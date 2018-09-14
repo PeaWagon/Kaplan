@@ -3,7 +3,8 @@
 \usepackage{tabularx}
 \usepackage{booktabs}
 
-\title{\underline{CAS 741: Problem Statement}\\{\Large Determination of Conformational Isomers using Evolutionary Computation}}
+\title{{CAS 741: Problem Statement}\\{\Large Determination of Conformational 
+Isomers}}
 
 \author{\textbf{Jen Garner} (PeaWagon//garnej2)}
 
@@ -11,7 +12,7 @@
 
 \pagenumbering{gobble}
 
-%\input{../Comments}
+\input{../Comments}
 
 \begin{document}
 
@@ -24,6 +25,8 @@
 \textbf{Date} & \textbf{Developer(s)} & \textbf{Change}\\
 \midrule
 September 13, 2018 (Thursday) & J. Garner & Creation of document. \\
+September 14, 2018 (Friday) & J. Garner & Make changes as per issues in Github. 
+\\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -42,23 +45,63 @@ A number of reasonable input structures may exist, especially for molecules with
 
 \vspace{2mm} %2mm vertical space
 
-This program will construct a set of conformers for each molecule in a list of input molecules. The program will convert a smiles string into an initial population of possible geometries, as represented by lists of dihedral angles. Then, an evolutionary algorithm will be implemented to search the energy surface and locate conformers.
+This program will construct a set of conformers for each molecule in a list of 
+input molecules. The program will convert a SMILES (simplified molecular-input 
+line-entry system) string into an initial population of possible geometries, as 
+represented by lists of dihedral angles. Then, an optimisation, such as an 
+evolutionary algorithm, will be implemented to search the energy surface and 
+locate conformers.
 
 \vspace{3mm} %3mm vertical space
-
-\noindent{\large\textbf{Environment}}
+\newpage
+\noindent{\large\textbf{Environment \& Usage}}
 
 \vspace{2mm} %2mm vertical space
 
-The program will have to run on high performance computing clusters (Sharcnet, Compute Canada, etc.), which almost exclusively use Linux OS. The program will also need to interface with Vetee, which is another (work-in-progress) software package to which the author is a contributor. Vetee handles databases of molecules and is responsible for setting-up and running calculations using the proprietary software package, Gaussian. 
+The author will try to package this program using Anaconda, so that it might be 
+installed in a Conda environment. Python is likely going to be the language of 
+choice, such that no compiling step will be needed (for initial stages - future 
+work may be to profile the code and replace slower areas with a compiled 
+language such as C++ or Rust).
 
-\vspace{3mm} %3mm vertical space
+Attempts will be made to locate an open-source software package for evaluating 
+the energy of a given structure (to confirm the location of an energy minimum). 
+For future research, the program will be linked to Vetee - a work-in-progress 
+project to which the author is a contributor. Vetee handles databases of 
+molecules and is responsible for setting-up and running calculations using 
+Gaussian. Since Gaussian is proprietary software, the energy calculation step 
+should be left open such that the user is not restricted behind a paywall.
 
-\noindent{\large\textbf{Usage}}
+This program will be used by the author to conduct research into databases of 
+floppy organic molecules, polycyclic aromatic hydrocarbons, carbenes, and 
+common drug molecules. The program will have to run on high performance 
+computing (HPC) clusters (Sharcnet, Compute Canada, etc.), which almost 
+exclusively use Linux OS. A serial version will be written first to ensure that 
+the project is executable on personal computers. Gaussian is available on the 
+HPC cluster, Graham, and its use is dependent on having a Compute Canada 
+account and in agreeing to the following terms:
+\begin{enumerate}
+	\item {I am not a member of a research group developing software 
+		competitive to Gaussian.}
+	\item {I will not copy the Gaussian software, nor make it available to 
+		anyone else.}
+	\item {I will properly acknowledge Gaussian Inc. and Compute Canada in 
+		publications.}
+	\item {I will notify Compute Canada of any change in the above 
+		acknowledgement.}
+\end{enumerate}
 
-\vspace{2mm} %2mm vertical space
+Ultimately, this program should be usable by other chemists to determine good 
+initial structures for molecules where the structure is unknown. The benefit of 
+using this program over other geometry optimisation techniques will be the 
+production of a set of possible geometries, rather than a single solution. For 
+example, some drug molecules may adopt certain conformations in active sites 
+that may not be the global minimum of the energy surface. The program should be 
+at least as fast as performing a geometry optimisation with a high level of 
+quantum mechanical theory (coupled-cluster, full configuration interaction, 
+etc.).
 
-This program will be used by the author to conduct research into databases of floppy organic molecules, polycyclic aromatic hydrocarbons, carbenes, and common drug molecules. It can also be used by other chemists to determine good initial structures for molecules where the structure is unknown. The benefit of using this program over other geometry optimisation techniques will be the production of a set of possible geometries, rather than a single solution. For example, some drug molecules may adopt certain conformations in active sites that may not be the global minimum of the energy surface. The program should be at least as fast as performing a geometry optimisation with a high level of quantum mechanical theory (coupled-cluster, full configuration interaction, etc.).
+
 
 %Put your problem statement here.  Comments to you can be added, like this:
 
