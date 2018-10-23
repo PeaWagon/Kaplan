@@ -1,0 +1,758 @@
+\documentclass[12pt, titlepage]{article}
+
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks,
+    citecolor=black,
+    filecolor=black,
+    linkcolor=red,
+    urlcolor=blue
+}
+\usepackage[round]{natbib}
+
+\input{../../Comments}
+
+% jen things
+\newcommand{\progname}{Kaplan} % PUT YOUR PROGRAM NAME HERE
+\usepackage{amsmath} % n choose k becomes \binom{n}{k}
+\usepackage{float} % for the [H] thing on tables and figures
+\usepackage{textcomp} % degree symbol \textdegree
+\usepackage{siunitx} % \si{\angstrom}
+
+\begin{document}
+
+\title{\progname{}: System Verification and Validation Plan} 
+\author{Jen Garner}
+\date{\today}
+	
+\maketitle
+
+\pagenumbering{roman}
+
+\section{Revision History}
+
+\begin{tabularx}{\textwidth}{p{3cm}p{2cm}X}
+\toprule {\bf Date} & {\bf Version} & {\bf Notes}\\
+\midrule
+Saturday 20 October, 2018 & 1.0 & Write initial draft (this time with a spell 
+check for Texstudio...)\\
+\bottomrule
+\end{tabularx}
+
+~\newpage
+
+\section{Symbols, Abbreviations and Acronyms}
+
+See the SRS document for \progname{} for other abbreviations and symbols, 
+particularly see Section 2 (Reference Material).
+
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{l l} 
+  \toprule		
+  \textbf{symbol} & \textbf{description}\\
+  \midrule 
+  T & Test\\
+  FT & Functional Test \\
+  NFT & Non-Functional Test \\
+  QCM & Quantum Chemical Method \\
+  BS & basis set \\
+  SRS & Software Requirements Specification \\
+  \bottomrule
+\end{tabular}\\
+
+\wss{symbols, abbreviations or acronyms -- you can simply reference the SRS
+  tables, if appropriate}
+
+\newpage
+
+\tableofcontents
+
+\listoftables
+
+\listoffigures
+
+\newpage
+
+\pagenumbering{arabic}
+
+The system verification and validation (systVnV) plan document is designed to 
+outline the tests for \progname{} and show how the software will be satisfying 
+its requirements. Verification means that the software was built correctly and 
+validation means that the correct software was built (for the intended 
+problem). The two important sections to this document include the planning 
+section (\ref{section-plans}) and the testing section (\ref{section-tests}). In 
+Section \ref{section-plans}, a brief overview as to how to verify the SRS, 
+Design, and Implementation of \progname{} will be given. Furthermore, software 
+validation techniques will be discussed. In Section \ref{section-tests}, 
+specific test inputs will be provided, and the expected outputs for these tests 
+will be described. The functional tests (FT) are designed to satisfy functional 
+requirements (R). The non-functional tests (NFT) are designed to satisfy some 
+of the non-functional requirements. All requirements are listed in the SRS 
+documentation. Section \ref{section-tables} gives traceability for these 
+requirements. A usability questionnaire is given in Appendix \ref{survey}.
+
+\wss{provide an introductory blurb and roadmap of the
+  Verification and Validation plan}
+
+\section{General Information}
+
+\subsection{Summary}
+
+\progname{} is designed to search the potential energy space of molecules for 
+possible conformational isomers. The inputs will be some geometry specification 
+for the molecule(s) of interest, a quantum chemical method (QCM), and a basis 
+set (BS). The output will be a geometry specification and a list of relevant 
+energies. 
+
+\wss{Say what software 
+is being tested.  Give its name and a brief overview of its general functions.}
+
+\subsection{Objectives}
+
+These tests should ensure that the input geometry can be converted to z-matrix 
+format, such that the dihedral angles can be extracted for manipulation. The 
+tests should also accurately procure a molecule's energy (which confirms that 
+the input geometry converges with the given basis set and method). Once the 
+conformational isomers have been found, the tests should certify that they are 
+distinct from one another (and not merely a translation or rotation in space). 
+The output geometries should be parsable by other quantum chemical software.
+
+\progname{} intends to be simple in its use and upkeep. Any error messages 
+should be verbose and steps to fix the issues will be given as suggestions. The 
+maintainability is important, since the code must interact with many other 
+libraries. If the code is not maintainable and the related libraries change, 
+then it will be difficult and time consuming to perform updates. 
+
+The tests should prove that \progname{} is robust with respect to a wide range 
+of inputs, and (in passing) they should convince the user that their returned 
+structures are chemically meaningful. The performance of \progname{} should be 
+easily tracked and it should be evident to the user if their method and basis 
+set are too computationally expensive for the input molecule.
+
+\wss{State what is intended to be accomplished.  The objective will be around
+  the qualities that are most important for your project.  You might have
+  something like: ``build confidence in the software correctness,''
+  ``demonstrate adequate usability.'' etc.  You won't list all of the qualities,
+  just those that are most important.}
+
+\subsection{Relevant Documentation}
+
+The Software Requirements Specification (SRS) document included in the 
+\progname{} repository should be referenced for any definitions. It may be 
+necessary to reference the documentation for external software such as Psi4 
+\cite{psi4}, Openbabel \cite{obabel}, \cite{obabel-web}, or Gaussian \cite{g16}.
+
+\wss{Reference relevant documentation.  This will definitely include your SRS}
+
+\section{Plan} \label{section-plans}
+	
+\subsection{Verification and Validation Team}
+
+Mulder, c'est moi.
+
+\wss{Probably just you.  :-)}
+
+\subsection{SRS Verification Plan}
+
+As stated in the SRS, two likely changes are present for \progname{}. First, 
+LC1 states that the fitness function may not be a linear combination of the sum 
+of energies and the sum of RMSD values. Once the code has been written and 
+tested, then the fitness function can be modified to determine if a more 
+efficient and/or accurate function exists. The modification will depend on the 
+time available; the optimal fitness function is not expected to be found, but 
+rather to be improved upon.
+
+Second, LC2 highlights assumption A11, which states that the conformer space is 
+independent of the ordering of atoms. If $n_a$ atoms are in molecule M, then 
+$n_a-3$ dihedral angles are needed. There are a total of $n_a$ choose $n_a-3$ 
+ways to select dihedral angles (simplified below in Equation 
+\ref{choose-order}). The question to answer will be: does the set of chosen 
+atoms change the conformational isomers that are found or the time needed to 
+find them?
+
+\begin{equation} \label{choose-order}
+\binom{n_a}{n_a-3} = \frac{n_a!}{3!(n_a-3)!} = \frac{n_a(n_a-1)(n_a-2)}{6} 
+\text{ ; } n_a > 3
+\end{equation}
+
+This question is relatively easy to test, as the input molecular geometry can 
+be re-ordered such that different subsets of atoms are chosen to construct the 
+z-matrix dihedral angles. It should be noted here that this test should be run 
+for M with as little symmetry as possible ($C_1$ point group), to contract the 
+search space and avoid comparing mirror images. The time to solution/energies 
+(output) will be compared for M. If the results are not equal (when using the 
+same random seed), then there is either a bug in the code, or the choice of 
+dihedral angles matters. A different time to solution suggests that the energy 
+calculations are somewhat dependent on the input configuration. A different 
+energy implies that some dihedral angles are more important than others. The 
+next question here would be - can a pattern be found to minimize the time to 
+solution or find lower energy conformers? For example, does the set of dihedral 
+angles, $D_i$, with heavier atoms converge more rapidly? Does $D_i$ outperform 
+when atoms are chosen with more bonded atoms?
+
+As for the SRS document itself, the author will review it again once the rest 
+of the program has been written to see if its requirements have been met. The 
+author can ask her supervisor to review the paper as well as a few lab members. 
+Brooks MacLachlan has already raised some github issues for the SRS document 
+that the author will address by the end of this semester (Fall 2018). Professor 
+Spencer Smith will also review the SRS and give feedback.
+
+\wss{List any approaches you intend to use for SRS verification.  This may just
+  be ad hoc feedback from reviewers, like your classmates, or you may have
+  something more rigorous/systematic in mind..}
+
+\subsection{Design Verification Plan}
+
+The design will be reviewed during a meeting with the author's supervisor.
+
+\wss{Plans for design verification}
+
+\subsection{Implementation Verification Plan}
+
+This document will represent the system testing. Another document will be 
+written to outline the unit tests to be performed. The code will be written in 
+Python, and nosetests will be used to run the tests. Various linters will be 
+used, such as pylint, pydocstyle, and pycodestyle, to ensure that standards are 
+being upheld for the code formatting and documentation (PEP8, numpy 
+docstrings). The implementation will also be tested by classmate, Malavika 
+Srinivasan, and Professor Spencer Smith. 
+
+\wss{You should at least point to the tests listed in this document and the unit
+  testing plan.}
+
+\subsection{Software Validation Plan}
+
+Journal articles that explore the conformer space of a given molecule will be 
+used as a reference, for example see \cite{butane-conformers}. Using the same 
+input molecule, determine whether 
+\progname{} can find the same conformers.
+
+\wss{If there is any external data that can be used for validation, you should
+  point to it here.  If there are no plans for validation, you should state that
+  here.}
+
+\section{System Test Description} \label{section-tests}
+	
+\subsection{Tests for Functional Requirements}
+
+\wss{Subsets of the tests may be in related, so this section is divided into
+  different areas.  If there are no identifiable subsets for the tests, this
+  level of document structure can be removed.}
+
+\subsubsection{FT1 - Data Input and Output}
+
+These tests will ensure that all data conversion and formatting is handled 
+correctly by \progname{}. As per functional requirement R1, the user must 
+provide 6 items to the program: $n_G$, $C_E$, $C_{RMSD}$, BS, QCM, and a 
+molecular geometry. 
+
+\begin{enumerate}
+
+\item Non-Geometry Input Type Check
+
+Description: test the inputs and check that they are of the correct type and 
+have sensical bounds.
+
+Control: Automatic
+
+Initial State: empty, no molecule input.
+
+Input:
+\begin{table}[H]
+	\begin{tabular}{p{3cm}p{3cm}p{2.5cm}p{4cm}}
+		\toprule
+		Input Variable & Special Cases & Usual Case & Error Cases \\
+		\midrule
+		$n_G$    & 0, 1        & 5*          & `a', ``bloop'', 1.0, 5.43, -5 \\
+		$C_E$    & 0          & 0.5, 5        & `a', ``blip'', -10 \\
+		$C_{RMSD}$ & 0        & 0.7, 2       & `a', ``banana'', -13 \\
+		BS       & BS from file*  & ``cc-pVTZ'', ``STO-6G'' & 
+		`o', ``not-a-basis-set'', unavailable basis (for atoms), unavailable 
+		basis (for external program), 10, 0.3 \\
+		QCM      & N/A           & ``HF'', ``CCSD'' & `o', ``not-a-method'', 
+		unavailable method, 7, 
+		0.25 
+		\\
+		\bottomrule
+	\end{tabular}
+\label{table-inputs}
+\caption{Test cases for the input variables.}
+\end{table}
+
+* May need to issue a warning if the user provides a value for $n_G$ that is 
+larger than 20 (or do stress testing to find the upper bound for $n_G$).\\
+** Depending on the external program used for energy calculations, a 
+user-specified basis set may not be supported. Here is a 
+\href{https://joaquinbarroso.com/2011/11/02/gen-keyword-gaussian/}{link} to a 
+tutorial for how to make a basis set for Gaussian (using gen keyword) 
+\cite{link-gen-basis}, \cite{g16}.
+
+Output: Expect the program to raise an input error (type error) for the error 
+cases. The coefficients ($C_E$ and $C_{RMSD}$) can be either a floating point 
+or an integer value, but must not be negative. The special cases occur when 
+there is a reduction of function calls (i.e. have $n_G$ = 0 means returning 0 
+rather than calculating $S_E$ or $S_{RMSD}$). The BS and QCM chosen must be 
+available in the external program (as used for energy calculations). Ensuring 
+that the BS is applicable to the input molecule, and ensuring energetic 
+convergence for the input molecule, is not covered by this test - see 
+subsequent Test FT1-\ref{test-input-geom}.
+
+How test will be performed: Provide inputs from each category as per Table 
+\ref{table-inputs} and ensure that they provide errors where expected and 
+minimize computation by following protocol for special cases.
+
+\item Test Input Geometry \label{test-input-geom}
+
+Description: This test ensures that a molecule can be input in various ways 
+(SMILES, xyz, z-matrix) and still produce the same geometry. Furthermore, it 
+checks that the geometry is compatible with the chosen BS and QCM. If the 
+geometry can converge during the optimization using that BS and QCM, then the 
+inputs pass.
+
+Control: Automatic
+
+Initial State: N/A
+
+Input: set of various test molecules (as SMILES, xyz, and z-matrix). Provide 
+geometries that are purposefully bad (for example, a flat molecule that is 
+supposed to be 3D). These geometries should not converge, no matter how the 
+dihedral angles are manipulated. Provide a geometry for which the energy 
+calculation will not converge, but can converge provided the dihedral angles 
+are changed. Here, an example could be to superimpose two atoms that can 
+otherwise be separated by free rotation. Note: depending on how robust the 
+chosen external program is for energy calculations, this type of geometry may 
+be hard to find. A last part of this test will be to input a geometry for which 
+the chosen BS does not include one or more of the molecule's atoms. A 
+good resource to check for this availability is the 
+\href{https://bse.pnl.gov/bse/portal}{Basis Set Exchange}  
+\cite{basis-set-exchange-ref1}, \cite{basis-set-exchange-ref2}, 
+\cite{basis-set-exchange-web}.
+ Some atoms, 
+especially the heavier elements, do not have as many BS available as others 
+(they simply have not been calculated yet).
+
+Output: Errors are expected when all energies are calculated as zero (which 
+will be the default value for non-converging calculations) - i.e. $S_E = 0$ for 
+$n_G > 0$. Note: non-converging here does not mean that the external program 
+fails (or runs out of computational time or resources, etc. - those are 
+separate errors). Errors should also be raised when the BS is available, but 
+there is an atom in the geometry for which the BS has not been parametrized. 
+Given the same random seed and molecule, the results should be equal (within a 
+small tolerance), regardless of whether the geometry is initialized as a SMILES 
+string, set of xyz coordinates, or z-matrix. Note: this may be changed later if 
+the SMILES strings give very different geometries to known experimental 
+structures of molecules.
+
+How test will be performed: This test will require running the program for the 
+testing molecules, as described in the input section. It is only intended to 
+satisfy the first part of R4, which requires that the energy calculations 
+converge.
+
+\item Test Output Generation
+
+Description: as per R5, the program should generate a geometry from $D_i$ and 
+the starting geometry.
+
+Control: automatic
+
+Initial State: an optimised input molecule versus an unoptimised input molecule.
+
+Input: list of dihedral angles, $D_i$, for each conformer, alongside the 
+starting geometry for that molecule.
+
+Output: xyz coordinates for each conformer. 
+
+How test will be performed: \progname{} will generate a new z-matrix file using 
+the original geometry and the new dihedral angles. Then, it will convert this 
+z-matrix to xyz coordinates using Openbabel and compare the outputs. For the 
+optimised molecule, test that the geometry is different from the input. For the 
+non-optimal molecule, test that the geometries are equal.
+					
+\end{enumerate}
+
+\subsubsection{FT2 - Calculations}
+
+\begin{enumerate}
+	
+	\item Calculate $Fit_G$
+	
+	Description: This test will be a simple check on the formula for $Fit_G$. 
+	The $C_{RMSD}$ and $C_E$ coefficients will be tested such that their limits 
+	will be sufficiently covered.
+	
+	Control: Automatic
+	
+	Initial State: $n_G$ = 0, 1, 2, 7, -10, 1.6
+	
+	Input: For each initial state, calculate $Fit_G$ for the parameters in 
+	Table \ref{table-fitg}.
+
+	\begin{table}[H]
+		\begin{center}
+		\begin{tabular}{lrrrr}
+			\toprule
+			Variable & \multicolumn{4}{c}{Values} \\
+			\midrule
+			$C_{RMSD}$ 	   & -1.4  & 0      & 1    & 0.5   \\
+			$C_E$		   & -4    & 1      & 0    & 0.5   \\
+			$S_E$ 		   & -120  & 500.24 & 23.4 & 400.3 \\
+			$S_{RMSD}$ 	   & -1.5  & 4.3    & 2    & 8.3   \\
+			\midrule
+			Result $Fit_G$ & Error & 500.24 & 2    & 204.3 \\
+			\bottomrule
+		\end{tabular}
+		\end{center}
+	\caption{Example input and output of $Fit_G$ calculations for some values 
+	of coefficients and summations.}
+	\label{table-fitg}
+	\end{table}
+	
+	Output: The value for $n_G$ (number of conformers being optimised) 
+	starts at 0, representing the base case where no conformers are being 
+	searched for. In this case, the result should be zero, and no functions 
+	need to be called. This test ensures no divide-by-zero errors occur. The 
+	second value ($n_G$ = 1) assumes one conformer. The expected behaviour is 
+	calculate $Fit_G$ and assert that the value is equal to $E_i$ (the energy 
+	of the conformer). Note: some errors may arise if the $S_{RMSD}$ value is 
+	not correctly handled (i.e. index-out-of-range errors), since there is only 
+	one molecule and the RMSD expects $n_G > 1$.
+	
+	The next two values for $n_G$ should be calculated as usual (one odd and on 
+	even value). No errors are expected. The last two values are invalid inputs 
+	for $n_G$ and should raise errors ($n_G$ cannot be a float and it cannot be 
+	negative).
+	
+	For each value of $n_G$, 3 sets of coefficients will be tested. The chosen 
+	values attempt to represent the limits of what should be calculated.
+	
+	How test will be performed: Run all input combinations with a test script 
+	and pass to nosetests.
+	
+	\item Calculate $S_E$
+	
+	Description: Psi4 is the chosen quantum chemistry package that will be used 
+	to run most energy calculations. More packages will be added later-on in 
+	the project. In case updates to Psi4 change the output energies, these 
+	tests will confirm that the same answer is being returned for the same 
+	input calculation. The results can be compared to literature values (within 
+	error tolerance).
+
+	Control: Automatic
+
+	Initial State: $n_G$ = 5
+
+	Input: Set of input molecules (previously calculated using Gaussian), BS, 
+	and QCM.
+
+	Output: $S_E$ 
+
+	How test will be performed: use Psi4 to calculate the energies of a set of 
+	geometries. The geometries will have two types: (1) they are all 
+	equivalent, and (2) they have been minimally randomized based on an initial 
+	convergent geometry. Calculate the $S_E$. Ensure that the result is 
+	positive and (if applicable) compare to previous test results. Compare the 
+	results to the Gaussian output for the same BS and QCM and ensure that 
+	value is within a tolerance.
+	
+	\item Calculate $S_{RMSD}$
+	
+	Description: The rmsd repository made by user charnley \\
+	(https://github.com/charnley/rmsd)\\ will be used to calculate the RMSD 
+	between two molecular geometries. This test should ensure that the 
+	$S_{RMSD}$ value is calculated correctly.
+	
+	Control: automatic
+	
+	Initial state: $n_G$ = 0, 1, 2, 6
+	
+	Input: given molecule, $M$, rotate this molecule 90\textdegree, called 
+	$M_r$. Translate M 2\si{\angstrom}, called $M_t$. 
+	
+	Output: $S_{RMSD}$
+	
+	How test will be performed: use rmsd repository to calculate the RMSD 
+	between geometries. As with the energy calculations, there should be a test 
+	done on equivalent geometries to ensure the RMSD is 0. The RMSD should also 
+	be 0 for $M_r$ and $M_t$ when compared to $M$. The second set of tests 
+	should be on geometries that have been changed by a small, random amount 
+	(+/-0.2\si{\angstrom}). Since such a change should not impact the rotation 
+	matrix, the RMSD can be calculated directly in a spreadsheet or other tool 
+	for validation.
+
+	
+\end{enumerate}
+
+\subsection{Tests for Nonfunctional Requirements}
+
+\subsubsection{NFT1 - External Package Compliance Tests}
+
+This section of testing ensures that \progname{} satisfies the non-functional 
+requirement of working well with other quantum chemistry packages. These tests 
+will show that the chosen quantum chemistry packages work as intended and 
+within quantifiable limits.
+
+\begin{enumerate}
+	
+\item Testing Formatting Conversion Error
+
+Description: This test will determine the change in geometry that occurs when 
+the molecule undergoes a formatting change. The conversion is performed using 
+Openbabel software. The test will confirm that Openbabel is a suitable library 
+to use for the program and quantify the rounding/floating point error 
+associated with n conversions. This test is a form of 
+stress testing. The author is open to suggestions as to how many conversions 
+should be performed before considering the conversion to be stable. If this 
+test passes, then the program will not need to keep re-reading the input 
+geometry from a file nor maintain the original geometry as a variable in 
+memory. The program will therefore be more robust and reliable upon quantifying 
+the formatting change error.
+
+Type: functional (automatic running, manual inspection)
+
+Initial State: N/A
+
+Input/Condition: \\
+SMILES string for caffeine CN1C=NC2=C1C(=O)N(C(=O)N2C)C \\
+Number of conversions $\rightarrow n = {1, 10, 20, 30..10000}$.
+
+Output/Result: coordinates for caffeine after n conversions. Check $D_i$ each 
+conversion and atom ordering. R5 should be satisfied here, in that the geometry 
+can be regenerated from $D_i$.
+
+How test will be performed: Starting with the SMILES string for caffeine, use 
+Openbabel to convert this format to Cartesian coordinates. Then, convert the 
+xyz coordinates to a z-matrix with Openbabel. One conversion counts as 
+converting to and from a z-matrix. Complete n conversions and calculate the 
+RMSD error between the initial and final xyz geometries. Plot the results 
+with Matplotlib (Python library) for all n. Ensure that there is a tolerance 
+for the number of conversions that \progname{} executes. Note: it may be 
+necessary to test this tolerance for molecules of differing sizes. This test 
+should also ensure that, after each conversion, the dihedral angles list $D_i$ 
+and the atom ordering remain constant.
+
+\item Testing Error between Quantum Chemical Packages
+
+Description: In order to determine which packages will to interface with 
+\progname{}, their energy calculation results will be compared for the same BS 
+and QCM. The energies should be similar within a tolerance, and this tolerance 
+should not impact the results of the conformer search.
+
+Type: functional
+					
+Initial State: N/A
+					
+Input/Condition: set of molecules, BS, and QCM.
+					
+Output/Result: $E_i$ for each molecule.
+					
+How test will be performed: Gaussian and Psi4 are the first two programs that 
+will interface with \progname{}. The difference in energy for the same 
+calculation shall be documented. If there is a significant difference in 
+results for any given BS or QCM, then these inputs may be removed as options 
+from \progname{} (at least until the case can be determined).
+
+\end{enumerate}
+
+\subsubsection{NFT2 - Robustness Tests for $Fit_G$}
+
+\begin{enumerate}
+	\item Testing different $Fit_G$ functions.
+	
+	Description: Since the form of $Fit_G$ is likely to change (and will be 
+	changed for research purposes), the program should be able to handle a 
+	change in form for this function.
+	
+	Type: functional
+	
+	Initial state: N/A
+	
+	Input/condition: run all tests for \progname{} (that are dependent on the 
+	calculation of $Fit_G$) such that the $Fit_G$ is evaluated as:
+	
+	\begin{enumerate}
+		\item $\frac{C_E S_E}{C_{RMSD} S_{RMSD}}$
+		\item $\frac{C_{RMSD} S_{RMSD}}{C_E S_E}$
+		\item $C_E C_E^2 + C_{RMSD}\sqrt{S_{RMSD}}$
+		\item $C_{RMSD} C_{RMSD}^2 + C_E\sqrt{S_E}$
+		\item $C_E\ln{S_E} + C_{RMSD} e^{S_{RMSD}}$
+		\item $C_{RMSD}\ln{S_{RMSD}} + C_E e^{S_E}$
+	\end{enumerate}
+
+	Output/result: returns the results of the tests involving $Fit_G$. If any 
+	tests failed, these tests should be investigated and fixed such that they 
+	pass for the new function for $Fit_G$.
+	
+	How test will be performed: write the new $Fit_G$ functions in an external 
+	file and use a test to call them. It might be easier to add the $Fit_G$ 
+	function choice as an input parameter to the program (however this choice 
+	may not be readily visible to the user).
+	
+\end{enumerate}
+
+\subsubsection{NFT3 - Parallelizability and HPC Testing}
+
+\begin{enumerate}
+	\item Testing for n cores.
+	
+	Description: this test will quantify the performance increase that occurs 
+	when the number of available computing cores is increased.
+	
+	Type: late-stage implementation (functional, manual observation)
+	
+	Initial state: no optimization has been performed on molecule, M.
+	
+	Input/condition: use n cores to optimize M, where n = 1, 2, 4, 8.
+	
+	Output/result: return the running time for each optimization. 
+	
+	How test will be performed: Plot the time to solution (y) with increasing n 
+	(x) using Matplotlib. Inspect this plot to ensure that the slope of this 
+	plot is not negative (i.e. increasing cores increases performance). This 
+	will likely be part of a later phase of implementation and testing.
+	
+	\item Testing on HPC cluster.
+	
+	Description: the program will be used primarily on a HPC cluster (for 
+	example, Compute Canada's cluster, Graham). This test should require the 
+	user to install the program on a HPC cluster and run the other tests.
+	
+	Type: manual installation, automatic running
+	
+	Input/condition: tests for \progname{}.
+	
+	Output/result: result of tests.
+	
+	How test will be performed: author will manually install the program on 
+	Graham and run the tests. 
+	
+	
+\end{enumerate}
+
+\subsection{Traceability Between Test Cases and 
+Requirements}\label{section-tables}
+
+\wss{Provide a table that shows which test cases are supporting which
+  requirements.}
+
+\begin{table}[H]
+	\begin{center}
+	\begin{tabular}{|l|c|c|c|c|c|}
+		\hline
+		& R1 & R2 & R3 & R4 & R5 \\
+		\hline
+		FT1-1 & X  &    &    &    &    \\
+		\hline
+		FT1-2 & X  &    &    &    &    \\
+		\hline
+		FT1-3 &    &    &    &    & X  \\
+		\hline
+		FT2-1 &    & X  &    & X  &    \\
+		\hline
+		FT2-2 &    & X  & X  & X  &    \\
+		\hline
+		FT2-3 &    & X  & X  &    &   \\
+		\hline
+	\end{tabular}
+\end{center}
+\caption{traceability table for functional requirements and tests.}
+\end{table}
+
+\begin{table}[H]
+	\begin{center}
+	\begin{tabular}{|l|c|c|c|c|c|}
+		\hline
+		& NFR1 & NFR2 & NFR3 & NFR4 & NFR5 \\
+		\hline
+		NFT1-1 &      &      &      &      & X    \\
+		\hline
+		NFT1-2  &      &      &      &      & X    \\
+		\hline
+		NFT2-1 & X    &      &      &      &      \\
+		\hline
+		NFT3-1 &      &      & X    &      &      \\
+		\hline
+		NFT3-2 &      &      & X    &      &     \\
+		\hline
+	\end{tabular}
+\end{center}
+\caption{traceability table for non-functional requirements and tests.}
+\end{table}
+
+\section{Static Verification Techniques}
+
+\wss{In this section give the details of any plans for static verification of
+  the implementation.  Potential techniques include code walkthroughs, code
+  inspection, static analyzers, etc.}
+
+It is assumed that any external programs that are used by \progname{} have 
+their own tests and that these tests will be run (and hopefully pass) on the 
+applicable systems.
+
+Planned external tests for these programs (note: cannot test Gaussian as it is 
+not open-source):
+
+\begin{itemize}
+	\item Openbabel: https://openbabel.org/docs/dev/Contributing/Testing.html
+	\item Psi4: http://www.psicode.org/psi4manual/1.2/testsuite.html
+	\item rmsd: https://github.com/charnley/rmsd/blob/master/tests.py
+\end{itemize}
+
+The author will provide a code review for this project at a lab meeting. The 
+other lab members will answer the usability survey questions as outlined in the 
+appendix section \ref{survey}.
+				
+Travis will be used to verify the build when a commit is made to the 
+\progname{} repository. Travis will attempt to install \progname{} as a Conda 
+package inside a Conda environment. 
+
+Here are some important style links:
+
+\begin{itemize}
+	
+\item https://www.python.org/dev/peps/pep-0008/
+\item https://pypi.org/project/pycodestyle/
+\item 
+https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example\_numpy.html
+
+\end{itemize}
+
+
+\bibliographystyle{plainnat}
+
+%\bibliography{SRS}\\
+\bibliography {../../../ReferenceMaterial/References}
+
+\newpage
+
+\section{Appendix}
+
+This is where you can place additional information.
+
+\subsection{Symbolic Parameters}
+
+The definition of the test cases will call for SYMBOLIC\_CONSTANTS.
+Their values are defined in this section for easy maintenance.
+
+\subsection{Usability Survey Questions} \label{survey}
+
+\wss{This is a section that would be appropriate for some projects.}
+
+\begin{enumerate}
+	\item Were you able to install the program using the instructions alone, or 
+	did you require additional researching/help? If any steps were unclear, 
+	please explain how they might be improved.
+	\item Did the program accept your molecular input?
+	\item Did the program return the same number of conformer geometries and 
+	energies as specified by your choice of input for $n_G$?
+	\item When you view these conformers (chimera, VMD, pymol, etc.), do their 
+	geometries seem appreciably different from one another?
+	\item Did your selection of BS or QCM  result in any convergence errors?
+	\item What did you choose for your coefficients? Do you think that the 
+	results can be improved with a different choice of $C_E$ and/or $C_{RMSD}$?
+	\item Was the output delivered more quickly or more slowly than expected?
+	
+\end{enumerate}
+
+\end{document}

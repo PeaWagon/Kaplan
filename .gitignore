@@ -1,3 +1,16 @@
 docs/ProblemStatement/ProblemStatement.aux
 docs/ProblemStatement/ProblemStatement.log
 docs/ProblemStatement/ProblemStatement.synctex.gz
+
+*.bbl
+*.aux
+*.log
+*.blg
+*.out
+*.synctex.gz
+*.toc
+*.egg-info
+*.lof
+*.lot
+
+ReferenceMaterial/*.pdf

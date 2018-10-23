@@ -101,7 +101,11 @@
 \begin{tabularx}{\textwidth}{p{3cm}p{2cm}X}
 \toprule {\bf Date} & {\bf Version} & {\bf Notes}\\
 \midrule
-October 4, 2018 (Thursday) & 1.0 & first draft for submission \\
+October 4, 2018 (Thursday) & 1.0 & first draft for 
+submission \\
+October 22, 2018 (Monday) & 1.1 & enumerate 
+non-functional requirements, add dictionary to 
+Texstudio and fix spelling errors \\
 \bottomrule
 \end{tabularx}
 
@@ -160,8 +164,9 @@ their units.
 
 $n_a$ & unitless & number of atoms in the input molecule \\
 $n_G$ & unitless & number of conformers (distinct geometries) being 
-simulatenously optimised \\
-$G_i$ & \si{\angstrom} & geometry for conformer $i$; matrix of cartesian 
+simultaneously optimised \\
+$G_i$ & \si{\angstrom} & geometry for conformer $i$; 
+matrix of Cartesian 
 coordinates with shape($n_a$, 3) \\
 $D_i$ & \textdegree & list of dihedral angles for conformer $i$; array of 
 length $n_a - 3$ \\
@@ -218,7 +223,7 @@ $R$ & \si{\angstrom} & position of nuclei; array of length 3 \\
   MO & molecular orbital \\
   LCAO & linear combination of atomic orbitals \\
   STO & slater-type orbital \\
-  GTO & gaussian-type orbital \\
+  GTO & Gaussian-type orbital \\
   QCM & quantum chemical method \\
   BS & basis set \\
   RMSD & root-mean square deviation \\
@@ -238,15 +243,20 @@ $R$ & \si{\angstrom} & position of nuclei; array of length 3 \\
 \section{Introduction} \label{2intro}
 
 Molecular geometry is a necessary piece of information with regards to running 
-calculations. Most computational chemists will run a geometry optimisation for 
-their moleule of interest before they can investigate other properties, such as 
+calculations. Most computational chemists will run a 
+geometry optimization for 
+their molecule of interest before they can investigate 
+other properties, such as 
 charge distribution and interaction energies. Without breaking any bonds, there 
 are multiple ways in which the atoms can be positioned such that an optimal 
 geometry is obtained - these geometries are called conformational isomers 
-(sometimes abbreivated as conformers). Rather than performing an exhaustive 
-search of all possible geometies, \progname{} is a package designed for the 
-efficient exploration and optimisation of molecular geometry with the end goal 
-of procurring a set of conformers.
+(sometimes abbreviated as conformers). Rather than 
+performing an exhaustive 
+search of all possible geometries, \progname{} is a 
+package designed for the 
+efficient exploration and optimization of molecular 
+geometry with the end goal 
+of procuring a set of conformers.
 
 
 \begin{figure}[H]
@@ -260,9 +270,11 @@ of procurring a set of conformers.
 
 A classic example of conformational isomers is the boat versus the chair 
 conformation of cyclohexane (see Figure \ref{C6H14}). A simple geometry 
-optimisation of cyclohexane would only afford the global minimum to the 
+optimization of cyclohexane would only afford the 
+global minimum to the 
 potential energy landscape, but, in using \progname{}, it will be possible to 
-find the local minima of this molecule. Knowing the local minima is useful in 
+find the local minima of this molecule. Knowing the 
+local minima is useful in 
 areas such as drug design, where the molecule is restricted by its environment 
 (for example, in the interaction with an enzyme) to have a certain shape. 
 Molecules can also adopt different conformations when they are exposed to 
@@ -297,16 +309,21 @@ needed for searching a molecular geometry space. Any assumptions inherent to
 solving the problem will be mentioned in this document. 
 
 \subsection{Scope of Requirements}
-Kaplan will optimise the geometry of an input molecule to find its conformers 
+Kaplan will optimize the geometry of an input molecule 
+to find its conformers 
 by searching the potential energy surface. The size of molecule that can be 
 accommodated depends greatly on the other inputs of the system, such as level 
 of theory and convergence criteria, but should be held within reasonable bounds 
-such as a maximum of a couple hundred atoms. During optimisation, the bond 
-lengths and bond angles will be held fixed, and only the diehdral angles will 
+such as a maximum of a couple hundred atoms. During 
+optimization, the bond 
+lengths and bond angles will be held fixed, and only 
+the dihedral angles will 
 be manipulated. As a result, molecules with less than 4 atoms will remain 
-unchanged after optimisation (no dihedral angles). Furthermore, the conformer 
+unchanged after optimization (no dihedral angles). 
+Furthermore, the conformer 
 with the lowest energy is not likely to represent the true minimum of the 
-potential energy landscape without subsequent optimisation of the other bond 
+potential energy landscape without subsequent 
+optimization of the other bond 
 angles/lengths. Lastly, the system is not intended to be impervious to abnormal 
 or forced bonding behaviour.
 
@@ -315,7 +332,8 @@ The reader should have taken first-year undergraduate chemistry, physics, and
 mathematics. They should be familiar with some bonding theory in molecules 
 (valence bond (VB) theory, molecular orbital (MO) theory, and valence-shell 
 electron pair repulsion (VSEPR)) and comfortable with the concept of 
-optimisation (especially of a multi-dimensional surface). 
+optimization (especially of a multi-dimensional 
+surface). 
 
 To understand the energy calculations, the reader should have taken a quantum 
 physics or quantum chemistry undergraduate course. Having a basic understanding 
@@ -325,7 +343,7 @@ the following terms will be useful:
 	\item Hartree Fock
 	\item wavefunction
 	\item basis set
-	\item hamiltonian operator
+	\item Hamiltonian operator
 	\item restricted versus unrestricted quantum chemistry calculations
 \end{itemize}
 
@@ -334,7 +352,8 @@ the following terms will be useful:
 This document follows the template outlined in \cite{SmithAndLai2005}. Section 
 \ref{1rev-hist} provides tables for all of the units, symbols, acronyms, and 
 abbreviations used throughout the document. Section \ref{2intro} is an overview 
-of the purpose and scope of the system, including an explaination the intended 
+of the purpose and scope of the system, including an 
+explanation the intended 
 reader for this document. Section \ref{3sys-desc} goes into more detail 
 regarding the system and its inputs, and describes the responsibilities of the 
 user versus the program. 
@@ -353,7 +372,8 @@ section. The user characteristics and system constraints are also given.
 Here the system context for Kaplan is shown (Figure \ref{sys-context}). With 
 respect to inputs, convergence conditions includes number of expected 
 conformers, energetic requirements, and the method and basis set used to 
-perform energy calculations. As for ouputs, an energy will be returned for each 
+perform energy calculations. As for outputs, an energy 
+will be returned for each 
 conformer geometry. 
 
 %It should be noted here that the program will not 
@@ -378,22 +398,23 @@ conformer geometry.
 \item provide chemically and computationally reasonable input
 
 %provide an input molecule that is chemically reasonable (i.e. likely to 
-%converge during optimisation)
+%converge during optimization)
 %give a level of theory (quantum mechanical method and basis set) for 
 %evaluating the energy
 %\item make sure the method and basis set make chemical and computational sense 
 %for the input molecule
 \item set the convergence criteria (how long will the program search for 
-confomers? What energetic requirements should the conformers possess? Estimate 
+conformers? What energetic requirements should the 
+conformers possess? Estimate 
 the number of expected conformers, etc.).
 \end{itemize}
 \item \progname{} Responsibilities:
 \begin{itemize}
-\item prepare molecular geometry for optimisation
+\item prepare molecular geometry for optimization
 %create initial coordinates for the molecule and generate a list of 
 %dihedral angles
 %convert between various input geometry types (examples: SMILES string, 
-%z-matrix, xyz (cartesian) coordinates)
+%z-matrix, xyz (Cartesian) coordinates)
 \item find conformers and calculate their energies
 \item determine if the convergence conditions have been met
 %, such as finding enough local minima (finding sufficient conformers)
@@ -409,7 +430,7 @@ impact of changing the quantum mechanical method and basis set for energy
 calculations, which implies that they understand basic quantum mechanics 
 (including how to solve the Schr\"{o}dinger equation - 3rd year quantum physics 
 course). The user should have a sense of whether their input geometry (where 
-applicable) will converge under optimisation.
+applicable) will converge under optimization
 
 %They must be familiar with how to write a script such that they can interface
 %with the program. 
@@ -470,7 +491,7 @@ Schr\"{o}dinger equation.
 \item \textbf{basis set:} how to describe the molecule mathematically such that 
 the Schr\"{o}dinger equation can be evaluated.
 \item \textbf{z-matrix:} an input file type that uses dihedral angles and 
-connectivities rather than cartesian coordinates.
+connectivities rather than Cartesian coordinates.
 \end{itemize}
 
 \subsubsection{Physical System Description}
@@ -480,7 +501,8 @@ The physical system of \progname{} includes the following elements:
 \begin{itemize}
 
 \item[PS1:] molecule for which to find conformers. This molecule is specified 
-by a file, such as xyz (cartesian coordinates) or a z-matrix, a SMILES string, 
+by a file, such as xyz (Cartesian coordinates) or a 
+z-matrix, a SMILES string, 
 or a name. From this geometry, the dihedral angles can be obtained.
 
 \end{itemize}
@@ -528,7 +550,8 @@ found in Table \ref{input-butane}.
 \caption{The physical system of \progname{}, using butane as an example 
 molecule. The first three columns represent equivalent geometries, given in 
 three different formats. The last column is the list of dihedral angles to be 
-optimised by the program. During optimisation, it is important that the 
+optimised by the program. During optimization, it is 
+important that the 
 dihedral angles map back to the input geometry using the same ordering for the 
 atoms.}
 \label{input-butane}
@@ -563,7 +586,8 @@ molecule \wss{inputs}, the goal statement is:
 
 \item[GS\refstepcounter{goalnum}\thegoalnum \label{goal}:] To 
 create a set of conformational isomers that represent the local minima of the 
-potential energy surface by optimising the molecule's dihedral angles. 
+potential energy surface by optimizing the molecule's 
+dihedral angles. 
 Alternatively, this GS can be described as: maximize the fitness function, 
 $Fit_G$.
 \wss{One sentence description of the goal.  There may be more than one.  Each 
@@ -635,7 +659,8 @@ Conformers can be found by manipulating dihedral angles only (i.e. bond lengths
 and bond angles will be held fixed). [\iref{IM:fitg}]
 
 \item[A\refstepcounter{assumpnum}\theassumpnum \label{A:fixed-mol}:] The 
-molecular composition does not change during the optimisation. [\tref{T_SE}]
+molecular composition does not change during the 
+optimization [\tref{T_SE}]
 
 \item[A\refstepcounter{assumpnum}\theassumpnum \label{A:one-mol}:] The 
 molecule is the only calculable object in the system (no solvent, other 
@@ -731,7 +756,8 @@ described by the basis set, and $k$ is the number of AO.
 There are two main types of AO in quantum chemistry - Slater-type orbitals 
 (STO) and Gaussian-type orbitals (GTO). STO have the form: $\phi(r,\sigma) = 
 ce^{-\zeta r}$, whereas GTO have the form: $\phi(r,\sigma) = ce^{-\zeta r^2}$, 
-where c is a value that depends on normalisation and the principle quantum 
+where c is a value that depends on normalization and 
+the principle quantum 
 number, $\zeta$ is a constant related to the effective nuclear charge, and r is 
 the distance of the electron from the nucleus. STO are more accurate, have poor 
 near-nuclear behaviour (approach $\infty$), but are expensive in terms of the 
@@ -831,7 +857,8 @@ models. The dimension of each quantity is also given.  \wss{Modify the examples
 		number of conformers being simultaneously optimised by the system. The 
 		individual energies should be negative; the absolute value bars imply 
 		that, when this summation is included in the overall fitness function, 
-		we are maximising the value of the fitness function.
+		we are maximizing the value of the fitness 
+		function.
 		\\
 		\hline
 		Sources& N/A \\
@@ -1102,14 +1129,30 @@ dihedral angles $D_i$ for each conformer back to a xyz geometry (using
 
 \wss{List your nonfunctional requirements.  You may consider using a fit
   criterion to make them verifiable.}
-Given that the fitness function is empirical, \progname{} should be relatively 
-robust with regards to changes made to the definition of $Fit_G$.
-Maintainability is also important for other students who will use the project 
-later-on. The program should be parallelisable and capable of running on 
+
+\begin{enumerate}
+	\item Given that the fitness function is 
+	empirical, \progname{} should be relatively 
+robust with regards to changes made to the definition 
+of $Fit_G$.
+
+\item Maintainability is also important for other 
+students who will use the project 
+later-on. 
+
+\item The program should be parallelisable and capable 
+of running on 
 high-performance computing servers without a difficult install process 
-(usability, portability). The program should have some suggestions for inputs 
-(example, default values for $n_G$, $C_E$, and $C_{RMSD}$) to help the user get 
-started. The program should work well with other quantum chemistry packages.
+(usability, portability). 
+
+\item The program should have some suggestions for 
+inputs (example, default values for $n_G$, $C_E$, and 
+$C_{RMSD}$) to help the user get started. 
+
+\item The program should work well with other quantum 
+chemistry packages.
+
+\end{enumerate}
 
 \section{Likely Changes}    
 
@@ -1292,7 +1335,8 @@ show the values of the symbolic parameters introduced in the report.}
 		$ \\
 		\hline
 		Description & 
-		The above equation gives the electronic hamiltonian operator for a 
+		The above equation gives the electronic 
+		Hamiltonian operator for a 
 		molecule with N-\ce{e-} and P-nuclei. $\hbar = \frac{h}{2\pi}$ is the 
 		reduced form of Plank's constant, $m_e$ is the mass of an electron, 
 		$\nabla$ is the gradient, $Z_\alpha$ is the atomic number for the given 
