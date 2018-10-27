@@ -106,12 +106,14 @@ submission \\
 October 22, 2018 (Monday) & 1.1 & enumerate 
 non-functional requirements, add dictionary to 
 Texstudio and fix spelling errors \\
+October 27, 2018 (Saturday) & 1.2 & fix some typos and consistency errors from 
+github issues\\
 \bottomrule
 \end{tabularx}
 
 ~\newpage
 
-\section{Reference Material}
+\section{Reference Material}\label{section-ref-tables}
 
 Units, constants, symbols, abbreviations, and acronyms are abbreviated here, as 
 used in this document.
@@ -350,7 +352,8 @@ the following terms will be useful:
 \subsection{Organization of Document}
 % TODO
 This document follows the template outlined in \cite{SmithAndLai2005}. Section 
-\ref{1rev-hist} provides tables for all of the units, symbols, acronyms, and 
+\ref{1rev-hist} is the revision history. Section \ref{section-ref-tables} 
+provides tables for all of the units, symbols, acronyms, and 
 abbreviations used throughout the document. Section \ref{2intro} is an overview 
 of the purpose and scope of the system, including an 
 explanation the intended 
@@ -369,8 +372,9 @@ section. The user characteristics and system constraints are also given.
 \wss{Your system context will likely include an explicit list of user and system
   responsibilities}
 
-Here the system context for Kaplan is shown (Figure \ref{sys-context}). With 
-respect to inputs, convergence conditions includes number of expected 
+\noindent Here the system context for Kaplan is shown (Figure 
+\ref{sys-context}). With 
+respect to inputs, convergence conditions include number of expected 
 conformers, energetic requirements, and the method and basis set used to 
 perform energy calculations. As for outputs, an energy 
 will be returned for each 
@@ -406,7 +410,7 @@ conformer geometry.
 \item set the convergence criteria (how long will the program search for 
 conformers? What energetic requirements should the 
 conformers possess? Estimate 
-the number of expected conformers, etc.).
+the number of expected conformers, etc.)
 \end{itemize}
 \item \progname{} Responsibilities:
 \begin{itemize}
@@ -424,11 +428,12 @@ the number of expected conformers, etc.).
 
 \subsection{User Characteristics} \label{SecUserCharacteristics}
 
-The user of \progname{} should have taken first year undergraduate physics, 
+The user of \progname{} should have taken first-year undergraduate physics, 
 chemistry, and mathematics. The user must understand the 
 impact of changing the quantum mechanical method and basis set for energy 
 calculations, which implies that they understand basic quantum mechanics 
-(including how to solve the Schr\"{o}dinger equation - 3rd year quantum physics 
+(including how to solve the Schr\"{o}dinger equation - third-year quantum 
+physics 
 course). The user should have a sense of whether their input geometry (where 
 applicable) will converge under optimization
 
@@ -480,7 +485,7 @@ either covalently or non-covalently.
 \item \textbf{bond length:} the distance between the centre of masses of two 
 atoms.
 \item \textbf{dihedral angle} the angle between two intersecting planes, where 
-each plane bisects 3 atoms.
+each plane bisects 3 atoms. See Figure \ref{butane-dihedral} for an example.
 \item \textbf{bond order:} the number of chemical bonds connecting two atoms. 
 This value sometimes depends on the theory used.
 \item \textbf{conformational isomer:} molecules that have the same number of 
@@ -500,7 +505,7 @@ The physical system of \progname{} includes the following elements:
 
 \begin{itemize}
 
-\item[PS1:] molecule for which to find conformers. This molecule is specified 
+\item[PS1:] Molecule for which to find conformers. This molecule is specified 
 by a file, such as xyz (Cartesian coordinates) or a 
 z-matrix, a SMILES string, 
 or a name. From this geometry, the dihedral angles can be obtained.
@@ -520,7 +525,8 @@ or a name. From this geometry, the dihedral angles can be obtained.
 \end{figure}
 
 An example of the physical system for the molecule butane ($C_4H_{10}$) can be 
-found in Table \ref{input-butane}.
+found in Table \ref{input-butane}. A visual for the molecule itself is 
+displayed in Figure \ref{butane-dihedral}.
 
 \begin{table}[H]
 	\begin{tabular}{llll}
@@ -642,7 +648,7 @@ function implies a better set of conformers.
 [\iref{IM:fitg}][\ddref{Sum_E}][\ddref{Sum_RMSD}]
 
 \item[A\refstepcounter{assumpnum}\theassumpnum \label{A:linear-fit}:] The 
-fitness function is linear combination of the sum of energies and the sum of 
+fitness function is a linear combination of the sum of energies and the sum of 
 RMSD values. [\iref{IM:fitg}]
 
 \item[A\refstepcounter{assumpnum}\theassumpnum \label{A:conf=min}:] Conformers 
@@ -849,11 +855,11 @@ models. The dimension of each quantity is also given.  \wss{Modify the examples
 		% \hline
 		SI Units & \si{\joule}\\
 		\hline
-		Equation & $\left|\sum\limits_{i=1}^{G_n}E_i\right|$ \\
+		Equation & $\left|\sum\limits_{i=1}^{n_G}E_i\right|$ \\
 		\hline
 		Description & 
 		$E_i$ is the energy (\si{\joule}) of conformer $i$, as calculated by 
-		solving the Schr\"{o}dinger equation (T\ref{T_SE}), and $G_n$ is the 
+		solving the Schr\"{o}dinger equation (T\ref{T_SE}), and $n_G$ is the 
 		number of conformers being simultaneously optimised by the system. The 
 		individual energies should be negative; the absolute value bars imply 
 		that, when this summation is included in the overall fitness function, 
@@ -912,7 +918,8 @@ The goal \gsref{goal} \wss{reference your goals} is solved by \iref{IM:fitg}
 \wss{reference your instance
   models}. \iref{IM:fitg} is an empirical function designed to explore the 
   potential energy space for a molecule. Given a multi-variate surface that 
-  depends on dihedral angles, manipulate those dihedral angles and solve for 
+  depends on dihedral angles, \progname{} will manipulate those dihedral angles 
+  and solve for 
   $Fit_G$. This fitness function has two arbitrary coefficients, $C_E$ and 
   $C_{RMSD}$ that the user must determine through experimentation with their 
   molecule. \wss{other details, with 
@@ -942,14 +949,15 @@ The goal \gsref{goal} \wss{reference your goals} is solved by \iref{IM:fitg}
   physical meaning. The purpose of the equation is to represent the optimal set 
   of conformers for a given input molecule.\\
   \hline
-  Description&$C_E$ is the energy coefficient water temperature 
+  Description&$C_E$ is the energy coefficient 
   (\si{1/\joule}).\\
   &$S_E$ is the absolute value of the sum of conformer energies (\ddref{Sum_E}) 
   (\si{\joule}).\\
   &$C_{RMSD}$ is root-mean square deviation coefficient (\si{1/\angstrom}).\\
   &$S_{RMSD}$ is sum of root-mean square deviations for each conformer 
   (\ddref{Sum_RMSD}) (\si{\angstrom}).\\
-  & The above equation applies when the number of conformers is greater than 1. 
+  & The above equation applies when the number of conformers is greater than 
+  one. 
   If the number of conformers is exactly one, then the $RMSD$ terms should be 
   set to zero.
   \\
@@ -1005,7 +1013,7 @@ have to determine this value through experimentation with the code.
   \textbf{Var} & \textbf{Physical Constraints} & \textbf{Software Constraints} &
                              \textbf{Typical Value} & \textbf{Uncertainty}\\
   \midrule 
-  $G_n$ & $n\geq 2\text{*} | n\in{\mathbb{Z}}$ & $G_n \leq G_{max}$ & 2-5 & N/A 
+  $n_G$ & $n\geq 2\text{*} | n\in{\mathbb{Z}}$ & $n_G \leq n_{max}$ & 2-5 & N/A 
   \\
   $C_E$ & $C_E > 0$ & $C_E > 0$ & 0.5 & N/A \\
   $C_{RMSD}$ & $C_{RMSD} > 0$ & $C_{RMSD} > 0$ & 0.5 & N/A \\
@@ -1018,7 +1026,7 @@ have to determine this value through experimentation with the code.
 
 \noindent 
 \begin{description}
-\item[(*)] if $G_n$ is equal to one, then the $Fit_G$ function should be 
+\item[(*)] if $n_G$ is equal to one, then the $Fit_G$ function should be 
 changed to only consider the energy term and not the RMSD term. \wss{you might 
 need to add some notes or clarifications}
 \end{description}
@@ -1082,7 +1090,7 @@ information has to be explicit.}
 	\toprule
 	symbol & unit & data type & description \\
 	\midrule
-	$G_n$ & unitless & integer & number of conformers (distinct geometries) 
+	$n_G$ & unitless & integer & number of conformers (distinct geometries) 
 	to search for \\
 	$C_E$ & \si{\joule} & floating point & coefficient for energy term in 
 	fitness function \\
@@ -1092,7 +1100,7 @@ information has to be explicit.}
 	QCM & unitless & string & quantum chemical method \\
 	molecular geometry & \si{\angstrom}, \textdegree & file, string & name, 
 	SMILES 
-	string, xyz file, z-matrix file - a way to specify to connectivity of 
+	string, xyz file, z-matrix file - a way to specify the connectivity of 
 	the input molecule \\
 	\bottomrule
 \end{tabularx}
