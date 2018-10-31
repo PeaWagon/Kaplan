@@ -151,7 +151,8 @@ description of the unit and the SI name. Some common constants are given.
   %	\caption{Provide a caption}
 %\end{table}
 
-\wss{Only include the units that your SRS actually uses}
+\wss{Only include the units that your SRS actually uses} \wss{You can remove
+  these comments from the blank template file.}
 
 \subsection{Table of Symbols}
 
@@ -466,9 +467,13 @@ spatial differences between conformers, will be found and maximized.
 
 \subsubsection{Terminology and Definitions}
 
-\meow{Does the wording here imply that none of these definitions can be used in 
-previous sections? Should the early sections of this document be so abstract as 
-to not use any terminology?}
+\meow{Does the wording here imply that none of these definitions can be used in
+  previous sections? Should the early sections of this document be so abstract
+  as to not use any terminology?} \wss{You might want to change the colour of
+  your comments.  They are hard to read on the pdf.} \wss{No, although I can see
+  why you would ask.  You can use these terms previously, but you wouldn't rely
+  on the exact definitions.  You would use the terminology in a less careful way
+  prior to this section.}
 
 This subsection provides a list of terms that are used in the subsequent
 sections and their meaning, with the purpose of reducing ambiguity and making it
@@ -476,7 +481,14 @@ easier to correctly understand the requirements:
 
 \meow{Do I need to define a term if, as per the intended reader requirements, 
 the reader should know what that terms means? For example, should I define 
-covalent bond here?}
+covalent bond here?} \wss{Great question.  If the intended reader should know
+the terminology, then you don't have to define it.  However, defining something
+they likely already know, is still okay.  Just because you can leave something
+out, doesn't mean that you should.  You will also have readers, like me, that
+aren't familiar with all of the terminology.  If it isn't too much work,
+including terminology is a good idea.  Also, some terminology is used
+ambiguously, even be experts, so picking the definition you are using and making
+it unambiguous is worthwhile.}
 
 \begin{itemize}
 \item \textbf{molecule:} a collection of atoms that are related in space, 
@@ -598,6 +610,9 @@ Alternatively, this GS can be described as: maximize the fitness function,
 $Fit_G$.
 \wss{One sentence description of the goal.  There may be more than one.  Each 
 Goal should have a meaningful label.}
+
+\wss{I'm confused by the output being a set.  How many elements in the set?  All
+  of them?  All of the ones the calculation can find?}
 
 \end{itemize}
 
