@@ -139,13 +139,11 @@ description of the unit and the SI name. Some common constants are given.
     \si{\joule} & energy & Joule\\
     \si{\farad} & electrical capacitance & farad \\
     \si{\coulomb} & electric charge & coulomb (\si{\ampere\second}) \\
-    $h$ & Planck's constant & 6.62607004x$10^{-34}$\si{\joule\second} \\
-    $\hbar$ & reduced Planck's constant & $h/2\pi$\si{\joule\second} \\
-    $m_e$ & mass of an electron & 9.10938x$10^{-31}$\si{\kilogram} \\
-    $q_e$ & charge of an electron & 1.60217662x$10^{-19}$\si{\coulomb} \\
-    $\epsilon_0$ & permittivity of free space  & 8.854187817x$10^{−12} 
-    \si{\farad/\metre}$ \\
-    
+    $h$ & Planck's constant & 6.62607004x$10^{-34}$ \si{\joule\second} \\
+    $\hbar$ & reduced Planck's constant & $h/2\pi$ \si{\joule\second} \\
+    $m_e$ & mass of an electron & 9.10938x$10^{-31} $ \si{\kilogram} \\
+    $q_e$ & charge of an electron & 1.60217662x$10^{-19} $ \si{\coulomb} \\
+    $\epsilon_0$ & permittivity of free space  & 8.854187817x$10^{−12}$ \si{\farad/\metre}\\
     \bottomrule
   \end{tabular}
   %	\caption{Provide a caption}
@@ -178,9 +176,12 @@ $S_E$ & \si{\joule} & sum of conformer potential energies \\
 $C_E$ & $\frac{1}{\si{\joule}}$ & coefficient for $S_E$ in the fitness function 
 \\
 $S_{RMSD}$ & \si{\angstrom} & sum of root-mean-square distances between all 
-possible combinations of conformer geometries \\
+possible combinations of conformer geometries \wss{They symbol would be better
+  as $S_\text{RMSD}$ because non-variable names shouldn't be in italics and
+  because as written it is spaced as if there is multiplication between $R$, $M$
+  etc.}\\
 $C_{RMSD}$ & $\frac{1}{\si{\angstrom}}$ & coefficient for $S_{RMSD}$ in the 
-fitness function \\
+fitness function \wss{same comment for symbol subscript as above}\\
 $Fit_G$ & unitless & the fitness of the set of conformers \\
 $E$ & \si{\joule} & energy (of conformer) \\
 $\hat{H}$ & \si{\joule} & Hamiltonian operator \\
@@ -213,7 +214,7 @@ $R$ & \si{\angstrom} & position of nuclei; array of length 3 \\
   PS & Physical System Description\\
   R & Requirement\\
   SRS & Software Requirements Specification\\
-  \progname{} & \wss{Kaplan}\\
+  \progname{} & \wss{Kaplan} \\
   T & Theoretical Model\\
   \midrule
   \multicolumn{2}{c}{\large{Chemical Acronyms}} \\
@@ -233,7 +234,10 @@ $R$ & \si{\angstrom} & position of nuclei; array of length 3 \\
   \bottomrule
 \end{tabular}\\
 
-\wss{Add any other abbreviations or acronyms that you add}
+\wss{Add any other abbreviations or acronyms that you add} \wss{Why is the
+  comment ``Kaplan'' above?  You should say that Kaplan is your program's name,
+  not just repeat the term.  Also, why is it a comment from me?} \wss{I like how
+  you split the list of abbreviations into domain areas.}
 
 \newpage
 
@@ -276,7 +280,12 @@ conformation of cyclohexane (see Figure \ref{C6H14}). A simple geometry
 optimization of cyclohexane would only afford the 
 global minimum to the 
 potential energy landscape, but, in using \progname{}, it will be possible to 
-find the local minima of this molecule. Knowing the 
+find the local minima of this molecule. \wss{I am confused by the difference
+  between the global minimum and the local minima.  Are you saying that there
+  are times when the local minima is actually a better solution than the global
+  one?  If that is what you are saying, then I guess I'm not confused, but it
+  goes against the usual rules of optimization.   You are usually looking for
+  the global minimum and trying to avoid getting stuck in a local minimum.} Knowing the 
 local minima is useful in 
 areas such as drug design, where the molecule is restricted by its environment 
 (for example, in the interaction with an enzyme) to have a certain shape. 
@@ -298,6 +307,12 @@ separation.
   families you should look at \cite{Smith2006, SmithMcCutchanAndCarette2017}.
   You should be able to do one document that captures the commonality analysis
   and the requirements.}
+
+\wss{The above comments from the original template are distracting.  You should
+  delete them or at least comment them out.  However, they do remind me of one
+  thing, in your introduction you should cite the source of the template that
+  you are using.  I just saw that the template is cited in the ``Organization of
+the Document'' section; you can ignore my previous statement.}
 
 \subsection{Purpose of Document}
 
@@ -324,7 +339,8 @@ the dihedral angles will
 be manipulated. As a result, molecules with less than 4 atoms will remain 
 unchanged after optimization (no dihedral angles). 
 Furthermore, the conformer 
-with the lowest energy is not likely to represent the true minimum of the 
+with the lowest energy is not likely to represent the true minimum \wss{global
+  minimum?} of the 
 potential energy landscape without subsequent 
 optimization of the other bond 
 angles/lengths. Lastly, the system is not intended to be impervious to abnormal 
@@ -724,7 +740,7 @@ which will be discussed briefly here.
 		Description & 
 		Most quantum chemical methods are focused on solving the above equation 
 		for a molecule with some number of nuclei and electrons. This equation 
-		is essentially an eigenvalue problem, where E gives the energy of a 
+		is essentially an eigenvalue problem, where $E$ gives the energy of a 
 		system (the eigenvalues), $\Psi$ is the wavefunction, and $\hat{H}$ is 
 		the Hamiltonian operator. An example of the electronic Hamiltonian 
 		operator can be found in the Appendix (Section \ref{appendix}).\\
@@ -787,7 +803,11 @@ evaluate, but are less accurate. When a basis set is chosen for a quantum
 chemical calculation, the set of one-particle functions (AO) used to build the 
 MO are described. Most quantum chemistry packages use GTO, and often the 
 solution for a more accurate MO is to use a linear combination of GTO to mimic 
-one STO. 
+one STO.
+
+\wss{I am not in a position to judge the above text, but it sounds great!}
+\wss{I didn't check all of them, but it is great to see that the acronyms I
+  checked are in your table of acronyms.}
 
 ~\newline
 
@@ -845,6 +865,10 @@ number of total atoms.
 %
 %\wss{This may be necessary when the necessary information does not fit in the
 %  description field.} 
+
+\wss{Can GD1 be viewed as a refinement of T1?  If so, this should be pointed
+  out.  If not, GD1 might make more sense as a data definition, or maybe as a
+  theoretical model?}
 
 \subsubsection{Data Definitions}\label{sec_datadef}
 
@@ -974,7 +998,10 @@ The goal \gsref{goal} \wss{reference your goals} is solved by \iref{IM:fitg}
   & The above equation applies when the number of conformers is greater than 
   one. 
   If the number of conformers is exactly one, then the $RMSD$ terms should be 
-  set to zero.
+  set to zero. \wss{You mentioned multiple assumptions in the assumptions
+    section that are relevant to this IM, but they do not actually appear in
+    your description anywhere.  All assumptions that are listed should be
+    ``invoked'' somewhere in your documentation.}
   \\
   \hline
   Sources& N/A \\
@@ -983,6 +1010,11 @@ The goal \gsref{goal} \wss{reference your goals} is solved by \iref{IM:fitg}
   \hline
 \end{tabular}
 \end{minipage}\\
+
+\wss{I may have missed it, but I don't see an optimization anywhere.  I thought
+  I would see an objective function that you are minimizing?  Something that
+  will trace to your goal statement.  I also thought that the output of the IM
+  would be a set of conformers.}
 
 %~\newline
 
