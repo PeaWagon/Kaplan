@@ -120,17 +120,16 @@ used in this document.
 
 \subsection{Table of Units and Constants}
 
-Throughout this document SI (Syst\`{e}me International d'Unit\'{e}s) is employed
-as the unit system.  In addition to the basic units, several derived units are
-used as described below.  For each unit, the symbol is given followed by a
-description of the unit and the SI name. Some common constants are given.
+This section describes the units that are used in the document. For each unit, 
+the symbol is given followed by a
+description of the unit and its name. Some common constants are given.
 ~\newline
 
 \renewcommand{\arraystretch}{1.2}
 %\begin{table}[ht]
   \noindent \begin{tabular}{l l l} 
     \toprule		
-    \textbf{symbol} & \textbf{unit} & \textbf{SI}\\
+    \textbf{Symbol} & \textbf{Unit} & \textbf{Name}\\
     \midrule 
     \si{\metre} & length & metre\\
     \si{\angstrom} & length & $1\si{\angstrom} = 1$x$10^{-10}$\si{\metre} \\
@@ -139,12 +138,7 @@ description of the unit and the SI name. Some common constants are given.
     \si{\joule} & energy & Joule\\
     \si{\farad} & electrical capacitance & farad \\
     \si{\coulomb} & electric charge & coulomb (\si{\ampere\second}) \\
-    $h$ & Planck's constant & 6.62607004x$10^{-34}$\si{\joule\second} \\
-    $\hbar$ & reduced Planck's constant & $h/2\pi$\si{\joule\second} \\
-    $m_e$ & mass of an electron & 9.10938x$10^{-31}$\si{\kilogram} \\
-    $q_e$ & charge of an electron & 1.60217662x$10^{-19}$\si{\coulomb} \\
-    $\epsilon_0$ & permittivity of free space  & 8.854187817x$10^{−12} 
-    \si{\farad/\metre}$ \\
+
     
     \bottomrule
   \end{tabular}
@@ -157,6 +151,24 @@ description of the unit and the SI name. Some common constants are given.
 
 The table that follows summarizes the symbols used in this document along with
 their units.
+
+
+
+\renewcommand{\arraystretch}{1.2}
+%\noindent \begin{tabularx}{1.0\textwidth}{l l X}
+\noindent \begin{longtable*}{l l p{12cm}} \toprule
+	\textbf{symbol} & \textbf{unit} & \textbf{description}\\
+	\midrule 
+	$h$ & Planck's constant & 6.62607004x$10^{-34}$\si{\joule\second} \\
+	$\hbar$ & reduced Planck's constant & $h/2\pi$\si{\joule\second} \\
+	$m_e$ & mass of an electron & 9.10938x$10^{-31}$\si{\kilogram} \\
+	$q_e$ & charge of an electron & 1.60217662x$10^{-19}$\si{\coulomb} \\
+	$\epsilon_0$ & permittivity of free space  & 8.854187817x$10^{−12} 
+	\si{\farad/\metre}$ \\
+
+	\bottomrule
+\end{longtable*}
+
 
 \renewcommand{\arraystretch}{1.2}
 %\noindent \begin{tabularx}{1.0\textwidth}{l l X}
@@ -176,8 +188,8 @@ $E_i$ & \si{\joule} & potential energy for conformer $i$ \\
 $S_E$ & \si{\joule} & sum of conformer potential energies \\
 $C_E$ & $\frac{1}{\si{\joule}}$ & coefficient for $S_E$ in the fitness function 
 \\
-$S_{RMSD}$ & \si{\angstrom} & sum of root-mean-square distances between all 
-possible combinations of conformer geometries \\
+$S_{RMSD}$ & \si{\angstrom} & sum of root-mean-square distances for all 
+conformer geometries \\
 $C_{RMSD}$ & $\frac{1}{\si{\angstrom}}$ & coefficient for $S_{RMSD}$ in the 
 fitness function \\
 $Fit_G$ & unitless & the fitness of the set of conformers \\
@@ -212,15 +224,14 @@ $R$ & \si{\angstrom} & position of nuclei; array of length 3 \\
   PS & Physical System Description\\
   R & Requirement\\
   SRS & Software Requirements Specification\\
-  \progname{} & \wss{Kaplan}\\
   T & Theoretical Model\\
   \midrule
   \multicolumn{2}{c}{\large{Chemical Acronyms}} \\
   \midrule
   \textbf{Symbol} & \textbf{Description}\\
   \midrule
-  BO & Bond Order \\
-  SMILES & Simplified molecular-input line-entry system \\
+  BO & bond order \\
+  SMILES & simplified molecular-input line-entry system \\
   AO & atomic orbital \\
   MO & molecular orbital \\
   LCAO & linear combination of atomic orbitals \\
@@ -229,6 +240,9 @@ $R$ & \si{\angstrom} & position of nuclei; array of length 3 \\
   QCM & quantum chemical method \\
   BS & basis set \\
   RMSD & root-mean square deviation \\
+  VSEPR & valence shell electron pair repulsion \\
+  VB & valence bond \\
+  3D & three-dimensional \\
   \bottomrule
 \end{tabular}\\
 
@@ -798,7 +812,7 @@ Label &\bf Root-mean square deviation \\
 \hline
 % Units&$MLt^{-3}T^0$\\
 % \hline
-SI Units&\si{\angstrom}\\
+Units&\si{\angstrom}\\
 \hline
 Equation&$RMSD_{ij} = \sqrt{\frac{1}{n_a}\sum\limits_{k=1}^{n_a} ((x_{ki} - 
 x_{kj})^2+(y_{ki} - y_{kj})^2+(z_{ki} - z_{kj})^2)}$  \\
@@ -853,7 +867,7 @@ models. The dimension of each quantity is also given.  \wss{Modify the examples
 		\hline
 		% Units& $Mt^{-3}$\\
 		% \hline
-		SI Units & \si{\joule}\\
+		Units & \si{\joule}\\
 		\hline
 		Equation & $\left|\sum\limits_{i=1}^{n_G}E_i\right|$ \\
 		\hline
@@ -888,7 +902,7 @@ models. The dimension of each quantity is also given.  \wss{Modify the examples
 		\hline
 		% Units& $Mt^{-3}$\\
 		% \hline
-		SI Units & \si{\angstrom}\\
+		Units & \si{\angstrom}\\
 		\hline
 		Equation & $\sum\limits_{i\neq j}RMSD_{ij}$ \\
 		\hline
