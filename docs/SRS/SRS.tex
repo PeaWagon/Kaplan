@@ -138,14 +138,13 @@ description of the unit and its name. Some common constants are given.
     \si{\joule} & energy & Joule\\
     \si{\farad} & electrical capacitance & farad \\
     \si{\coulomb} & electric charge & coulomb (\si{\ampere\second}) \\
-
-    
     \bottomrule
   \end{tabular}
   %	\caption{Provide a caption}
 %\end{table}
 
-\wss{Only include the units that your SRS actually uses}
+\wss{Only include the units that your SRS actually uses} \wss{You can remove
+  these comments from the blank template file.}
 
 \subsection{Table of Symbols}
 
@@ -188,10 +187,10 @@ $E_i$ & \si{\joule} & potential energy for conformer $i$ \\
 $S_E$ & \si{\joule} & sum of conformer potential energies \\
 $C_E$ & $\frac{1}{\si{\joule}}$ & coefficient for $S_E$ in the fitness function 
 \\
-$S_{RMSD}$ & \si{\angstrom} & sum of root-mean-square distances for all 
+$S_\text{RMSD}$ & \si{\angstrom} & sum of root-mean-square distances for all 
 conformer geometries \\
-$C_{RMSD}$ & $\frac{1}{\si{\angstrom}}$ & coefficient for $S_{RMSD}$ in the 
-fitness function \\
+$C_\text{RMSD}$ & $\frac{1}{\si{\angstrom}}$ & coefficient for $S_\text{RMSD}$ in the 
+fitness function \wss{same comment for symbol subscript as above}\\
 $Fit_G$ & unitless & the fitness of the set of conformers \\
 $E$ & \si{\joule} & energy (of conformer) \\
 $\hat{H}$ & \si{\joule} & Hamiltonian operator \\
@@ -224,6 +223,7 @@ $R$ & \si{\angstrom} & position of nuclei; array of length 3 \\
   PS & Physical System Description\\
   R & Requirement\\
   SRS & Software Requirements Specification\\
+  \progname{} & \wss{Kaplan} \\
   T & Theoretical Model\\
   \midrule
   \multicolumn{2}{c}{\large{Chemical Acronyms}} \\
@@ -246,7 +246,10 @@ $R$ & \si{\angstrom} & position of nuclei; array of length 3 \\
   \bottomrule
 \end{tabular}\\
 
-\wss{Add any other abbreviations or acronyms that you add}
+\wss{Add any other abbreviations or acronyms that you add} \wss{Why is the
+  comment ``Kaplan'' above?  You should say that Kaplan is your program's name,
+  not just repeat the term.  Also, why is it a comment from me?} \wss{I like how
+  you split the list of abbreviations into domain areas.}
 
 \newpage
 
@@ -289,7 +292,12 @@ conformation of cyclohexane (see Figure \ref{C6H14}). A simple geometry
 optimization of cyclohexane would only afford the 
 global minimum to the 
 potential energy landscape, but, in using \progname{}, it will be possible to 
-find the local minima of this molecule. Knowing the 
+find the local minima of this molecule. \wss{I am confused by the difference
+  between the global minimum and the local minima.  Are you saying that there
+  are times when the local minima is actually a better solution than the global
+  one?  If that is what you are saying, then I guess I'm not confused, but it
+  goes against the usual rules of optimization.   You are usually looking for
+  the global minimum and trying to avoid getting stuck in a local minimum.} Knowing the 
 local minima is useful in 
 areas such as drug design, where the molecule is restricted by its environment 
 (for example, in the interaction with an enzyme) to have a certain shape. 
@@ -311,6 +319,12 @@ separation.
   families you should look at \cite{Smith2006, SmithMcCutchanAndCarette2017}.
   You should be able to do one document that captures the commonality analysis
   and the requirements.}
+
+\wss{The above comments from the original template are distracting.  You should
+  delete them or at least comment them out.  However, they do remind me of one
+  thing, in your introduction you should cite the source of the template that
+  you are using.  I just saw that the template is cited in the ``Organization of
+the Document'' section; you can ignore my previous statement.}
 
 \subsection{Purpose of Document}
 
@@ -337,7 +351,8 @@ the dihedral angles will
 be manipulated. As a result, molecules with less than 4 atoms will remain 
 unchanged after optimization (no dihedral angles). 
 Furthermore, the conformer 
-with the lowest energy is not likely to represent the true minimum of the 
+with the lowest energy is not likely to represent the true minimum \wss{global
+  minimum?} of the 
 potential energy landscape without subsequent 
 optimization of the other bond 
 angles/lengths. Lastly, the system is not intended to be impervious to abnormal 
@@ -480,9 +495,13 @@ spatial differences between conformers, will be found and maximized.
 
 \subsubsection{Terminology and Definitions}
 
-\meow{Does the wording here imply that none of these definitions can be used in 
-previous sections? Should the early sections of this document be so abstract as 
-to not use any terminology?}
+\meow{Does the wording here imply that none of these definitions can be used in
+  previous sections? Should the early sections of this document be so abstract
+  as to not use any terminology?} \wss{You might want to change the colour of
+  your comments.  They are hard to read on the pdf.} \wss{No, although I can see
+  why you would ask.  You can use these terms previously, but you wouldn't rely
+  on the exact definitions.  You would use the terminology in a less careful way
+  prior to this section.}
 
 This subsection provides a list of terms that are used in the subsequent
 sections and their meaning, with the purpose of reducing ambiguity and making it
@@ -490,7 +509,14 @@ easier to correctly understand the requirements:
 
 \meow{Do I need to define a term if, as per the intended reader requirements, 
 the reader should know what that terms means? For example, should I define 
-covalent bond here?}
+covalent bond here?} \wss{Great question.  If the intended reader should know
+the terminology, then you don't have to define it.  However, defining something
+they likely already know, is still okay.  Just because you can leave something
+out, doesn't mean that you should.  You will also have readers, like me, that
+aren't familiar with all of the terminology.  If it isn't too much work,
+including terminology is a good idea.  Also, some terminology is used
+ambiguously, even be experts, so picking the definition you are using and making
+it unambiguous is worthwhile.}
 
 \begin{itemize}
 \item \textbf{molecule:} a collection of atoms that are related in space, 
@@ -613,6 +639,9 @@ $Fit_G$.
 \wss{One sentence description of the goal.  There may be more than one.  Each 
 Goal should have a meaningful label.}
 
+\wss{I'm confused by the output being a set.  How many elements in the set?  All
+  of them?  All of the ones the calculation can find?}
+
 \end{itemize}
 
 \subsection{Solution Characteristics Specification}
@@ -723,7 +752,7 @@ which will be discussed briefly here.
 		Description & 
 		Most quantum chemical methods are focused on solving the above equation 
 		for a molecule with some number of nuclei and electrons. This equation 
-		is essentially an eigenvalue problem, where E gives the energy of a 
+		is essentially an eigenvalue problem, where $E$ gives the energy of a 
 		system (the eigenvalues), $\Psi$ is the wavefunction, and $\hat{H}$ is 
 		the Hamiltonian operator. An example of the electronic Hamiltonian 
 		operator can be found in the Appendix (Section \ref{appendix}).\\
@@ -786,7 +815,11 @@ evaluate, but are less accurate. When a basis set is chosen for a quantum
 chemical calculation, the set of one-particle functions (AO) used to build the 
 MO are described. Most quantum chemistry packages use GTO, and often the 
 solution for a more accurate MO is to use a linear combination of GTO to mimic 
-one STO. 
+one STO.
+
+\wss{I am not in a position to judge the above text, but it sounds great!}
+\wss{I didn't check all of them, but it is great to see that the acronyms I
+  checked are in your table of acronyms.}
 
 ~\newline
 
@@ -845,6 +878,10 @@ number of total atoms.
 %\wss{This may be necessary when the necessary information does not fit in the
 %  description field.} 
 
+\wss{Can GD1 be viewed as a refinement of T1?  If so, this should be pointed
+  out.  If not, GD1 might make more sense as a data definition, or maybe as a
+  theoretical model?}
+
 \subsubsection{Data Definitions}\label{sec_datadef}
 
 This section collects and defines all the data needed to build the instance
@@ -898,7 +935,7 @@ models. The dimension of each quantity is also given.  \wss{Modify the examples
 		\hline
 		Label & \bf Sum of root-mean square deviations \\
 		\hline
-		Symbol & $S_{RMSD}$\\
+		Symbol & $S_\text{RMSD}$\\
 		\hline
 		% Units& $Mt^{-3}$\\
 		% \hline
@@ -935,7 +972,7 @@ The goal \gsref{goal} \wss{reference your goals} is solved by \iref{IM:fitg}
   depends on dihedral angles, \progname{} will manipulate those dihedral angles 
   and solve for 
   $Fit_G$. This fitness function has two arbitrary coefficients, $C_E$ and 
-  $C_{RMSD}$ that the user must determine through experimentation with their 
+  $C_\text{RMSD}$ that the user must determine through experimentation with their 
   molecule. \wss{other details, with 
   cross-references where appropriate.}
 \wss{Modify the examples below for your problem, and add additional models as
@@ -955,10 +992,10 @@ The goal \gsref{goal} \wss{reference your goals} is solved by \iref{IM:fitg}
   \hline
   Label& \bf Fitness of conformer geometries $Fit_G$\\
   \hline
-  Input&$C_E$, $C_{RMSD}$, $S_E$, $S_{RMSD}$ \\
-  & The input is constrained so that $C_E > 0$ and $C_{RMSD} > 0$\\
+  Input&$C_E$, $C_\text{RMSD}$, $S_E$, $S_\text{RMSD}$ \\
+  & The input is constrained so that $C_E > 0$ and $C_\text{RMSD} > 0$\\
   \hline
-  Output&$Fit_G = C_E S_E + C_{RMSD} S_{RMSD}$ \\
+  Output&$Fit_G = C_E S_E + C_\text{RMSD} S_\text{RMSD}$ \\
   & This equation is entirely empirical and its output does not have any 
   physical meaning. The purpose of the equation is to represent the optimal set 
   of conformers for a given input molecule.\\
@@ -967,13 +1004,16 @@ The goal \gsref{goal} \wss{reference your goals} is solved by \iref{IM:fitg}
   (\si{1/\joule}).\\
   &$S_E$ is the absolute value of the sum of conformer energies (\ddref{Sum_E}) 
   (\si{\joule}).\\
-  &$C_{RMSD}$ is root-mean square deviation coefficient (\si{1/\angstrom}).\\
-  &$S_{RMSD}$ is sum of root-mean square deviations for each conformer 
+  &$C_\text{RMSD}$ is root-mean square deviation coefficient (\si{1/\angstrom}).\\
+  &$S_\text{RMSD}$ is sum of root-mean square deviations for each conformer 
   (\ddref{Sum_RMSD}) (\si{\angstrom}).\\
   & The above equation applies when the number of conformers is greater than 
   one. 
   If the number of conformers is exactly one, then the $RMSD$ terms should be 
-  set to zero.
+  set to zero. \wss{You mentioned multiple assumptions in the assumptions
+    section that are relevant to this IM, but they do not actually appear in
+    your description anywhere.  All assumptions that are listed should be
+    ``invoked'' somewhere in your documentation.}
   \\
   \hline
   Sources& N/A \\
@@ -982,6 +1022,11 @@ The goal \gsref{goal} \wss{reference your goals} is solved by \iref{IM:fitg}
   \hline
 \end{tabular}
 \end{minipage}\\
+
+\wss{I may have missed it, but I don't see an optimization anywhere.  I thought
+  I would see an objective function that you are minimizing?  Something that
+  will trace to your goal statement.  I also thought that the output of the IM
+  would be a set of conformers.}
 
 %~\newline
 
@@ -1010,12 +1055,12 @@ Table~\ref{TblSpecParams}.
 cases the typical values will be specific to the molecule (specifically, number 
 of atoms). Should these two columns still be in this table?}
 
-For $C_E$ and $C_{RMSD}$, the values for the coefficients depend on the shape 
+For $C_E$ and $C_\text{RMSD}$, the values for the coefficients depend on the shape 
 of the potential energy surface. For example, in a surface where the minima are 
 close together and the potential wells for the conformers are very high, 
 placing more emphasis on $C_E$ (i.e. making $C_E$ bigger) would enable a better 
 $Fit_G$. In the case where there are many low-lying conformers with wide energy 
-basins, then the emphasis on $C_{RMSD}$ would afford a better result. The 
+basins, then the emphasis on $C_\text{RMSD}$ would afford a better result. The 
 number of conformers may not be known at the start of the program; the user may 
 have to determine this value through experimentation with the code.
 
@@ -1030,7 +1075,7 @@ have to determine this value through experimentation with the code.
   $n_G$ & $n\geq 2\text{*} | n\in{\mathbb{Z}}$ & $n_G \leq n_{max}$ & 2-5 & N/A 
   \\
   $C_E$ & $C_E > 0$ & $C_E > 0$ & 0.5 & N/A \\
-  $C_{RMSD}$ & $C_{RMSD} > 0$ & $C_{RMSD} > 0$ & 0.5 & N/A \\
+  $C_\text{RMSD}$ & $C_\text{RMSD} > 0$ & $C_\text{RMSD} > 0$ & 0.5 & N/A \\
   $BS$ & available for molecule & available in software package & cc-pVTZ & N/A 
   \\
   $QCM$& available for molecule & available in software package & CCSD & N/A \\
@@ -1108,7 +1153,7 @@ information has to be explicit.}
 	to search for \\
 	$C_E$ & \si{\joule} & floating point & coefficient for energy term in 
 	fitness function \\
-	$C_{RMSD}$ & \si{\metre} & floating point & coefficient for RMSD term 
+	$C_\text{RMSD}$ & \si{\metre} & floating point & coefficient for RMSD term 
 	in fitness function \\
 	BS & unitless & string & basis set \\
 	QCM & unitless & string & quantum chemical method \\
@@ -1169,7 +1214,7 @@ high-performance computing servers without a difficult install process
 
 \item The program should have some suggestions for 
 inputs (example, default values for $n_G$, $C_E$, and 
-$C_{RMSD}$) to help the user get started. 
+$C_\text{RMSD}$) to help the user get started. 
 
 \item The program should work well with other quantum 
 chemistry packages.
