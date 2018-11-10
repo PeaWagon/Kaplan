@@ -65,6 +65,8 @@ particularly see Section 2 (Reference Material).
 \wss{symbols, abbreviations or acronyms -- you can simply reference the SRS
   tables, if appropriate}
 
+\wss{You should comment out my original comments.  They are confusing now.}
+
 \newpage
 
 \tableofcontents
@@ -104,7 +106,7 @@ requirements. A usability questionnaire is given in Appendix \ref{survey}.
 possible conformational isomers. The inputs will be some geometry specification 
 for the molecule(s) of interest, a quantum chemical method (QCM), and a basis 
 set (BS). The output will be a geometry specification and a list of relevant 
-energies. 
+energies. \wss{A geometry specification, or potentially a set of geometry specifications?}
 
 \wss{Say what software 
 is being tested.  Give its name and a brief overview of its general functions.}
@@ -145,6 +147,8 @@ necessary to reference the documentation for external software such as Psi4
 \cite{psi4}, Openbabel \cite{obabel}, \cite{obabel-web}, or Gaussian \cite{g16}.
 
 \wss{Reference relevant documentation.  This will definitely include your SRS}
+
+\wss{You should include the url for the other \progname{} documents.}
 
 \section{Plan} \label{section-plans}
 	
@@ -192,6 +196,9 @@ solution or find lower energy conformers? For example, does the set of dihedral
 angles, $D_i$, with heavier atoms converge more rapidly? Does $D_i$ outperform 
 when atoms are chosen with more bonded atoms?
 
+\wss{I like that you have thought about how your SRS might change as a result of
+  your test cases.  Nice.}
+
 As for the SRS document itself, the author will review it again once the rest 
 of the program has been written to see if its requirements have been met. The 
 author can ask her supervisor to review the paper as well as a few lab members. 
@@ -206,18 +213,23 @@ Spencer Smith will also review the SRS and give feedback.
 \subsection{Design Verification Plan}
 
 The design will be reviewed during a meeting with the author's supervisor.
+\wss{Your classmates and myself will also review  your design.}
 
 \wss{Plans for design verification}
 
 \subsection{Implementation Verification Plan}
 
-This document will represent the system testing. Another document will be 
-written to outline the unit tests to be performed. The code will be written in 
-Python, and nosetests will be used to run the tests. Various linters will be 
-used, such as pylint, pydocstyle, and pycodestyle, to ensure that standards are 
-being upheld for the code formatting and documentation (PEP8, numpy 
-docstrings). The implementation will also be tested by classmate, Malavika 
-Srinivasan, and Professor Spencer Smith. 
+This document will represent the system testing. Another document will be
+written to outline the unit tests to be performed. \wss{You can actually point
+  to the repo where this documentation will be located.} The code will be
+written in Python, and nosetests \wss{Can you point to a url that defines
+  nosetests?} will be used to run the tests. Various linters will be used, such
+as pylint, pydocstyle, and pycodestyle, to ensure that standards are being
+upheld for the code formatting and documentation (PEP8, numpy
+docstrings). \wss{These ideas are good, but they aren't very specific.  I would
+  rather you made your decisions here.  You can always go back and edit the
+  document if you change your mind later.} The implementation will also be
+tested by classmate, Malavika Srinivasan, and Professor Spencer Smith.
 
 \wss{You should at least point to the tests listed in this document and the unit
   testing plan.}
@@ -228,6 +240,8 @@ Journal articles that explore the conformer space of a given molecule will be
 used as a reference, for example see \cite{butane-conformers}. Using the same 
 input molecule, determine whether 
 \progname{} can find the same conformers.
+
+\wss{Great!  Nice to see someone with a validation plan.}
 
 \wss{If there is any external data that can be used for validation, you should
   point to it here.  If there are no plans for validation, you should state that
@@ -282,7 +296,11 @@ Input:
 \end{table}
 
 * May need to issue a warning if the user provides a value for $n_G$ that is 
-larger than 20 (or do stress testing to find the upper bound for $n_G$).\\
+larger than 20 (or do stress testing to find the upper bound for
+$n_G$). \wss{Rather than describe this as a note, it would be nice if you gave
+  the full details of the stress testing you would run to determine $n_G$.  What
+  would be the base input?  What would you vary?   How do you know when the
+  value of $n_G$ is too big?}\\
 ** Depending on the external program used for energy calculations, a 
 user-specified basis set may not be supported. Here is a 
 \href{https://joaquinbarroso.com/2011/11/02/gen-keyword-gaussian/}{link} to a 
@@ -298,6 +316,10 @@ available in the external program (as used for energy calculations). Ensuring
 that the BS is applicable to the input molecule, and ensuring energetic 
 convergence for the input molecule, is not covered by this test - see 
 subsequent Test FT1-\ref{test-input-geom}.
+
+\wss{I assume the information on invalid inputs is in your SRS.  You should
+  reference your SRS here. Ideally,  you should point to the data  contraints
+  table in that document.}
 
 How test will be performed: Provide inputs from each category as per Table 
 \ref{table-inputs} and ensure that they provide errors where expected and 
@@ -331,7 +353,12 @@ good resource to check for this availability is the
 \cite{basis-set-exchange-web}.
  Some atoms, 
 especially the heavier elements, do not have as many BS available as others 
-(they simply have not been calculated yet).
+(they simply have not been calculated yet).  \wss{You should be more specific
+  about what the inputs will be.  You have to decide before you can run the
+  tests, so why not decide now.  This comment about more specific inputs applies
+elsewhere as well.  The description of an input might be complicated in your
+case.  You can put the details in an Appendix, or just reference a file, maybe
+in your repo, that has the geometry input information.}
 
 Output: Errors are expected when all energies are calculated as zero (which 
 will be the default value for non-converging calculations) - i.e. $S_E = 0$ for 
@@ -409,6 +436,8 @@ non-optimal molecule, test that the geometries are equal.
 	\label{table-fitg}
 	\end{table}
 	
+\wss{How do you know what the results should be in the last column?  Is this
+  from another program?}
 	Output: The value for $n_G$ (number of conformers being optimised) 
 	starts at 0, representing the base case where no conformers are being 
 	searched for. In this case, the result should be zero, and no functions 
@@ -580,7 +609,9 @@ from \progname{} (at least until the case can be determined).
 		\item $C_{RMSD}\ln{S_{RMSD}} + C_E e^{S_E}$
 	\end{enumerate}
 
-	Output/result: returns the results of the tests involving $Fit_G$. If any 
+	Output/result: returns the results of the tests involving
+        $Fit_G$. \wss{what are the testes that involve $Fit_G$?.  Could  you
+          reference the labels of these tests to make this unambiguous?} If any 
 	tests failed, these tests should be investigated and fixed such that they 
 	pass for the new function for $Fit_G$.
 	
@@ -610,7 +641,8 @@ from \progname{} (at least until the case can be determined).
 	How test will be performed: Plot the time to solution (y) with increasing n 
 	(x) using Matplotlib. Inspect this plot to ensure that the slope of this 
 	plot is not negative (i.e. increasing cores increases performance). This 
-	will likely be part of a later phase of implementation and testing.
+	will likely be part of a later phase of implementation and
+        testing. \wss{I like that you are planning on plotting these results.}
 	
 	\item Testing on HPC cluster.
 	
@@ -718,6 +750,7 @@ https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example\_numpy.html
 
 \end{itemize}
 
+\wss{You can remove this section and add the relevant material to Section 4.4.}
 
 \bibliographystyle{plainnat}
 
