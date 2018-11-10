@@ -1,7 +1,3 @@
-docs/ProblemStatement/ProblemStatement.aux
-docs/ProblemStatement/ProblemStatement.log
-docs/ProblemStatement/ProblemStatement.synctex.gz
-
 *.bbl
 *.aux
 *.log
@@ -14,3 +10,4 @@ docs/ProblemStatement/ProblemStatement.synctex.gz
 *.lot
 
 ReferenceMaterial/*.pdf
+.DS_Store

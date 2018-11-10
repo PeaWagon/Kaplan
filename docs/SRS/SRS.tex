@@ -199,11 +199,15 @@ $\sigma$ & unitless & spin ($\alpha$ or $\beta$) \\
 $\phi$ & unitless & atomic orbital \\
 $r$ & \si{\angstrom} & position of electron; array of length 3 \\
 $R$ & \si{\angstrom} & position of nuclei; array of length 3 \\
+$c_i$ & basis set constant \\
+$c_N$ & normalization/principle quantum number constant \\
+$\zeta$ & effective nuclear charge constant \\
 \ce{e-} & N/A & electron \\
-\bottomrule
+x & x-component of Cartesian coordinates \\
+y & y-component of Cartesian coordinates \\
+z & z-component of Cartesian coordinates \\
+$Z_\alpha$ & atomic number \\
 \end{longtable*}
-\wss{Use your problems actual symbols.  The si package is a good idea to use for
-  units.}
 
 \subsection{Abbreviations and Acronyms}
 
@@ -804,8 +808,9 @@ described by the basis set, and $k$ is the number of AO.
 
 There are two main types of AO in quantum chemistry - Slater-type orbitals 
 (STO) and Gaussian-type orbitals (GTO). STO have the form: $\phi(r,\sigma) = 
-ce^{-\zeta r}$, whereas GTO have the form: $\phi(r,\sigma) = ce^{-\zeta r^2}$, 
-where c is a value that depends on normalization and 
+c_Ne^{-\zeta r}$, whereas GTO have the form: $\phi(r,\sigma) = c_Ne^{-\zeta 
+r^2}$, 
+where $c_N$ is a value that depends on normalization and 
 the principle quantum 
 number, $\zeta$ is a constant related to the effective nuclear charge, and r is 
 the distance of the electron from the nucleus. STO are more accurate, have poor 
