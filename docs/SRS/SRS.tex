@@ -143,20 +143,14 @@ description of the unit and its name. Some common constants are given.
   %	\caption{Provide a caption}
 %\end{table}
 
-\wss{Only include the units that your SRS actually uses} \wss{You can remove
-  these comments from the blank template file.}
+\subsection{Table of Numerical Constants}
 
-\subsection{Table of Symbols}
-
-The table that follows summarizes the symbols used in this document along with
-their units.
-
-
+These symbols appear in the documentation and represent real numbers.
 
 \renewcommand{\arraystretch}{1.2}
 %\noindent \begin{tabularx}{1.0\textwidth}{l l X}
 \noindent \begin{longtable*}{l l p{12cm}} \toprule
-	\textbf{symbol} & \textbf{unit} & \textbf{description}\\
+	\textbf{Symbol} & \textbf{Numerical Constant} & \textbf{Value}\\
 	\midrule 
 	$h$ & Planck's constant & 6.62607004x$10^{-34}$\si{\joule\second} \\
 	$\hbar$ & reduced Planck's constant & $h/2\pi$\si{\joule\second} \\
@@ -168,6 +162,10 @@ their units.
 	\bottomrule
 \end{longtable*}
 
+\subsection{Table of Symbols}
+
+The table that follows summarizes the symbols used in this document along with
+their units.
 
 \renewcommand{\arraystretch}{1.2}
 %\noindent \begin{tabularx}{1.0\textwidth}{l l X}
@@ -183,14 +181,13 @@ matrix of Cartesian
 coordinates with shape($n_a$, 3) \\
 $D_i$ & \textdegree & list of dihedral angles for conformer $i$; array of 
 length $n_a - 3$ \\
-$E_i$ & \si{\joule} & potential energy for conformer $i$ \\
 $S_E$ & \si{\joule} & sum of conformer potential energies \\
 $C_E$ & $\frac{1}{\si{\joule}}$ & coefficient for $S_E$ in the fitness function 
 \\
 $S_\text{RMSD}$ & \si{\angstrom} & sum of root-mean-square distances for all 
 conformer geometries \\
 $C_\text{RMSD}$ & $\frac{1}{\si{\angstrom}}$ & coefficient for $S_\text{RMSD}$ in the 
-fitness function \wss{same comment for symbol subscript as above}\\
+fitness function \\
 $Fit_G$ & unitless & the fitness of the set of conformers \\
 $E$ & \si{\joule} & energy (of conformer) \\
 $\hat{H}$ & \si{\joule} & Hamiltonian operator \\
@@ -199,14 +196,14 @@ $\sigma$ & unitless & spin ($\alpha$ or $\beta$) \\
 $\phi$ & unitless & atomic orbital \\
 $r$ & \si{\angstrom} & position of electron; array of length 3 \\
 $R$ & \si{\angstrom} & position of nuclei; array of length 3 \\
-$c_i$ & basis set constant \\
-$c_N$ & normalization/principle quantum number constant \\
-$\zeta$ & effective nuclear charge constant \\
+$c_i$ & tbd & basis set constant \\
+$c_N$ & tbd & normalization/principle quantum number constant \\
+$\zeta$ & tbd & effective nuclear charge constant \\
 \ce{e-} & N/A & electron \\
-x & x-component of Cartesian coordinates \\
-y & y-component of Cartesian coordinates \\
-z & z-component of Cartesian coordinates \\
-$Z_\alpha$ & atomic number \\
+x, y, z & \si{\angstrom} & components of atomic Cartesian coordinates \\
+X, Y, Z & \si{\angstrom} & components of electronic Cartesian coordinates \\
+$Z_a$ & unitless & atomic number \\
+i, j, k & N/A & indexing variables (see text for specific use case) \\
 \end{longtable*}
 
 \subsection{Abbreviations and Acronyms}
@@ -227,7 +224,7 @@ $Z_\alpha$ & atomic number \\
   PS & Physical System Description\\
   R & Requirement\\
   SRS & Software Requirements Specification\\
-  \progname{} & \wss{Kaplan} \\
+  \progname{} & Program Name \\
   T & Theoretical Model\\
   \midrule
   \multicolumn{2}{c}{\large{Chemical Acronyms}} \\
@@ -792,7 +789,7 @@ Appendix is shown explicitly after these assumptions have been applied.
 The wavefunction has no physical meaning; it is a complex-valued function for a 
 single particle where the input is the position vector. The wavefunction 
 squared ($|\psi(r)^2|$) is proportional to the probability of finding the 
-particle at position $r = x,y,z$. That is, the integration over all space for 
+particle at position $r = X,Y,Z$. That is, the integration over all space for 
 $|\psi(r)^2|$ is equal to one, because the particle (if it exists) must be 
 somewhere in space.
 
@@ -802,9 +799,10 @@ the position ($r$). For a multi-electron wavefunction, we have a linear
 combination of atomic orbitals (LCAO) to give the molecular orbital (MO). Since 
 the number of orbitals needed to exactly describe a molecule is infinite, the 
 MO is approximated by contracting the number of AO to a finite set (and thus a 
-finite space), affording $\Psi(r, \sigma) = \sum\limits_{i=1}^{k}c_i 
-\phi(r,\sigma)_i$, where $\phi(r,\sigma)_i$ is the AO, $c_i$ is a constant  
-described by the basis set, and $k$ is the number of AO.
+finite space), affording $\Psi(r, \sigma) = \sum\limits_{i}c_i 
+\phi(r,\sigma)_i$, where $\phi(r,\sigma)_i$ is the ith AO and $c_i$ is a 
+constant  
+described by the basis set.
 
 There are two main types of AO in quantum chemistry - Slater-type orbitals 
 (STO) and Gaussian-type orbitals (GTO). STO have the form: $\phi(r,\sigma) = 
@@ -1400,7 +1398,7 @@ show the values of the symbolic parameters introduced in the report.}
 		Equation&  $\hat{H_{ee}} = 
 		\sum\limits_{i=1}^{N}\frac{-\hbar^2}{2m_e}\nabla_i^2 + 
 		\sum\limits_{i=1}^{N} 
-		\sum\limits_{\alpha=1}^{P}\frac{-Z_\alpha 
+		\sum\limits_{\alpha=1}^{P}\frac{-Z_a 
 			q_e^2}{4\pi\epsilon_0|\overrightarrow{r_i}-\overrightarrow{R_\alpha}|}
 			 + 
 		\sum\limits_{i=1}^{N}\sum\limits_{j=i+1}^{N}\frac{q_e^2}{4\pi\epsilon_0|\overrightarrow{r_i}-\overrightarrow{r_j}|}
@@ -1411,8 +1409,9 @@ show the values of the symbolic parameters introduced in the report.}
 		Hamiltonian operator for a 
 		molecule with N-\ce{e-} and P-nuclei. $\hbar = \frac{h}{2\pi}$ is the 
 		reduced form of Plank's constant, $m_e$ is the mass of an electron, 
-		$\nabla$ is the gradient, $Z_\alpha$ is the atomic number for the given 
-		nuclei, $\epsilon_0$ is the permittivity of free space, $r_i$ are the 
+		$\nabla$ is the gradient, $Z_a$ is the atomic number for the given 
+		nuclei (a), $\epsilon_0$ is the permittivity of free space, $r_i$ are 
+		the 
 		xyz coordinates for the electrons, $R_\alpha$ are the xyz coordinates 
 		for the nuclei, and $q_e$ is the charge of an electron.
 		\\
