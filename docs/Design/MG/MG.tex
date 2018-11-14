@@ -135,27 +135,40 @@ change.
 run the software.
 \item[\refstepcounter{acnum} \actheacnum \label{acInput}:] Format of the input 
 data.
-\item[\refstepcounter{acnum} \actheacnum \label{acRMSD}:] RMSD module may be 
-rewritten as a behaviour hiding module.
+\item[\refstepcounter{acnum} \actheacnum \label{acRMSD}:] RMSD module may be
+  rewritten as a behaviour hiding module. \wss{A module doesn't really change
+    its classification.  You can rewrite modules, but this isn't considered in
+    this list of anticipated changes.  The anticipated changes imply that code
+    will be re-written.  You might be getting confused because the software
+    decision hiding modules are generic services that are often already
+    available from other libraries.  However, even if you write the generic
+    services yourself, it is still a software decision hiding module.}
 \item[\refstepcounter{acnum} \actheacnum \label{acRing}:] The ring may change 
-to another data structure.
+to another data structure. \wss{Can you create an abstract data structure that
+  anticipates the future possibilities?}
 \item[\refstepcounter{acnum} \actheacnum \label{acFit_G}:] The calculation for 
 $Fit_G$ may be expanded to include more formats than initially described in the 
 SRS document.
 \item[\refstepcounter{acnum} \actheacnum \label{acHorton}:] \progname{} may be 
 incorporated into another software package, thus making it a library not a 
-standalone program.
+standalone program. \wss{This isn't what is meant by anticipated changes.}
 \item[\refstepcounter{acnum} \actheacnum \label{acOutputDevice}:] As per 
 AC\ref{acHorton}, \progname{} may be required to run on cell phones through a 
 web 
 interface. The input/output device therefore will change from a keyboard and 
 mouse to a touchscreen.
 \item[\refstepcounter{acnum} \actheacnum \label{acProgLang}:] The programming 
-language may change to improve performance.
+language may change to improve performance. \wss{This isn't what is meant by anticipated changes.}
 \item[\refstepcounter{acnum} \actheacnum \label{acEnergy}:] The external 
 program used to run the energy calculations may change or multiple choices may 
 become available (depending on user input).
 \end{description}
+
+\wss{There seems to be some misunderstanding about the anticipated changes.
+  These are what become the secrets of your modules.  The interface to your
+  modules will be abstract so that you can hide the anticipated changes in one
+  module.  Changing programming language is not something you can ``hide'' in
+  one module.  It would mean changing all of your modules.}
 
 \subsection{Unlikely Changes} \label{SecUchange}
 
@@ -478,6 +491,10 @@ because they use modules from the lower levels.
 omitted for clarity.}
 \label{FigUH}
 \end{figure}
+
+\wss{Do any other modules use the Input module?  It is usually the case that
+  other modules will ask the Input module for its values.  Or will the Control
+  module be the only one that needs these values?}
 
 %\section*{References}
 
