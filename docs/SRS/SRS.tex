@@ -96,7 +96,7 @@
 
 \pagenumbering{roman}
 
-\section{Revision History}\label{1rev-hist}
+\section{Revision History}\label{rev-hist}
 
 \begin{tabularx}{\textwidth}{p{3cm}p{2cm}X}
 \toprule {\bf Date} & {\bf Version} & {\bf Notes}\\
@@ -110,6 +110,7 @@ October 27, 2018 (Saturday) & 1.2 & fix some typos and consistency errors from
 github issues\\
 November 14, 2018 (Wednesday) & 1.3 & remove original wss comments, move 
 numerical constants table to appendix, fix traceability issues \\
+November 21, 2018 (Wednesday) & 1.4 & fix some issues from Github \\
 \bottomrule
 \end{tabularx}
 
@@ -241,7 +242,7 @@ i, j, k & N/A & indexing variables (see text for specific use case) \\
 
 \pagenumbering{arabic}
 
-\section{Introduction} \label{2intro}
+\section{Introduction} \label{intro}
 
 Molecular geometry is a necessary piece of information with regards to running 
 calculations. Most computational chemists will run a 
@@ -340,20 +341,34 @@ the following terms will be useful:
 \end{itemize}
 
 \subsection{Organization of Document}
-% TODO
+
 This document follows the template outlined in \citet{SmithAndLai2005, 
 SmithEtAl2007}. Section 
-\ref{1rev-hist} is the revision history. Section \ref{section-ref-tables} 
+\ref{rev-hist} is the revision history, including some updates as to how the 
+document has changed over time. Section \ref{section-ref-tables} 
 provides tables for all of the units, symbols, acronyms, and 
-abbreviations used throughout the document. Section \ref{2intro} is an overview 
+abbreviations used throughout the document. Section \ref{intro} is an overview 
 of the purpose and scope of the system, including an 
 explanation the intended 
-reader for this document. Section \ref{3sys-desc} goes into more detail 
+reader for this document. Section \ref{sys-desc} goes into more detail 
 regarding the system and its inputs, and describes the responsibilities of the 
-user versus the program. 
-%TODO
+user versus the program. Some constraints are also mentioned here for the 
+design, and the user characteristics for the program are given. 
 
-\section{General System Description} \label{3sys-desc}
+Section \ref{section-system-desc} defines the problem to be solved, the 
+terminology and definitions for the problem, the physical system that will be 
+used to represent the problem, the goal statements, the characteristics of the 
+solution, the models that are used to solve the problem, the assumptions about 
+the problem, and the constraints on the output.
+
+Section \ref{section-require} lists the functional and non-functional 
+requirements of the program. Section \ref{section-lc} gives the likely changes 
+to the program, and Section \ref{section-trace} gives traceability tables 
+showing how the portions of the document are connected. If changes are made to 
+the document, then these traceability tables will be referenced to determine 
+what other changes might be necessary in order to satisfy requirements.
+
+\section{General System Description} \label{sys-desc}
 
 The interactions between the system and its environment are discussed in this 
 section. The user characteristics and system constraints are also given.
@@ -433,7 +448,7 @@ applicable) will converge under optimization
 An evolutionary algorithm will be used to search the potential energy space. 
 Energies will be calculated using an open-source quantum chemistry package.
 
-\section{Specific System Description}
+\section{Specific System Description} \label{section-system-desc}
 
 This section first presents the problem description, which gives a high-level
 view of the problem to be solved.  This is followed by the solution 
@@ -446,7 +461,15 @@ the instance models.
 \progname{} is designed to search the potential energy surface for 
 conformational isomers of an input molecule by manipulating dihedral angles. 
 The solution to a fitness function, which is related to the energies of and 
-spatial differences between conformers, will be found and maximized.
+spatial differences between conformers, will be found and maximized. As 
+calculated using a quantum mechanical approach, the energies of the conformers 
+will be optimized when they have the lowest energy (largest negative value). 
+The set of conformers will be optimized when the RMSD (root-mean-squared 
+deviation) is maximized since this is a measure of how different the conformers 
+are from one another. If the user specifies that they wish to obtain 3 
+conformers, the RMSD measure is necessary, otherwise the user could get 3 
+global minima of the potential energy space representing the exact same 
+molecule. 
 
 \subsubsection{Terminology and Definitions}
 
@@ -546,12 +569,20 @@ molecule, the goal statement is:
 
 \begin{itemize}
 
-\item[GS\refstepcounter{goalnum}\thegoalnum \label{goal}:] To 
-create a set of conformational isomers that represent the local minima of the 
-potential energy surface by optimizing the molecule's 
-dihedral angles. 
-Alternatively, this GS can be described as: maximize the fitness function, 
-$Fit_G$.
+\item[GS\refstepcounter{goalnum}\thegoalnum \label{goal}:] Return $n_G$ 
+geometries that represent the maximum $Fit_G$ value that was found after the 
+optimization. 
+
+\item[GS\refstepcounter{goalnum}\thegoalnum \label{goal-energy}:] Return the 
+energies of each geometry in the set that represents the maximum $Fit_G$ value 
+from the optimization.
+
+%To 
+%create a set of conformational isomers that represent the local minima of the 
+%potential energy surface by optimizing the molecule's 
+%dihedral angles. 
+%Alternatively, this GS can be described as: maximize the fitness function, 
+%$Fit_G$.
 
 \wss{I'm confused by the output being a set.  How many elements in the set?  All
   of them?  All of the ones the calculation can find?}
@@ -801,7 +832,7 @@ models. The dimension of each quantity is also given.
 		% \hline
 		Units & \si{\joule}\\
 		\hline
-		Equation & $\left|\sum\limits_{i=1}^{n_G}E_i\right|$ \\
+		Equation & $S_E = \left|\sum\limits_{i=1}^{n_G}E_i\right|$ \\
 		\hline
 		Description & 
 		$E_i$ is the energy (\si{\joule}) of conformer $i$, as calculated by 
@@ -836,7 +867,7 @@ models. The dimension of each quantity is also given.
 		% \hline
 		Units & \si{\angstrom}\\
 		\hline
-		Equation & $\sum\limits_{i\neq j}RMSD_{ij}$ \\
+		Equation & $S_\text{RMSD} = \sum\limits_{i\neq j}RMSD_{ij}$ \\
 		\hline
 		Description & 
 		$RMSD_{ij}$ is the root-mean square deviation between conformers $i$ 
@@ -1002,10 +1033,19 @@ changed to only consider the energy term and not the RMSD term.
 \subsubsection{Properties of a Correct Solution} \label{sec_CorrectSolution}
 
 \noindent
-\todo{actually fill this in}
-A correct solution must exhibit \wss{fill in the details}
+This problem will return its ``best guess'' as to the most favoured 
+conformations for the input molecule. The correct solution should return unique 
+conformers, rather than $n_G$ copies of the global minimum energy conformer. 
+During the optimization, many potential solutions will be generated. A solution 
+consists of $n_G$ geometries, where each geometry $G_i$ is generated from the 
+dihedral angles list $D_i$ and the initial geometry specification (which 
+dictates bond angles and bond lengths). The energy should be calculated for 
+each of these geometries. The best of these potential solutions exhibits the 
+property that it has the biggest $Fit_G$ value of all the sets of geometries 
+currently available. The returned geometries should also converge when their 
+energy calculations are performed.
 
-\section{Requirements}
+\section{Requirements} \label{section-require}
 
 This section provides the functional requirements, the business tasks that the
 software is expected to complete, and the nonfunctional requirements, the
@@ -1019,13 +1059,7 @@ qualities that the software is expected to exhibit.
 \noindent \begin{itemize}
 
 \item[R\refstepcounter{reqnum}\thereqnum \label{R_Inputs}:] Input the following 
-parameters for the molecule whose conformers should be found. The molecule can 
-be given as a SMILES string (example: ``C[N]1C=NC2=C1C(N(C(N2C)=O)C)=O''), name 
-(example: ``caffeine''), xyz coordinates file, or z-matrix file. For example, 
-the pubchem database can be queried with a name and is able to return 3D 
-coordinates for that molecule. The other inputs that are required include the 
-basis set and method; these inputs specify exactly how the Schr\"{o}dinger 
-Equation (\tref{T_SE}) should be solved in order to get the energy. See Table 
+parameters for the molecule whose conformers should be found. See Table 
 \ref{input-butane} for an example of what these molecular specifications look 
 like.
 
@@ -1050,8 +1084,8 @@ like.
 
 \item[R\refstepcounter{reqnum}\thereqnum \label{R_OutputInputs}:] Given the 
 inputs from \rref{R_Inputs}, use \iref{IM:fitg} to solve for $Fit_G$. Based on 
-the initial geometry, generate a set of random dihedral angles $D_i$, whose 
-size should be equal to $n_G$.
+the initial geometry, generate sets of random dihedral angles $D_i$, each with 
+length of $n_a - 3$. The number of sets to generate should be equal to $n_G$.
 
 \item[R\refstepcounter{reqnum}\thereqnum \label{R_Calculate}:] Calculate the 
 energy $E_i$ for each conformer and the RMSD distance between each conformer 
@@ -1063,9 +1097,13 @@ the energy calculations converge (\aref{A:init-params-conv},
 the requirement in 
 Table \ref{TblOutputVar}.
 
-\item[R\refstepcounter{reqnum}\thereqnum \label{R_Output}:] Convert the 
-dihedral angles $D_i$ for each conformer back to a xyz geometry (using 
-\aref{A:dihedral-only}, \aref{A:atom-ordering}).
+\item[R\refstepcounter{reqnum}\thereqnum \label{R_Output}:] Generate output 
+geometries by combining the dihedral angles $D_i$ for each conformer 
+with the original geometric specifications (i.e. bond lengths, bond angles, and 
+satisfying \aref{A:dihedral-only}, \aref{A:atom-ordering}).
+
+\item[R\refstepcounter{reqnum}\thereqnum \label{R_template}:] Program contains 
+a set of template files that the user can modify to run their own calculations.
 
 \end{itemize}
 
@@ -1086,16 +1124,14 @@ of running on
 high-performance computing servers without a difficult install process 
 (usability, portability). 
 
-\item The program should have some suggestions for 
-inputs (example, default values for $n_G$, $C_E$, and 
-$C_\text{RMSD}$) to help the user get started. 
+\item The program should be easy to use and quick to explain to chemists.
 
 \item The program should work well with other quantum 
 chemistry packages.
 
 \end{enumerate}
 
-\section{Likely Changes}    
+\section{Likely Changes} \label{section-lc}
 
 \noindent \begin{itemize}
 
@@ -1110,7 +1146,7 @@ has not been verified. [\aref{A:atom-ordering}]
 
 \end{itemize}
 
-\section{Traceability Matrices and Graphs}
+\section{Traceability Matrices and Graphs} \label{section-trace}
 
 The purpose of the traceability matrices is to provide easy references on what
 has to be additionally modified if a certain component is changed.  Every time a

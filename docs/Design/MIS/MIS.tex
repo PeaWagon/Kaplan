@@ -20,6 +20,10 @@
 \usepackage{caption}
 \usepackage{fullpage}
 
+% jen things
+\usepackage{amssymb}
+% end jen things
+
 \hypersetup{
 bookmarks=true,     % show bookmarks bar?
 colorlinks=true,       % false: boxed links; true: colored links
@@ -95,6 +99,9 @@ with the addition that template modules have been adapted from
 multiple assignment statement and conditional rules follow the form $(c_1
 \Rightarrow r_1 | c_2 \Rightarrow r_2 | ... | c_n \Rightarrow r_n )$.
 
+Jen is also using \href{https://proofwiki.org/wiki/Symbols:R}{this link} for 
+now.
+
 The following table summarizes the primitive data types used by \progname. 
 
 \begin{center}
@@ -165,7 +172,7 @@ The following table is taken directly from the Module Guide document for this pr
 
 \subsection{Module}
 
-ga_input
+ga\_input
 
 \subsection{Uses}
 
@@ -173,53 +180,46 @@ None
 
 \subsection{Syntax}
 
-\begin{table}[]
-	\begin{tabular}{llll}
-		Name              & In   & Out  & 
-		Exceptions                                                                                                                                                                                                                     \\
-		read\_ga\_input   & str  & dict & 
-		FileNotFoundError                                                                                                                                                                                                              \\
-		verify\_ga\_input & dict & -    & 
-		\begin{tabular}[c]{@{}l@{}}ValueError\\ - num\_filled \textgreater 
-		num\_slots\\ - num\_swaps \textgreater num\_geoms\\ - t\_size 
-		\textgreater num\_filled\\ not an integer type\\ missng key/unknown key 
-		provided\end{tabular} \\
-		&      &      
-		&                                                                                                                                                                                                                               
-	\end{tabular}
-\end{table}
-
 \subsubsection{Exported Constants}
+
+None
 
 \subsubsection{Exported Access Programs}
 
-\begin{center}
-\begin{tabular}{p{2cm} p{4cm} p{4cm} p{2cm}}
-\hline
-\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
-\hline
-\wss{accessProg} & - & - & - \\
-\hline
-\end{tabular}
-\end{center}
-
+\begin{table}[H]
+	\begin{tabular}{p{4cm} p{2cm} p{2cm} p{5cm}}
+		\toprule
+		\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
+		\hline
+		read\_ga\_input   & str  & dict & FileNotFoundError \\
+		verify\_ga\_input & dict & None    & ValueError \\
+		\bottomrule
+	\end{tabular}
+\end{table}
 \subsection{Semantics}
 
 \subsubsection{State Variables}
 
-\wss{Not all modules will have state variables.  State variables give the module
-  a memory.}
+ga\_input\_dict, which is a dictionary that contains:
+\begin{itemize}
+\item num\_geoms: $\mathbb{R}_{>0} = \{x \in \mathbb{R}: x > 0\}$
+\item num\_atoms: $\mathbb{R}_{>0} = \{x \in \mathbb{R}: x > 0\}$
+\item num\_slots: $\mathbb{R}_{>0} = \{x \in \mathbb{R}: x > 0\}$
+\item num\_filled: $\mathbb{R}_{>0} = \{x \in \mathbb{R}: x > 0\}$
+\item num\_muts: $\mathbb{R}_{\geq0} = \{x \in \mathbb{R}: x \geq 0\}$
+\item num\_swaps: $\mathbb{R}_{\geq0} = \{x \in \mathbb{R}: x \geq 0\}$
+\item t\_size: $\mathbb{R}_{>0} = \{x \in \mathbb{R}: x > 0\}$
+\end{itemize}
 
 \subsubsection{Environment Variables}
 
-\wss{This section is not necessary for all modules.  Its purpose is to capture
-  when the module has external interaction with the environment, such as for a
-  device driver, screen interface, keyboard, file, etc.}
+ga\_input\_file: str representing the file that exists in the working directory.
 
 \subsubsection{Assumptions}
 
-\wss{Try to minimize assumptions and anticipate programmer errors via
-  exceptions, but for practical purposes assumptions are sometimes appropriate.}
+This module is responsible for all type checking and no errors will come from 
+incorrect passing of variables (except input related to the molecule - covered 
+in \ref{section-mol_input}).
 
 \subsubsection{Access Routine Semantics}
 
@@ -237,12 +237,33 @@ None
 \wss{Modules rarely have both a transition and an output.  In most cases you
   will have one or the other.}
 
+\noindent read\_ga\_input(ga\_input\_file):
+\begin{itemize}
+	\item transition: open ga\_input\_file and read its contents
+	\item output: dictionary (ga\_input\_dict) that contains the values listed 
+	in State Variables
+	\item exception: FileNotFoundError := ga\_input\_file $\notin$ current 
+	working 
+	directory
+\end{itemize}
+
+\noindent verify\_ga\_input(ga\_input\_dict):
+\begin{itemize}
+	\item transition: 
+	\item output: None
+	\item exception: ValueError
+	\begin{itemize}
+		\item num\_filled \textgreater num\_slots
+		\item num\_swaps \textgreater num\_geoms
+		\item t\_size \textgreater num\_filled 
+		\item not an integer type 
+		\item missing key/unknown key
+	\end{itemize}
+\end{itemize}
+
 \subsubsection{Local Functions}
 
-\wss{As appropriate} \wss{These functions are for the purpose of specification.
-  They are not necessarily something that is going to be implemented
-  explicitly.  Even if they are implemented, they are not exported; they only
-  have local scope.}
+None
 
 \newpage
 
