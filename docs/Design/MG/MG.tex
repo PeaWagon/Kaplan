@@ -198,13 +198,15 @@ actually be implemented.
 \begin{description}
 \item [\refstepcounter{mnum} \mthemnum \label{mHH}:] Hardware-Hiding
 \item [\refstepcounter{mnum} \mthemnum \label{mGAIn}:] GA Input
+\item [\refstepcounter{mnum} \mthemnum \label{mMolIn}:] Molecule Input
 \item [\refstepcounter{mnum} \mthemnum \label{mGAC}:] GA Control
 \item [\refstepcounter{mnum} \mthemnum \label{mFitg}:] $Fit_G$
 \item [\refstepcounter{mnum} \mthemnum \label{mTour}:] Tournament
 \item [\refstepcounter{mnum} \mthemnum \label{mCM}:] Crossover \& Mutation
 \item [\refstepcounter{mnum} \mthemnum \label{mRing}:] Ring
+\item [\refstepcounter{mnum} \mthemnum \label{mPmem}:] Pmem
 \item [\refstepcounter{mnum} \mthemnum \label{mOut}:] Output
-\item [\refstepcounter{mnum} \mthemnum \label{mMolIn}:] Molecule Input
+\item [\refstepcounter{mnum} \mthemnum \label{mGeometry}:] Geometry
 \item [\refstepcounter{mnum} \mthemnum \label{mE}:] Energies
 \item [\refstepcounter{mnum} \mthemnum \label{mRMSD}:] RMSD
 \end{description}
@@ -220,16 +222,19 @@ actually be implemented.
 {Hardware-Hiding Module} & ~ \\
 \midrule
 
-\multirow{7}{0.3\textwidth}{Behaviour-Hiding Module}& GA Input \\
+\multirow{9}{0.3\textwidth}{Behaviour-Hiding Module}& GA Input \\
+													& Molecule Input \\
 													& GA Control\\
 													& $Fit_G$ \\
 													& Tournament \\
 													& Crossover \& Mutation \\
 													& Ring \\
+													& Pmem \\
 													& Output \\
+
 \midrule
 
-\multirow{3}{0.3\textwidth}{Software Decision Module} & Molecule Input \\
+\multirow{3}{0.3\textwidth}{Software Decision Module} & Geometry \\
 													  & Energies \\
 													  & RMSD \\
 \bottomrule
@@ -300,6 +305,15 @@ bounds. These values are static and should not change during the optimization.
 \item[Implemented By:] \progname{}
 \end{description}
 
+\subsubsection{Molecule Input Module (\mref{mMolIn})}
+\begin{description}
+	\item[Secrets:] The format and structure of the input data for the 
+	molecule, including how the input data is verified.
+	\item[Services:] Reads in a molecular structure data file input and 
+	verifies the types, values, and completeness of the input.
+	\item[Implemented By:] \progname{}
+\end{description}
+
 \subsubsection{GA Control Module (\mref{mGAC})}
 
 \begin{description}
@@ -307,9 +321,7 @@ bounds. These values are static and should not change during the optimization.
 	find and optimize conformer geometries.
 	\item[Services:] Initializes the Ring data structure and calls the 
 	Tournament to update the Ring. When the number of mating events specified 
-	by the user has been completed, calls the Output module. If the Ring has 
-	empty entries for energy at the end of the program's execution, then this 
-	module can call \mref{mFitg} to fill in the missing values.
+	by the user has been completed, calls the Output module. 
 	\item[Implemented By:] \progname{}
 \end{description}
 
@@ -325,10 +337,11 @@ bounds. These values are static and should not change during the optimization.
 \subsubsection{Tournament Module (\mref{mTour})}
 
 \begin{description}
-	\item[Secrets:] How to conduct Tournament selection for the genetic 
-	algorithm.
-	\item[Services:] Chooses participants, winners, and losers in the 
-	tournament such that these population members can be updated in the Ring.
+	\item[Secrets:] How to compare the set of available solutions (in the Ring 
+	\mref{mRing}) for the conformer optimization problem.
+	\item[Services:] Chooses participants and winners in the 
+	tournament. Returns children (made by \mref{mCM}) such that these 
+	population members can be given to the Ring.
 	\item[Implemented By:] \progname{}
 \end{description}
 
@@ -344,11 +357,21 @@ bounds. These values are static and should not change during the optimization.
 \subsubsection{Ring Module (\mref{mRing})}
 
 \begin{description}
-	\item[Secrets:] The data structure for the Ring.
+	\item[Secrets:] The data structure for the Ring (the population of 
+	solutions).
+	\item[Services:] Determines if a new population member (Pmem) can be added, 
+	and where they are added.
+	\item[Implemented By:] \progname{}
+\end{description}
+
+
+\subsubsection{Pmem Module (\mref{mPmem})}
+
+\begin{description}
+	\item[Secrets:] The data structure for the individual solutions to the 
+	conformer search optimization problem.
 	\item[Services:] Defines the potential solutions to the conformer 
 	optimization in the form of dihedral angles (and energies if calculated). 
-	Determines if a new population member can be added, and where they are 
-	added.
 	\item[Implemented By:] \progname{}
 \end{description}
 
@@ -375,13 +398,12 @@ bounds. These values are static and should not change during the optimization.
 \item[Implemented By:] --
 \end{description}
 
-\subsubsection{Molecule Input Module (\mref{mMolIn})}
+\subsubsection{Geometry Module (\mref{mGeometry})}
 \begin{description}
-	\item[Secrets:] The format and structure of the input data for the 
-	molecule, including how the input data is verified.
-	\item[Services:] Converts the input data between formats, extracts dihedral 
-	angles, reconstructs geometries from dihedral angles and initial bond 
-	angles and lengths.
+	\item[Secrets:] Data structure for full geometric specifications.
+	\item[Services:] Combines a list of dihedral angles and the original 
+	molecular geometry to produce a new geometry. Creates an object capable of 
+	reading and writing structure files.
 	\item[Implemented By:] Vetee, Openbabel \citet{obabel} \citet{obabel-web}
 \end{description}
 

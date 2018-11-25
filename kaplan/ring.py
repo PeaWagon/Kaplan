@@ -1,4 +1,5 @@
 
+from kaplan.pmem import Pmem
 
 """
 Consider the conversion of cartesian coordinates
@@ -35,22 +36,15 @@ Important information that this object will contain:
 import numpy as np
 
 
-
-def get_dihedrals(input_file):
-    with open(input_file, 'r') as f:
-        pass
-        
-    
-    
-
-
-
+class RingEmptyError(Exception):
+    """Error that occurs when the ring has no pmems in it."""
+    pass
 
 class Ring(object):
     """Data structure for genetic algorithm."""
 
     def __init__(self, num_geoms, num_atoms, num_slots, 
-                 num_filled):
+                 num_filled, pmem_dist, mol_input_file):
 #                 num_filled, dihedrals):
         """Constructor for ring data structure.
 
@@ -73,7 +67,9 @@ class Ring(object):
             num_slots value. This variable is dynamic and
             changes depending on how many slots are currently
             filled in on the ring.
-
+        pmem_dist : int
+            The distance that a pmem can be placed from
+            the parent in number of slots.
 
         Returns
         -------
@@ -104,22 +100,83 @@ class Ring(object):
         self.num_atoms = num_atoms
         self.num_slots = num_slots
         self.num_filled = num_filled
+        self.pmem_dist = pmem_dist
+        self.mol_input_file = mol_input_file
         # Fill contiguous segment of ring with pmems.
-        self.pmems = np.array([Pmem(i, self.num_geoms, self.num_atoms) if i <= self.num_filled else None for i in range(self.num_slots)], dtype=object)
+        self.pmems = np.array([Pmem(i, num_geoms, mol_input_file) if i <= self.num_filled else None for i in range(self.num_slots)], dtype=object)
+        # check that pmems have the same number of atoms as the mol_input_file
+        assert self.num_atoms == self.pmems[0].num_atoms
 
-    def update(self, child1, child2, loser1, loser2):
-        """All inputs are ring indices."""
-        # child1 and child2 have the same indices on
-        # the ring as their parents currently
+    def update(self, parent_index, child):
+        """Add child to ring based on parent location.
 
-        # choose random location within the basket range
-        nest1 = np.random.choice(child1-self.max_distance, child1+self.max_distance)
-        nest2 = np.random.choice(child2-self.max_distance, child2+self.max_distance)
-        if ring.pmems[nest1] is not None:
-            del self.pmems[nest1]
-            del self.pmems[loser2]
-        self.pmems[loser1] = child1
-        self.pmems[loser2] = child2
+        Parameters
+        ----------
+        parent_index : int
+        children : pmem
+
+        Returns
+        -------
+        None
+
+        """
+        # NOTE: should check if person is added
+        # if person is added, then increment self.num_filled
+
+
+        # pick random index within +/-self.pmem_dist of parent
+        # if slot is occupied: 
+        #     compare fitness of child with current occupant
+        #     if fitness no worse:
+        #         replace occupant with child
+        # else
+        #     slot is empty so put child in slot
+        pass
+
+#    def update(self, child1, child2, loser1, loser2):
+#        """All inputs are ring indices."""
+#        # child1 and child2 have the same indices on
+#        # the ring as their parents currently
+
+#        # choose random location within the basket range
+#        nest1 = np.random.choice(child1-self.max_distance, child1+self.max_distance)
+#        nest2 = np.random.choice(child2-self.max_distance, child2+self.max_distance)
+#        if ring.pmems[nest1] is not None:
+#            del self.pmems[nest1]
+#            del self.pmems[loser2]
+#        self.pmems[loser1] = child1
+#        self.pmems[loser2] = child2
+
+    def fill(self, num_pmems):
+        """Fill the ring with additional pmems.
+
+        Notes
+        -----
+        This will fill a contiguous segment of the ring.
+        Might have to change it to a try accept block
+        where the pmems are added while there is space
+        (otherwise I see this breaking for large t_size
+        and small num_slots).
+
+        Parameters
+        ----------
+        num_pmems : int
+            Number of pmems to add to the ring.
+
+        Raises
+        ------
+        AssertionError
+            Trying to add more pmems than slots available
+            in ring.
+
+        """
+        # check that adding pmems doesn't overflow ring
+        num_avail = self.num_slots - self.num_filled
+        assert num_avail >= num_pmems
+        for i in range(self.num_filled, self.num_filled + num_pmems + 1):
+            self.pmems[i] = Pmem(i, self.num_geoms, self.mol_input_file)
+            
+
 ###############################################################
 
 # attempt to enable ring indexing
@@ -146,47 +203,6 @@ class Ring(object):
                 filled += 1
         return filled
 
-class Pmem(Ring):
-    """Population member of the ring."""
 
-    def __init__(self, ring_loc, num_geoms, num_atoms):
-        """
-
-        Parameters
-        ----------
-        ring_loc : int
-            Index of the ring where the pmem lives.
-        dihedrals : np.array(shape(num_atoms-3, num_geoms),
-                             dtype=int)
-            List of integers representing the dihedral angles
-            connecting the molecule under optimisation.
-
-        """
-        self.ring_loc = ring_loc
-        self.num_geoms = num_geoms
-        self.num_atoms = num_atoms
-#        self._fitness = None
-        # generate random dihedral angles (degrees)
-        # each row is a set of dihedral angles for one conformer
-        self.dihedrals = np.random.randint(0, 359,
-                         size=(self.num_geoms,self.num_atoms-3))
-        # TODO change to actually calculate the energy
-        self.energies = np.zeros(shape=(self.num_geoms,),
-                                 dtype=float)
-#        self._fitness = np.zeros(shape=(self.num_slots,), dtype=float)
-
-
-#    def is_occupant(self):
-#        """Determine if Pmem is part of Ring or just a placeholder."""
-#        if self.ring_loc is not None:
-#            return True
-#        else:
-#            return False
-
-#    @fitness.setter
-#    def fitness(self, value):
-#        assert isinstance(value, float)
-#        assert value >= 0
-#        self._fitness = value
     
     

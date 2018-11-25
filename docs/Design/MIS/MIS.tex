@@ -22,6 +22,8 @@
 
 % jen things
 \usepackage{amssymb}
+\usepackage{listings}
+
 % end jen things
 
 \hypersetup{
@@ -66,9 +68,13 @@ November 20, 2018 (Tuesday) & 1.0 & Initial draft \\
 
 \section{Symbols, Abbreviations and Acronyms}
 
-See SRS Documentation at \wss{give url}
+See \href{SRS}{https://github.com/PeaWagon/Kaplan/blob/master/docs/SRS/SRS.pdf} 
+Documentation.
 
-\wss{Also add any additional symbols, abbreviations or acronyms}
+cid = compound identification number (for 
+\href{pubchem}{https://pubchem.ncbi.nlm.nih.gov/} website)
+
+vetee = private database repository on github
 
 \newpage
 
@@ -80,17 +86,17 @@ See SRS Documentation at \wss{give url}
 
 \section{Introduction}
 
-The following document details the Module Interface Specifications for
-\wss{Fill in your project name and description}
+The following document details the Module Interface Specifications for 
+\progname{}. This program is designed to search a potential energy space for a 
+set of conformers for a given input molecule. The energy and RMSD are used to 
+optimize dihedral angles, which can then be combined with an original geometry 
+specification to determine an overall structure for a conformational isomer.
 
-Complementary documents include the System Requirement Specifications
-and Module Guide.  The full documentation and implementation can be
-found at \url{...}.  \wss{provide the url for your repo}
+Complementary documents include the System Requirement Specifications (SRS)
+and Module Guide (MG).  The full documentation and implementation can be
+found at \url{https://github.com/PeaWagon/Kaplan}.
 
 \section{Notation}
-
-\wss{You should describe your notation.  You can use what is below as
-  a starting point.}
 
 The structure of the MIS for modules comes from \citet{HoffmanAndStrooper1995},
 with the addition that template modules have been adapted from
@@ -100,7 +106,7 @@ multiple assignment statement and conditional rules follow the form $(c_1
 \Rightarrow r_1 | c_2 \Rightarrow r_2 | ... | c_n \Rightarrow r_n )$.
 
 Jen is also using \href{https://proofwiki.org/wiki/Symbols:R}{this link} for 
-now.
+now. Also, the PEP8 style guide from Python will be used for naming conventions.
 
 The following table summarizes the primitive data types used by \progname. 
 
@@ -115,15 +121,59 @@ character & char & a single symbol or digit\\
 integer & $\mathbb{Z}$ & a number without a fractional component in (-$\infty$, $\infty$) \\
 natural number & $\mathbb{N}$ & a number without a fractional component in [1, $\infty$) \\
 real & $\mathbb{R}$ & any number in (-$\infty$, $\infty$)\\
+boolean & bool & True or False \\
+
+
 \bottomrule
 \end{tabular} 
 \end{center}
 
 \noindent
-The specification of \progname \ uses some derived data types: sequences, strings, and
-tuples. Sequences are lists filled with elements of the same data type. Strings
-are sequences of characters. Tuples contain a list of values, potentially of
-different types. In addition, \progname \ uses functions, which
+The specification of \progname{} uses some derived data types: sequences, 
+strings, tuples, lists, and dictionaries. Sequences are lists filled with 
+elements of the same data type. Strings
+are sequences of characters. Tuples contain a fixed list of values, potentially 
+of different types. Lists are similar to tuples, except that they can change in 
+size and their entries can be modified. For strings, lists, and tuples, the 
+index can be used to retrieve a value at a certain location. Indexing starts at 
+0 and continues until the length of the item minus one (example: for a list 
+my\_list = [1,2,3], my\_list[1] returns 2). A slice of these data types affords 
+a subsection of the original data (example: given a string s = ``kaplan'', 
+s[2:4] gives ``pl''). Notice that the slice's second value is a non-inclusive 
+bound. A dictionary is a dynamic set of key-value pairs, where the keys and the 
+values can be modified and of any type. A dictionary value is accessed by 
+calling its key, as in dictionary\_name[key\_name] = value.
+
+\progname{} uses three special objects called Pmem, Ring, and Parser. These 
+objects have methods that are described in \ref{section-pmem}, 
+\ref{section-ring}, and \ref{section-geometry} respectively. The Python 
+NoneType type object is also used.
+
+Here is a table to summarize the derived data types:
+
+\begin{center}
+\renewcommand{\arraystretch}{1.2}
+\noindent 
+\begin{tabular}{l l p{7.5cm}} 
+\toprule 
+\textbf{Data Type} & \textbf{Notation} & \textbf{Description}\\ 
+\midrule
+population member & Pmem & an object used by \progname{} to represent potential 
+solutions to the conformer search/optimization problem \\
+ring & Ring & an object used by \progname{} to store Pmem objects and define 
+how they are removed, added, and updated \\
+parser & Parser & a Vetee object used by \progname{} to represent the molecular 
+geometry, its energy calculations, and input/output parameters; also inherited 
+classes include: Xyz, Com, Glog, Structure \\
+string & str & a string is a list of characters (as implemented in Python) \\
+list & list or [ ] & a Python list (doubly-linked) \\
+dictionary & dict or \{\} & a Python dictionary that has key value pairs \\
+NoneType & None & empty data type \\
+\bottomrule
+\end{tabular} 
+\end{center}
+
+In addition, \progname \ uses functions, which
 are defined by the data types of their inputs and outputs. Local functions are
 described by giving their type signature followed by their specification.
 
@@ -141,17 +191,19 @@ The following table is taken directly from the Module Guide document for this pr
 		{Hardware-Hiding Module} & ~ \\
 		\midrule
 		
-		\multirow{7}{0.3\textwidth}{Behaviour-Hiding Module}& GA Input \\
+		\multirow{9}{0.3\textwidth}{Behaviour-Hiding Module}& GA Input \\
+		& Molecule Input \\
 		& GA Control\\
 		& $Fit_G$ \\
 		& Tournament \\
 		& Crossover \& Mutation \\
 		& Ring \\
+		& Pmem \\
 		& Output \\
+		
 		\midrule
 		
-		\multirow{3}{0.3\textwidth}{Software Decision Module} & Molecule Input 
-		\\
+		\multirow{3}{0.3\textwidth}{Software Decision Module} & Geometry \\
 		& Energies \\
 		& RMSD \\
 		\bottomrule
@@ -170,6 +222,37 @@ The following table is taken directly from the Module Guide document for this pr
 
 \wss{It is also possible to use \LaTeX for hypperlinks to external documents.}
 
+The purpose of this module is to provide a utility for reading and verifying 
+input related to the genetic algorithm (GA). There are two main functions: 
+read\_ga\_input and verify\_ga\_input. The first function opens a data file 
+(.txt file) with the following format:
+
+\begin{lstlisting}
+num_mevs = 1000
+num_slots = 100
+num_filled = 20
+num_geoms = 3
+num_atoms = 10
+t_size = 7
+num_muts = 3
+num_swaps = 1
+pmem_dist = 5
+fit_form = 0
+coef_energy = 0.5
+coef_rmsd = 0.5
+\end{lstlisting}
+
+These values are read into a Python dictionary, called ga\_input\_dict. The 
+order of the inputs does not matter, but \progname{} will throw an error if one 
+of the keys is missing. This dictionary is then passed to the second function, 
+which checks that the values are correct and that all keys have been given. 
+From the SRS document, $n_G$ and $n_a$ are represented here as num\_geoms and 
+num\_atoms respectively. Also, coef\_energy and coef\_rmsd are $C_\text{E}$ and 
+$C_\text{RMSD}$ from the SRS. All keys are case insensitive.
+
+\meow{I may have to check if SMILES strings are case sensitive for the programs 
+I am parsing them with.}
+
 \subsection{Module}
 
 ga\_input
@@ -182,7 +265,7 @@ None
 
 \subsubsection{Exported Constants}
 
-None
+NUM\_GA\_ARGS := 12
 
 \subsubsection{Exported Access Programs}
 
@@ -200,20 +283,31 @@ None
 
 \subsubsection{State Variables}
 
-ga\_input\_dict, which is a dictionary that contains:
+\noindent num\_args := $+(x : list | key \in x \land value \in x \land 
+length(x) = 2 : 1)$ \\
+
+\noindent ga\_input\_dict, which is a dictionary that contains:
 \begin{itemize}
-\item num\_geoms: $\mathbb{R}_{>0} = \{x \in \mathbb{R}: x > 0\}$
-\item num\_atoms: $\mathbb{R}_{>0} = \{x \in \mathbb{R}: x > 0\}$
-\item num\_slots: $\mathbb{R}_{>0} = \{x \in \mathbb{R}: x > 0\}$
-\item num\_filled: $\mathbb{R}_{>0} = \{x \in \mathbb{R}: x > 0\}$
-\item num\_muts: $\mathbb{R}_{\geq0} = \{x \in \mathbb{R}: x \geq 0\}$
-\item num\_swaps: $\mathbb{R}_{\geq0} = \{x \in \mathbb{R}: x \geq 0\}$
-\item t\_size: $\mathbb{R}_{>0} = \{x \in \mathbb{R}: x > 0\}$
+\item num\_mevs := $\mathbb{N}$
+\item num\_geoms := $\mathbb{N}$
+\item num\_atoms := $\{x \in \mathbb{N}: x > 3\}$
+\item num\_slots := $\{x \in \mathbb{N}: x \geq \text{num\_filled} \}$
+\item num\_filled := $\{x \in \mathbb{N}: x \leq \text{num\_slots}\}$
+\item num\_muts := $\{0 \lor x \in \mathbb{N}: \text{num\_atoms} \geq x \geq 
+0\}$
+\item num\_swaps := $\{0 \lor x \in \mathbb{N}: \text{num\_geoms} \geq x \geq 
+0\}$
+\item t\_size := $\{x \in \mathbb{N}: 2 \geq x \leq \text{num\_filled} \}$
+\item pmem\_dist := $\{0 \lor x \in \mathbb{N}: x \geq 0\}$
+\item fit\_form := $\{0 \lor x \in \mathbb{N}: x \geq 0\}$
+\item coef\_energy: $\mathbb{R}$
+\item coef\_rmsd: $\mathbb{R}$
 \end{itemize}
 
 \subsubsection{Environment Variables}
 
-ga\_input\_file: str representing the file that exists in the working directory.
+ga\_input\_file: str representing the file that exists in the working directory 
+(optionally includes a prepended path).
 
 \subsubsection{Assumptions}
 
@@ -222,20 +316,6 @@ incorrect passing of variables (except input related to the molecule - covered
 in \ref{section-mol_input}).
 
 \subsubsection{Access Routine Semantics}
-
-\noindent \wss{accessProg}():
-\begin{itemize}
-\item transition: \wss{if appropriate} 
-\item output: \wss{if appropriate} 
-\item exception: \wss{if appropriate} 
-\end{itemize}
-
-\wss{A module without environment variables or state variables is unlikely to
-  have a state transition.  In this case a state transition can only occur if
-  the module is changing the state of another module.}
-
-\wss{Modules rarely have both a transition and an output.  In most cases you
-  will have one or the other.}
 
 \noindent read\_ga\_input(ga\_input\_file):
 \begin{itemize}
@@ -249,15 +329,19 @@ in \ref{section-mol_input}).
 
 \noindent verify\_ga\_input(ga\_input\_dict):
 \begin{itemize}
-	\item transition: 
+	\item transition: None
 	\item output: None
 	\item exception: ValueError
 	\begin{itemize}
+		\item 4 \textgreater num\_atoms
 		\item num\_filled \textgreater num\_slots
 		\item num\_swaps \textgreater num\_geoms
-		\item t\_size \textgreater num\_filled 
-		\item not an integer type 
+		\item t\_size \textgreater num\_filled $\lor$ t\_size \textless 2
+		\item not an integer type (for all except coef\_energy and coef\_rmsd, 
+		which should be floats)
 		\item missing key/unknown key
+		\item too many keys (i.e. repeated keys), where num\_args $\neq$ 
+		NUM\_GA\_ARGS 
 	\end{itemize}
 \end{itemize}
 
@@ -267,452 +351,561 @@ None
 
 \newpage
 
-\section{MIS of GA Control} \label{section-gac} \wss{Use labels for
-	cross-referencing}
-
-\wss{You can reference SRS labels, such as R\ref{R_Inputs}.}
-
-\wss{It is also possible to use \LaTeX for hypperlinks to external documents.}
-
-\subsection{Module}
-
-\wss{Short name for the module}
-
-\subsection{Uses}
-
-
-\subsection{Syntax}
-
-\subsubsection{Exported Constants}
-
-\subsubsection{Exported Access Programs}
-
-\begin{center}
-	\begin{tabular}{p{2cm} p{4cm} p{4cm} p{2cm}}
-		\hline
-		\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
-		\hline
-		\wss{accessProg} & - & - & - \\
-		\hline
-	\end{tabular}
-\end{center}
-
-\subsection{Semantics}
-
-\subsubsection{State Variables}
-
-\wss{Not all modules will have state variables.  State variables give the module
-	a memory.}
-
-\subsubsection{Environment Variables}
-
-\wss{This section is not necessary for all modules.  Its purpose is to capture
-	when the module has external interaction with the environment, such as for a
-	device driver, screen interface, keyboard, file, etc.}
-
-\subsubsection{Assumptions}
-
-\wss{Try to minimize assumptions and anticipate programmer errors via
-	exceptions, but for practical purposes assumptions are sometimes 
-	appropriate.}
-
-\subsubsection{Access Routine Semantics}
-
-\noindent \wss{accessProg}():
-\begin{itemize}
-	\item transition: \wss{if appropriate} 
-	\item output: \wss{if appropriate} 
-	\item exception: \wss{if appropriate} 
-\end{itemize}
-
-\wss{A module without environment variables or state variables is unlikely to
-	have a state transition.  In this case a state transition can only occur if
-	the module is changing the state of another module.}
-
-\wss{Modules rarely have both a transition and an output.  In most cases you
-	will have one or the other.}
-
-\subsubsection{Local Functions}
-
-\wss{As appropriate} \wss{These functions are for the purpose of specification.
-	They are not necessarily something that is going to be implemented
-	explicitly.  Even if they are implemented, they are not exported; they only
-	have local scope.}
-
-\newpage
-
-\section{MIS of $Fit_G$} \label{section-fitg}
-
-\wss{You can reference SRS labels, such as R\ref{R_Inputs}.}
-
-\wss{It is also possible to use \LaTeX for hypperlinks to external documents.}
-
-\subsection{Module}
-
-\wss{Short name for the module}
-
-\subsection{Uses}
-
-
-\subsection{Syntax}
-
-\subsubsection{Exported Constants}
-
-\subsubsection{Exported Access Programs}
-
-\begin{center}
-	\begin{tabular}{p{2cm} p{4cm} p{4cm} p{2cm}}
-		\hline
-		\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
-		\hline
-		\wss{accessProg} & - & - & - \\
-		\hline
-	\end{tabular}
-\end{center}
-
-\subsection{Semantics}
-
-\subsubsection{State Variables}
-
-\wss{Not all modules will have state variables.  State variables give the module
-	a memory.}
-
-\subsubsection{Environment Variables}
-
-\wss{This section is not necessary for all modules.  Its purpose is to capture
-	when the module has external interaction with the environment, such as for a
-	device driver, screen interface, keyboard, file, etc.}
-
-\subsubsection{Assumptions}
-
-\wss{Try to minimize assumptions and anticipate programmer errors via
-	exceptions, but for practical purposes assumptions are sometimes 
-	appropriate.}
-
-\subsubsection{Access Routine Semantics}
-
-\noindent \wss{accessProg}():
-\begin{itemize}
-	\item transition: \wss{if appropriate} 
-	\item output: \wss{if appropriate} 
-	\item exception: \wss{if appropriate} 
-\end{itemize}
-
-\wss{A module without environment variables or state variables is unlikely to
-	have a state transition.  In this case a state transition can only occur if
-	the module is changing the state of another module.}
-
-\wss{Modules rarely have both a transition and an output.  In most cases you
-	will have one or the other.}
-
-\subsubsection{Local Functions}
-
-\wss{As appropriate} \wss{These functions are for the purpose of specification.
-	They are not necessarily something that is going to be implemented
-	explicitly.  Even if they are implemented, they are not exported; they only
-	have local scope.}
-
-\newpage
-
-\section{MIS of Tournament} \label{section-tournament} \wss{Use labels for
-	cross-referencing}
-
-\wss{You can reference SRS labels, such as R\ref{R_Inputs}.}
-
-\wss{It is also possible to use \LaTeX for hypperlinks to external documents.}
-
-\subsection{Module}
-
-\wss{Short name for the module}
-
-\subsection{Uses}
-
-
-\subsection{Syntax}
-
-\subsubsection{Exported Constants}
-
-\subsubsection{Exported Access Programs}
-
-\begin{center}
-	\begin{tabular}{p{2cm} p{4cm} p{4cm} p{2cm}}
-		\hline
-		\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
-		\hline
-		\wss{accessProg} & - & - & - \\
-		\hline
-	\end{tabular}
-\end{center}
-
-\subsection{Semantics}
-
-\subsubsection{State Variables}
-
-\wss{Not all modules will have state variables.  State variables give the module
-	a memory.}
-
-\subsubsection{Environment Variables}
-
-\wss{This section is not necessary for all modules.  Its purpose is to capture
-	when the module has external interaction with the environment, such as for a
-	device driver, screen interface, keyboard, file, etc.}
-
-\subsubsection{Assumptions}
-
-\wss{Try to minimize assumptions and anticipate programmer errors via
-	exceptions, but for practical purposes assumptions are sometimes 
-	appropriate.}
-
-\subsubsection{Access Routine Semantics}
-
-\noindent \wss{accessProg}():
-\begin{itemize}
-	\item transition: \wss{if appropriate} 
-	\item output: \wss{if appropriate} 
-	\item exception: \wss{if appropriate} 
-\end{itemize}
-
-\wss{A module without environment variables or state variables is unlikely to
-	have a state transition.  In this case a state transition can only occur if
-	the module is changing the state of another module.}
-
-\wss{Modules rarely have both a transition and an output.  In most cases you
-	will have one or the other.}
-
-\subsubsection{Local Functions}
-
-\wss{As appropriate} \wss{These functions are for the purpose of specification.
-	They are not necessarily something that is going to be implemented
-	explicitly.  Even if they are implemented, they are not exported; they only
-	have local scope.}
-
-\newpage
-
-\section{MIS of Crossover \& Mutation} \label{section-mutations}
-
-\wss{You can reference SRS labels, such as R\ref{R_Inputs}.}
-
-\wss{It is also possible to use \LaTeX for hypperlinks to external documents.}
-
-\subsection{Module}
-
-\wss{Short name for the module}
-
-\subsection{Uses}
-
-
-\subsection{Syntax}
-
-\subsubsection{Exported Constants}
-
-\subsubsection{Exported Access Programs}
-
-\begin{center}
-	\begin{tabular}{p{2cm} p{4cm} p{4cm} p{2cm}}
-		\hline
-		\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
-		\hline
-		\wss{accessProg} & - & - & - \\
-		\hline
-	\end{tabular}
-\end{center}
-
-\subsection{Semantics}
-
-\subsubsection{State Variables}
-
-\wss{Not all modules will have state variables.  State variables give the module
-	a memory.}
-
-\subsubsection{Environment Variables}
-
-\wss{This section is not necessary for all modules.  Its purpose is to capture
-	when the module has external interaction with the environment, such as for a
-	device driver, screen interface, keyboard, file, etc.}
-
-\subsubsection{Assumptions}
-
-\wss{Try to minimize assumptions and anticipate programmer errors via
-	exceptions, but for practical purposes assumptions are sometimes 
-	appropriate.}
-
-\subsubsection{Access Routine Semantics}
-
-\noindent \wss{accessProg}():
-\begin{itemize}
-	\item transition: \wss{if appropriate} 
-	\item output: \wss{if appropriate} 
-	\item exception: \wss{if appropriate} 
-\end{itemize}
-
-\wss{A module without environment variables or state variables is unlikely to
-	have a state transition.  In this case a state transition can only occur if
-	the module is changing the state of another module.}
-
-\wss{Modules rarely have both a transition and an output.  In most cases you
-	will have one or the other.}
-
-\subsubsection{Local Functions}
-
-\wss{As appropriate} \wss{These functions are for the purpose of specification.
-	They are not necessarily something that is going to be implemented
-	explicitly.  Even if they are implemented, they are not exported; they only
-	have local scope.}
-
-\newpage
-
-\section{MIS of Ring} \label{section-ring}
-
-\wss{You can reference SRS labels, such as R\ref{R_Inputs}.}
-
-\wss{It is also possible to use \LaTeX for hypperlinks to external documents.}
-
-\subsection{Module}
-
-\wss{Short name for the module}
-
-\subsection{Uses}
-
-
-\subsection{Syntax}
-
-\subsubsection{Exported Constants}
-
-\subsubsection{Exported Access Programs}
-
-\begin{center}
-	\begin{tabular}{p{2cm} p{4cm} p{4cm} p{2cm}}
-		\hline
-		\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
-		\hline
-		\wss{accessProg} & - & - & - \\
-		\hline
-	\end{tabular}
-\end{center}
-
-\subsection{Semantics}
-
-\subsubsection{State Variables}
-
-\wss{Not all modules will have state variables.  State variables give the module
-	a memory.}
-
-\subsubsection{Environment Variables}
-
-\wss{This section is not necessary for all modules.  Its purpose is to capture
-	when the module has external interaction with the environment, such as for a
-	device driver, screen interface, keyboard, file, etc.}
-
-\subsubsection{Assumptions}
-
-\wss{Try to minimize assumptions and anticipate programmer errors via
-	exceptions, but for practical purposes assumptions are sometimes 
-	appropriate.}
-
-\subsubsection{Access Routine Semantics}
-
-\noindent \wss{accessProg}():
-\begin{itemize}
-	\item transition: \wss{if appropriate} 
-	\item output: \wss{if appropriate} 
-	\item exception: \wss{if appropriate} 
-\end{itemize}
-
-\wss{A module without environment variables or state variables is unlikely to
-	have a state transition.  In this case a state transition can only occur if
-	the module is changing the state of another module.}
-
-\wss{Modules rarely have both a transition and an output.  In most cases you
-	will have one or the other.}
-
-\subsubsection{Local Functions}
-
-\wss{As appropriate} \wss{These functions are for the purpose of specification.
-	They are not necessarily something that is going to be implemented
-	explicitly.  Even if they are implemented, they are not exported; they only
-	have local scope.}
-
-\newpage
-
-\section{MIS of Output} \label{section-output}
-
-\wss{You can reference SRS labels, such as R\ref{R_Inputs}.}
-
-\wss{It is also possible to use \LaTeX for hypperlinks to external documents.}
-
-\subsection{Module}
-
-\wss{Short name for the module}
-
-\subsection{Uses}
-
-
-\subsection{Syntax}
-
-\subsubsection{Exported Constants}
-
-\subsubsection{Exported Access Programs}
-
-\begin{center}
-	\begin{tabular}{p{2cm} p{4cm} p{4cm} p{2cm}}
-		\hline
-		\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
-		\hline
-		\wss{accessProg} & - & - & - \\
-		\hline
-	\end{tabular}
-\end{center}
-
-\subsection{Semantics}
-
-\subsubsection{State Variables}
-
-\wss{Not all modules will have state variables.  State variables give the module
-	a memory.}
-
-\subsubsection{Environment Variables}
-
-\wss{This section is not necessary for all modules.  Its purpose is to capture
-	when the module has external interaction with the environment, such as for a
-	device driver, screen interface, keyboard, file, etc.}
-
-\subsubsection{Assumptions}
-
-\wss{Try to minimize assumptions and anticipate programmer errors via
-	exceptions, but for practical purposes assumptions are sometimes 
-	appropriate.}
-
-\subsubsection{Access Routine Semantics}
-
-\noindent \wss{accessProg}():
-\begin{itemize}
-	\item transition: \wss{if appropriate} 
-	\item output: \wss{if appropriate} 
-	\item exception: \wss{if appropriate} 
-\end{itemize}
-
-\wss{A module without environment variables or state variables is unlikely to
-	have a state transition.  In this case a state transition can only occur if
-	the module is changing the state of another module.}
-
-\wss{Modules rarely have both a transition and an output.  In most cases you
-	will have one or the other.}
-
-\subsubsection{Local Functions}
-
-\wss{As appropriate} \wss{These functions are for the purpose of specification.
-	They are not necessarily something that is going to be implemented
-	explicitly.  Even if they are implemented, they are not exported; they only
-	have local scope.}
-
-\newpage
-
 \section{MIS of Molecule Input} \label{section-mol_input}
 
 \wss{You can reference SRS labels, such as R\ref{R_Inputs}.}
 
 \wss{It is also possible to use \LaTeX for hypperlinks to external documents.}
 
+The purpose of this module is to provide a utility for reading and verifying 
+input related to the molecule, including its structure and energy calculations. 
+There are two main functions: read\_mol\_input and verify\_mol\_input. The 
+first function opens a data file (.txt file) with the following format:
+
+\begin{lstlisting}
+qcm = hartree-fock
+basis = aug-cc-pvtz
+struct_input = C=CC=C
+struct_type = smiles
+prog = psi4
+charge = 0
+multip = 1
+\end{lstlisting}
+
+These values are read into a Python dictionary, called mol\_input\_dict. The 
+order of the inputs does not matter, but \progname{} will throw an error if one 
+of the keys is missing. This dictionary is then passed to the second function, 
+which checks that the values are correct and that all keys have been given. To 
+verify the molecular input, Vetee's Parser object is constructed using the 
+mol\_input\_dict (geometry module, Section \ref{section-geometry}). The 
+mol\_input module calls the energy module (Section \ref{section-energies}) to 
+run a calculation on the input molecule. If this calculation converges, then 
+the manipulation of the dihedral angles are more likely to afford calculations 
+that converge. After this final verification, the Parser object is passed back 
+to the gac module, and eventually gets used by the pmem module 
+(Section \ref{section-pmem}). From the SRS document, $QCM$ and $BS$ are 
+represented here as qcm and basis respectively. All keys and string values are 
+case insensitive.
+
+\subsection{Module}
+
+mol\_input
+
+\subsection{Uses}
+
+geometry (Section \ref{section-geometry}), energy (Section 
+\ref{section-energies})
+
+\subsection{Syntax}
+
+\subsubsection{Exported Constants}
+
+NUM\_MOL\_ARGS := 7
+
+\subsubsection{Exported Access Programs}
+
+\begin{table}[H]
+	\begin{tabular}{p{4cm} p{2cm} p{2cm} p{5cm}}
+		\toprule
+		\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
+		\hline
+		read\_mol\_input   & str  & dict & FileNotFoundError \\
+		verify\_mol\_input & dict & Parser & ValueError \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+\subsection{Semantics}
+
+\subsubsection{State Variables}
+
+\noindent num\_args := $+(x : list | key \in x \land value \in x \land 
+length(x) = 2 : 1)$ \\
+
+\noindent mol\_input\_dict, which is a dictionary that contains:
+\begin{itemize}
+	\item qcm := str $\in$ available methods given prog
+	\item basis := str $\in$ available basis sets given prog and molecule
+	\item struct\_input := $\{x : str | x = file \lor x = SMILES \lor x = name 
+	\lor x = cid : x\}$
+	\item struct\_type := $str \in \{``smiles", ``xyz", ``com", ``glog", 
+	``name", ``cid"\} $
+	\item prog := $str \in \{``psi4"\}$
+	\item charge := $\mathbb{Z}$
+	\item multip := $\mathbb{N}$
+\end{itemize}
+
+\subsubsection{Environment Variables}
+
+mol\_input\_file: str representing the file that exists in the working 
+directory (optionally includes a prepended path).
+
+\subsubsection{Assumptions}
+
+As with \ref{section-ga_input}, other modules that use and exchange the state 
+variables found in this module will not raise errors related to the type of 
+input.
+
+\subsubsection{Access Routine Semantics}
+
+\noindent read\_mol\_input(mol\_input\_file):
+\begin{itemize}
+	\item transition: open mol\_input\_file and read its contents
+	\item output: dictionary (mol\_input\_dict) that contains the values listed 
+	in State Variables
+	\item exception: FileNotFoundError := mol\_input\_file $\notin$ current 
+	working directory
+\end{itemize}
+
+\noindent verify\_mol\_input(mol\_input\_dict):
+\begin{itemize}
+	\item transition: None
+	\item output: Parser
+	\item exception: ValueError
+	\begin{itemize}
+		\item qcm $\notin$ prog
+		\item basis $\notin$ prog $\lor$ basis unavailable for molecule
+		\item unable to parse SMILES string, name, cid, or input file
+		\item struct\_type not available
+		\item not a string type (for all except charge (integer) and multip 
+		(natural number))
+		\item missing key/unknown key
+		\item too many keys (i.e. repeated keys), where num\_args $\neq$ 
+		NUM\_MOL\_ARGS 
+	\end{itemize}
+\end{itemize}
+
+\subsubsection{Local Functions}
+
+None
+
+\newpage
+
+\section{MIS of GA Control} \label{section-gac} 
+
+This module is responsible for running the GA using the given inputs. The 
+general format of the algorithm is as follows:
+\begin{enumerate}
+	\item Read in and verify ga\_input\_file (\ref{section-ga_input}).
+	\item Read in and verify mol\_input\_file (\ref{section-mol_input}). This 
+	step includes a check of the initial geometry, QCM, and BS for convergence 
+	(\ref{section-energies}), and generating a Parser object 
+	(\ref{section-geometry}).
+	\item Generate a Ring object (\ref{section-ring}).
+	\item Fill the Ring with Pmem objects according to the num\_filled input 
+	variable (\ref{section-pmem}).
+	\item Iterate over the num\_mevs input variable, and run a tournament on 
+	the Ring according to the t\_size variable (\ref{section-tournament}).
+	\item Return the output as per the output module specifications 
+	(\ref{section-output}).
+\end{enumerate}
+
+\subsection{Module}
+
+gac
+
+\subsection{Uses}
+
+ga\_input (Section \ref{section-ga_input}), 
+mol\_input (Section \ref{section-mol_input}),
+output (Section \ref{section-output}),
+ring (Section \ref{section-ring}),
+tournament (Section \ref{section-tournament})
+
+\subsection{Syntax}
+
+\subsubsection{Exported Constants}
+
+\subsubsection{Exported Access Programs}
+
+\meow{Not sure if I should list the exceptions raised by imported modules here? 
+For example, reading the input may give an error, but this error is not 
+explicitly raised by the gac module. Do I still have to list it here?}
+
+\begin{center}
+	\begin{tabular}{p{2cm} p{4cm} p{4cm} p{2cm}}
+		\hline
+		\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
+		\hline
+		run\_kaplan & str, str & None & None \\
+		\hline
+	\end{tabular}
+\end{center}
+
+\subsection{Semantics}
+
+\subsubsection{State Variables}
+
+\meow{I don't actually need to store the mol\_input\_dict variable here since 
+its information will be completely contained in the Parser object. Mostly I am 
+leaving this note here as a reminder to update the Parser object with the prog 
+attribute. This update would also mean consolidating the function calls read 
+and verify mol input. Not sure if it is a good idea to have these separated in 
+gac?}
+
+\begin{itemize}
+	\item ga\_input\_dict : dict (see \ref{section-ga_input})
+	\item mol\_input\_dict : dict (see \ref{section-mol_input})
+	\item parser : Parser (see \ref{section-geometry})
+	\item ring : Ring (see \ref{section-ring})
+	\item mev : $\{x : \mathbb{Z} | \text{mum\_mevs} > x \geq 0 : x\}$
+\end{itemize}
+
+
+\subsubsection{Environment Variables}
+
+None
+
+\subsubsection{Assumptions}
+
+This is the main control unit for the program; the user will write their own 
+input files and only need to access this module to complete their task.
+
+\subsubsection{Access Routine Semantics}
+
+\noindent run\_kaplan(ga\_input\_file, mol\_input\_file):
+\begin{itemize}
+	\item transition: The desired conformers are produced and passed to the 
+	output module (\ref{section-output}).
+	\item output: None
+	\item exception: None
+\end{itemize}
+
+\subsubsection{Local Functions}
+
+None
+\meow{Since the run\_kaplan function is only used by gac, should I put it here 
+in local functions? Technically the user will have to import it somewhere to 
+use it.}
+
+\newpage
+
+\section{MIS of $Fit_G$} \label{section-fitg} %TODO
+
+\wss{You can reference SRS labels, such as R\ref{R_Inputs}.}
+
+\wss{It is also possible to use \LaTeX for hypperlinks to external documents.}
+
+\subsection{Module}
+
+fitg
+
+\subsection{Uses}
+
+energy (Section \ref{section-energies}), rmsd (Section \ref{section-rmsd})
+
+\subsection{Syntax}
+
+I am using Pmem to indicate usage of the Pmem class. Lowercase p - pmem - will 
+be used to indicate that this is a specific instance of the Pmem class.
+
+\subsubsection{Exported Constants}
+
+\subsubsection{Exported Access Programs}
+
+\begin{center}
+	\begin{tabular}{p{2cm} p{4cm} p{4cm} p{2cm}}
+		\hline
+		\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
+		\hline
+		\wss{accessProg} & - & - & - \\
+		sum\_energies & Pmem & float & - \\
+		sum\_rmsd & Pmem & float & - \\
+		fitness & int, float, float, Pmem & float & - \\
+		fit\_form0 & float, float, float, float & float & - \\
+		\hline
+	\end{tabular}
+\end{center}
+
+\subsection{Semantics}
+
+\subsubsection{State Variables}
+
+\wss{Not all modules will have state variables.  State variables give the module
+	a memory.}
+
+\subsubsection{Environment Variables}
+
+None
+
+\subsubsection{Assumptions}
+
+New fitness functions will be added. Each new fitness functions should be 
+incrementally labelled. The first fitness function is called fit\_form0. 
+Subsequent functions will be called fit\_form1, fit\_form2, etc. Any new 
+fitness functions that are added should account for the possibility of divide 
+by zero errors.
+
+\subsubsection{Access Routine Semantics}
+
+
+\noindent sum\_energies(pmem): $pmem \rightarrow \mathbb{R} $
+\begin{itemize}
+	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := $+(x: \mathbb{R}|x \in \text{pmem.energies}: 
+	|x|)$
+	\item exception: \wss{if appropriate} 
+\end{itemize}
+
+\noindent sum\_rmsd(pmem): $pmem \rightarrow \mathbb{R} $
+\begin{itemize}
+	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := $+(x: \mathbb{R}|x \in \text{pmem.rmsd} 
+	\wedge 
+	x \neq \text{None}
+	: |x|)$
+	\item exception: \wss{if appropriate} 
+\end{itemize}
+
+\noindent fitness(pmem, fit\_form, coef\_energy, coef\_rmsd):
+\begin{itemize}
+	\item transition: \wss{if appropriate} 
+	
+	
+	\item output: \textit{out} := ()
+	
+	
+	\item exception: \wss{if appropriate} 
+\end{itemize}
+
+\noindent fit\_form0(sum\_energy, sum\_rmsd, coef\_energy, coef\_rmsd):
+\begin{itemize}
+	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := (coef\_energy*sum\_energy + 
+	coef\_rmsd*sum\_rmsd)
+	\item exception: \wss{if appropriate} 
+\end{itemize}
+
+\noindent \wss{accessProg}():
+\begin{itemize}
+	\item transition: \wss{if appropriate} 
+	\item output: \wss{if appropriate} 
+	\item exception: \wss{if appropriate} 
+\end{itemize}
+
+\wss{A module without environment variables or state variables is unlikely to
+	have a state transition.  In this case a state transition can only occur if
+	the module is changing the state of another module.}
+
+\wss{Modules rarely have both a transition and an output.  In most cases you
+	will have one or the other.}
+
+\subsubsection{Local Functions}
+
+\wss{As appropriate} \wss{These functions are for the purpose of specification.
+	They are not necessarily something that is going to be implemented
+	explicitly.  Even if they are implemented, they are not exported; they only
+	have local scope.}
+
+\newpage
+
+\section{MIS of Tournament} \label{section-tournament} 
+
+The tournament module selects t\_size pmems from the ring for comparison. It 
+ranks the pmems in order of increasing fitness, as calculated using the fitg 
+module (\ref{section-fitg}). Then, the two best pmems are chosen as ``parents", 
+and the mutations module (\ref{section-mutations}) is used to generate two new 
+``children" based on these parents. The ring module (\ref{section-ring}) then 
+decides whether the children are added to the ring or not, and if old pmems are 
+deleted to make room for the children.
+
+\subsection{Module}
+
+tournament
+
+\subsection{Uses}
+
+ring (Section \ref{section-ring}),
+pmem (Section \ref{section-pmem}),
+mutations (Section \ref{section-mutations})
+
+\subsection{Syntax}
+
+\subsubsection{Exported Constants}
+
+None
+
+\subsubsection{Exported Access Programs}
+
+\begin{center}
+	\begin{tabular}{p{3.5cm} p{4cm} p{4cm} p{2cm}}
+		\hline
+		\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
+		\hline
+		run\_tournament & $\mathbb{N}$, $\mathbb{Z}$, $\mathbb{Z}$, Ring & None 
+		& EmptyRingError \\
+		select\_pmems & $\mathbb{N}$, Ring & list & None \\
+		select\_parents & list, Ring & list & None \\
+		\hline
+	\end{tabular}
+\end{center}
+
+\subsection{Semantics}
+
+\subsubsection{State Variables}
+
+\begin{itemize}
+\item selected\_pmems := $\{x : \mathbb{N} | x \geq 0 \land 
+\text{ring.pmems}[x] \neq None\}$
+\item parents := $\{x : \mathbb{N} | x \geq 0 \land \text{ring.pmems}[x] \neq 
+None\}$
+\item parent1 := $[[D_1], [D_2], ..., [D_{n_G}]]$, where each 
+$D_i$ is a list of length num\_atoms of integers representing the dihedral 
+angles
+\item parent2 := $[[D_1], [D_2], ..., [D_{n_G}]]$, where each 
+$D_i$ is a list of length num\_atoms of integers representing the dihedral 
+angles
+\item children := $[[[D_1], [D_2], ..., [D_{n_G}]], [[D_1], [D_2], ..., 
+[D_{n_G}]]]$, where each $D_i$ is a list of length num\_atoms of integers 
+representing the dihedral 
+angles
+\end{itemize}
+
+
+\subsubsection{Environment Variables}
+
+None
+
+\subsubsection{Assumptions}
+
+None \meow{May have to think on this more.}
+
+\subsubsection{Access Routine Semantics}
+
+\noindent run\_tournament(t\_size, num\_muts, num\_swaps, ring):
+\begin{itemize}
+	\item transition: new ring members may be added (changes ring.num\_filled), 
+	deleted (replace old pmem with a new one)
+	\item output: None 
+	\item exception: EmptyRingError when t\_size > ring.num\_filled
+\end{itemize}
+
+\subsubsection{Local Functions}
+
+\noindent select\_pmems(number, ring):
+\begin{itemize}
+	\item transition: None
+	\item output: selection, which is a list of length \textit{number} of 
+	random ring indices containing a pmem; no pmem can appear twice in the 
+	selection
+	\item exception: None
+\end{itemize}
+
+\noindent select\_parents(selected\_pmems, ring):
+\begin{itemize}
+	\item transition: None
+	\item output: list of length 2 representing the ring indices of the pmems 
+	with the best fitness out of the selected\_pmems indicies according to 
+	fitness value
+	\item exception: None
+\end{itemize}
+
+\newpage
+
+\section{MIS of Crossover \& Mutation} \label{section-mutations}
+
+This module is used to generate new solution instances with which to generate 
+new pmems (\ref{section-pmem}) for the ring (\ref{section-ring}). It has two 
+local functions, mutate and swap. Mutate takes in a list of lists representing 
+dihedral angles for the molecule of interest. Then, a number of these dihedral 
+angles are randomly changed. Swap takes in two of such list of lists and swaps 
+a number of sublists between the two inputs. This module is called during a 
+tournament (\ref{section-tournament}). A wrapper function to call these two 
+functions is called generate\_children, which returns the new solution 
+instances to the tournament.
+
+\subsection{Module}
+
+mutations
+
+\subsection{Uses}
+
+None
+
+\subsection{Syntax}
+
+\subsubsection{Exported Constants}
+
+These two values restrict the dihedral angles that can be chosen.
+
+MIN\_VALUE : 0\\
+\indent MAX\_VALUE : 360
+
+\subsubsection{Exported Access Programs}
+
+\begin{center}
+	\begin{tabular}{p{3.5cm} p{4cm} p{3cm} p{2cm}}
+		\hline
+		\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
+		\hline
+		generate\_children & list(list($\mathbb{Z}$)), 
+		list(list($\mathbb{Z}$)), $\mathbb{Z}$, $\mathbb{Z}$ & 
+		list(list($\mathbb{Z}$)), list(list($\mathbb{Z}$)) & None \\
+		mutate & list(list($\mathbb{Z}$)), $\mathbb{Z}$ & 
+		list(list($\mathbb{Z}$)) & None \\
+		swap & list(list($\mathbb{Z}$)), 
+		list(list($\mathbb{Z}$)), $\mathbb{Z}$ & list(list($\mathbb{Z}$)), 
+		list(list($\mathbb{Z}$)) & None \\
+		\hline
+	\end{tabular}
+\end{center}
+
+\subsection{Semantics}
+
+\subsubsection{State Variables}
+
+\begin{itemize}
+	\item number of chosen swaps
+	\item number of chosen mutations
+\end{itemize}
+
+\subsubsection{Environment Variables}
+
+None
+
+\subsubsection{Assumptions}
+
+None \meow{Maybe good to reference SRS assumptions about inputs here?}
+
+\subsubsection{Access Routine Semantics}
+
+\noindent generate\_children(parent1, parent2, num\_muts, num\_swaps):
+\begin{itemize}
+	\item transition: None
+	\item output: two list of lists of integers between MIN\_VALUE and 
+	MAX\_VALUE representing dihedrals for two new population members. These 
+	will be used to create pmem objects.
+	\item exception: None
+\end{itemize}
+
+\subsubsection{Local Functions}
+
+\noindent mutate(dihedrals, num\_muts):
+\begin{itemize}
+	\item transition: locally update num\_muts with a random number (min 0, max 
+	num\_muts)
+	\item output: a list of lists of integers between MIN\_VALUE and 
+	MAX\_VALUE representing dihedrals for one mutated population member.
+	\item exception: None
+\end{itemize}
+
+\noindent swap(parent1, parent2, num\_swaps):
+\begin{itemize}
+	\item transition: locally update num\_swaps with a random number (min 0, 
+	max num\_swaps)
+	\item output: two list of lists of integers between MIN\_VALUE and 
+	MAX\_VALUE representing dihedrals for two swapped population members.
+	\item exception: None
+\end{itemize}
+
+\newpage
+
+\section{MIS of Ring} \label{section-ring} %TODO
+
+\wss{You can reference SRS labels, such as R\ref{R_Inputs}.}
+
+\wss{It is also possible to use \LaTeX for hypperlinks to external documents.}
+
 \subsection{Module}
 
 \wss{Short name for the module}
@@ -779,6 +972,249 @@ None
 	have local scope.}
 
 \newpage
+
+
+
+
+
+\section{MIS of Pmem} \label{section-pmem} %TODO
+
+\wss{You can reference SRS labels, such as R\ref{R_Inputs}.}
+
+\wss{It is also possible to use \LaTeX for hypperlinks to external documents.}
+
+\subsection{Module}
+
+pmem
+
+\subsection{Uses}
+
+
+\subsection{Syntax}
+
+\subsubsection{Exported Constants}
+
+\subsubsection{Exported Access Programs}
+
+\begin{center}
+	\begin{tabular}{p{2cm} p{4cm} p{4cm} p{2cm}}
+		\hline
+		\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
+		\hline
+		\wss{accessProg} & - & - & - \\
+		\hline
+	\end{tabular}
+\end{center}
+
+\subsection{Semantics}
+
+\subsubsection{State Variables}
+
+\wss{Not all modules will have state variables.  State variables give the module
+	a memory.}
+
+\subsubsection{Environment Variables}
+
+\wss{This section is not necessary for all modules.  Its purpose is to capture
+	when the module has external interaction with the environment, such as for a
+	device driver, screen interface, keyboard, file, etc.}
+
+\subsubsection{Assumptions}
+
+\wss{Try to minimize assumptions and anticipate programmer errors via
+	exceptions, but for practical purposes assumptions are sometimes 
+	appropriate.}
+
+\subsubsection{Access Routine Semantics}
+
+\noindent \wss{accessProg}():
+\begin{itemize}
+	\item transition: \wss{if appropriate} 
+	\item output: \wss{if appropriate} 
+	\item exception: \wss{if appropriate} 
+\end{itemize}
+
+\wss{A module without environment variables or state variables is unlikely to
+	have a state transition.  In this case a state transition can only occur if
+	the module is changing the state of another module.}
+
+\wss{Modules rarely have both a transition and an output.  In most cases you
+	will have one or the other.}
+
+\subsubsection{Local Functions}
+
+\wss{As appropriate} \wss{These functions are for the purpose of specification.
+	They are not necessarily something that is going to be implemented
+	explicitly.  Even if they are implemented, they are not exported; they only
+	have local scope.}
+
+\newpage
+
+
+
+
+
+
+
+
+
+
+\section{MIS of Output} \label{section-output}
+
+The output module is called by the GA Control module (\ref{section-gac}) to 
+produce output for the program. There are two main requirements: return the 
+best set of conformer geometries with full geometry specifications and 
+calculate their respective energies. Although it is not listed in the 
+requirements, this module will most likely be upgraded to include some 
+statistical measurements of the results.
+
+\subsection{Module}
+
+output
+
+\subsection{Uses}
+
+geometry (Section \ref{section-geometry}),
+ring (Section \ref{section-ring}),
+pmem (Section \ref{section-pmem})
+
+\subsection{Syntax}
+
+\subsubsection{Exported Constants}
+
+OUTPUT\_FORMAT = ``xyz"
+
+\subsubsection{Exported Access Programs}
+
+\begin{center}
+	\begin{tabular}{p{2cm} p{4cm} p{4cm} p{2cm}}
+		\hline
+		\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
+		\hline
+		run\_output & ring & None & None \\
+		\hline
+	\end{tabular}
+\end{center}
+
+\subsection{Semantics}
+
+\subsubsection{State Variables}
+
+\begin{itemize}
+\item total\_fit : the total sum of all fitness values for pmems in the Ring 
+(that aren't None), float $\geq$ 0
+\item best\_pmem : the ring index for the pmem in the ring with the highest 
+fitness value, $\mathbb{Z} \geq$ 0
+\item best\_fit : the value of the best fitness as found in the ring, float 
+$\geq$ 0 
+\end{itemize}
+
+
+\subsubsection{Environment Variables}
+
+The output files with extension OUTPUT\_FORMAT will be written to the current 
+working directory.
+
+\subsubsection{Assumptions}
+
+None
+
+\subsubsection{Access Routine Semantics}
+
+\noindent run\_output(ring):
+\begin{itemize}
+	\item transition: generate an output files for the best conformer 
+	geometries.
+	\item output: returns the average fitness value in the ring, the best 
+	fitness value in the ring, the energies of the best geometries, and the 
+	final ring object.
+	\item exception: raise an error if the user doesn't have write permissions 
+	in the current working directory.
+\end{itemize}
+
+\subsubsection{Local Functions}
+
+None
+
+\newpage
+
+
+
+
+\section{MIS of Geometry} \label{section-geometry}
+
+\wss{You can reference SRS labels, such as R\ref{R_Inputs}.}
+
+\wss{It is also possible to use \LaTeX for hypperlinks to external documents.}
+
+\subsection{Module}
+
+geometry
+
+\subsection{Uses}
+
+
+\subsection{Syntax}
+
+\subsubsection{Exported Constants}
+
+\subsubsection{Exported Access Programs}
+
+\begin{center}
+	\begin{tabular}{p{2cm} p{4cm} p{4cm} p{2cm}}
+		\hline
+		\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
+		\hline
+		\wss{accessProg} & - & - & - \\
+		\hline
+	\end{tabular}
+\end{center}
+
+\subsection{Semantics}
+
+\subsubsection{State Variables}
+
+\wss{Not all modules will have state variables.  State variables give the module
+	a memory.}
+
+\subsubsection{Environment Variables}
+
+\wss{This section is not necessary for all modules.  Its purpose is to capture
+	when the module has external interaction with the environment, such as for a
+	device driver, screen interface, keyboard, file, etc.}
+
+\subsubsection{Assumptions}
+
+\wss{Try to minimize assumptions and anticipate programmer errors via
+	exceptions, but for practical purposes assumptions are sometimes 
+	appropriate.}
+
+\subsubsection{Access Routine Semantics}
+
+\noindent \wss{accessProg}():
+\begin{itemize}
+	\item transition: \wss{if appropriate} 
+	\item output: \wss{if appropriate} 
+	\item exception: \wss{if appropriate} 
+\end{itemize}
+
+\wss{A module without environment variables or state variables is unlikely to
+	have a state transition.  In this case a state transition can only occur if
+	the module is changing the state of another module.}
+
+\wss{Modules rarely have both a transition and an output.  In most cases you
+	will have one or the other.}
+
+\subsubsection{Local Functions}
+
+\wss{As appropriate} \wss{These functions are for the purpose of specification.
+	They are not necessarily something that is going to be implemented
+	explicitly.  Even if they are implemented, they are not exported; they only
+	have local scope.}
+
+\newpage
+
+
 
 \section{MIS of Energies} \label{section-energies}
 
@@ -788,7 +1224,7 @@ None
 
 \subsection{Module}
 
-\wss{Short name for the module}
+energy
 
 \subsection{Uses}
 

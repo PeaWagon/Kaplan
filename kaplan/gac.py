@@ -1,35 +1,66 @@
 
+import sys
+
 from kaplan.ga_input import read_ga_input, verify_ga_input
+from kaplan.mol_input import read_mol_input, verify_mol_input
+from kaplan.ring import Ring
+from kaplan.tournament import run_tournament
+from kaplan.output import run_output
 
 """
 
 In charge of evolving a population for the set
 number of mating events.
 
-Can also decide upon another stopping condition
-whereby there is a set of conformers with a suitably
-low energy (i.e. good fitness).
-
-Haven't decided on whether to make this an object or
-not yet.
-
-Needs to contain:
-* stopping condition
-* what kinds of mutations to perform
-* selection rules (i.e. tournament)
-
 """
 
-def run_kaplan(ga_input_file, mol_input):
+def run_kaplan(ga_input_file, mol_input_file):
     """Run the Kaplan programme.
 
     Parameters
     ----------
     ga_input_file : str
         The input file containing genetic algorithm constants.
-    mol_input : object (vetee)
-        A vetee Parser object (or child class).
+    mol_input_file : str
+        The input file containing the molecular information.
 
     """
+    # read in and verify ga_input_file
     ga_input_dict = read_ga_input(ga_input_file)
     verify_ga_input(ga_input_dict)
+
+    # read in and verify mol_input_file
+    # check that initial geometry converges
+    # and construct a parser object
+    mol_input_dict = read_mol_input(mol_input_file)
+    parser = verify_mol_input(mol_input_dict)
+
+    # make a ring
+    ring = Ring(ga_input_dict['num_geoms'], 
+                ga_input_dict['num_atoms'],
+                ga_input_dict['num_slots'],
+                0,
+                ga_input_dict['pmem_dist'],
+                parser)
+
+    # fill ring with an initial population
+    ring.fill(ga_input_dict['num_filled'])
+
+    # run the mevs
+    for mev in range(ga_input_dict['num_mevs']):
+        try:
+            run_tournament(ga_input_dict['t_size'],
+                           ga_input_dict['num_muts'],
+                           ga_input_dict['num_swaps'],
+                           ring)
+        except EmptyRingError:
+            ring.fill(ga_input_dict['num_filled'])
+
+    # run output
+    run_output(ring)
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 3:
+        raise FileNotFoundError("Please include the ga_input_file and the mol_input_file as arguments to the program.")
+    run_kaplan(sys.argv[1], sys.argv[2])

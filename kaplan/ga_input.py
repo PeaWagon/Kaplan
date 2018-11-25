@@ -1,16 +1,25 @@
 
+NUM_GA_ARGS = 12
 
 def read_ga_input(ga_input_file):
     ga_input_dict = dict()
+    num_args = 0
     try:
         with open(ga_input_file, 'r') as f:
             for line in f:
                 # remove \n char and separate keys and values
-                line = line[:-1].split(' = ')
+                line = line[:-1].lower().split(' = ')
+                # ignore blank lines/long input
+                if len(line) != 2:
+                    print(f"Warning: line - {line} - was ignored from the ga_input_file.")
+                    continue
                 ga_input_dict[line[0]] = line[1]
+                num_args += 1
                 # go through each line and pull data and key
     except FileNotFoundError:
         raise FileNotFoundError("No such ga_input_file.")
+    if num_args != NUM_GA_ARGS:
+        raise ValueError("Incorrect number of GA arguments.")
     return ga_input_dict
 
 def verify_ga_input(ga_input_dict):
