@@ -1,5 +1,8 @@
 
 
+from kaplan.energy import 
+from kaplan.rmsd import 
+
 def get_fitness(pmem, fit_form, coef_energy, coef_rmsd):
     pass
 

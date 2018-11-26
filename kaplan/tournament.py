@@ -3,7 +3,8 @@ import numpy as np
 from kaplan.ring import EmptyRingError
 from kaplan.mutations import generate_children
 
-def run_tournament(t_size, num_muts, num_swaps, ring):
+def run_tournament(t_size, num_muts, num_swaps, ring,
+                   current_mev):
     # check ring has enough pmems for a tournament
     if t_size > ring.num_filled:
         raise EmtpyRingError("Not enough pmems to run a tournament.")
@@ -18,7 +19,7 @@ def run_tournament(t_size, num_muts, num_swaps, ring):
 
     # generate children
     children = generate_children(parent1, parent2, num_muts,
-                                 num_swaps)
+                                 num_swaps, current_mev)
 
     # put children in ring
     ring.update(parents[0], children[1])

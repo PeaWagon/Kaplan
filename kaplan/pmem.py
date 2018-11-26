@@ -1,11 +1,15 @@
 
-from kaplan.fitg import get_fitness
-from kaplan.geometry import get_parser
+import numpy as np
+
+# values for dihedral angles in degrees
+MIN_VALUE = 0
+MAX_VALUE = 360
 
 class Pmem(object):
     """Population member of the ring."""
 
-    def __init__(self, ring_loc, num_geoms, mol_input_file):
+    def __init__(self, ring_loc, num_geoms, num_atoms,
+                 current_mev):
         """Constructor for pmem object.
 
         Parameters
@@ -14,9 +18,12 @@ class Pmem(object):
             Index of the ring where the pmem lives.
         num_geoms : int
             How many conformers we are trying to find.
-        mol_input_file : str
-            The name of the file representing the
-            geometry specifications.
+        num_atoms : int
+            Number of atoms in the input molecule. This
+            determines the length of the dihedral angles
+            list for each conformer.
+        current_mev : int
+            The mating event at which the pmem was constructed.
 
         Attributes
         ----------
@@ -25,37 +32,20 @@ class Pmem(object):
             List of integers representing the dihedral angles
             connecting the molecule under optimisation.
 
+        Notes
+        -----
+        The birthday attribute keeps track of when the pmem
+        was initialised. This will be helpful later in case
+        the age of the pmems are pertinent to solving my
+        problem.
+
         """
         self.ring_loc = ring_loc
-        self.num_geoms = num_geoms
-        self.num_atoms = num_atoms
-
-
-
-
-
-
-
-#        self._fitness = None
         # generate random dihedral angles (degrees)
         # each row is a set of dihedral angles for one conformer
-        self.dihedrals = np.random.randint(0, 359,
-                         size=(self.num_geoms,self.num_atoms-3))
-        # TODO change to actually calculate the energy
-        self.energies = np.zeros(shape=(self.num_geoms,),
-                                 dtype=float)
-#        self._fitness = np.zeros(shape=(self.num_slots,), dtype=float)
+        self.dihedrals = np.random.randint(MIN_VALUE, MAX_VALUE,
+                         size=(num_geoms, num_atoms-3))
+        self.fitness = None
+        self.energies = np.zeros(num_geoms, float)
+        self.birthday = current_mev
 
-
-#    def is_occupant(self):
-#        """Determine if Pmem is part of Ring or just a placeholder."""
-#        if self.ring_loc is not None:
-#            return True
-#        else:
-#            return False
-
-#    @fitness.setter
-#    def fitness(self, value):
-#        assert isinstance(value, float)
-#        assert value >= 0
-#        self._fitness = value

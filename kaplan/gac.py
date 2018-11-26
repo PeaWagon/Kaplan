@@ -35,16 +35,21 @@ def run_kaplan(ga_input_file, mol_input_file):
     mol_input_dict = read_mol_input(mol_input_file)
     parser = verify_mol_input(mol_input_dict)
 
+    # check that inputs agree on a very trivial level
+    assert ga_input_dict['num_atoms'] == parser.num_atoms
+
     # make a ring
     ring = Ring(ga_input_dict['num_geoms'], 
                 ga_input_dict['num_atoms'],
                 ga_input_dict['num_slots'],
-                0,
                 ga_input_dict['pmem_dist'],
+                ga_input_dict['fit_form'],
+                ga_input_dict['coef_energy'],
+                ga_input_dict['coef_rmsd'],
                 parser)
 
     # fill ring with an initial population
-    ring.fill(ga_input_dict['num_filled'])
+    ring.fill(ga_input_dict['num_filled'], 0)
 
     # run the mevs
     for mev in range(ga_input_dict['num_mevs']):
@@ -52,7 +57,7 @@ def run_kaplan(ga_input_file, mol_input_file):
             run_tournament(ga_input_dict['t_size'],
                            ga_input_dict['num_muts'],
                            ga_input_dict['num_swaps'],
-                           ring)
+                           ring, current_mev)
         except EmptyRingError:
             ring.fill(ga_input_dict['num_filled'])
 

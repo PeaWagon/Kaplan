@@ -177,6 +177,10 @@ In addition, \progname \ uses functions, which
 are defined by the data types of their inputs and outputs. Local functions are
 described by giving their type signature followed by their specification.
 
+Note that obvious errors (such as missing inputs) that are handled by the 
+Python interpreter are not listed under the exceptions in any of the 
+\progname{} modules.
+
 \section{Module Decomposition}
 
 The following table is taken directly from the Module Guide document for this project.
@@ -750,13 +754,13 @@ None
 \item parents := $\{x : \mathbb{N} | x \geq 0 \land \text{ring.pmems}[x] \neq 
 None\}$
 \item parent1 := $[[D_1], [D_2], ..., [D_{n_G}]]$, where each 
-$D_i$ is a list of length num\_atoms of integers representing the dihedral 
+$D_i$ is a list of length num\_atoms-3 of integers representing the dihedral 
 angles
 \item parent2 := $[[D_1], [D_2], ..., [D_{n_G}]]$, where each 
-$D_i$ is a list of length num\_atoms of integers representing the dihedral 
+$D_i$ is a list of length num\_atoms-3 of integers representing the dihedral 
 angles
 \item children := $[[[D_1], [D_2], ..., [D_{n_G}]], [[D_1], [D_2], ..., 
-[D_{n_G}]]]$, where each $D_i$ is a list of length num\_atoms of integers 
+[D_{n_G}]]]$, where each $D_i$ is a list of length num\_atoms-3 of integers 
 representing the dihedral 
 angles
 \end{itemize}
@@ -900,18 +904,40 @@ None \meow{Maybe good to reference SRS assumptions about inputs here?}
 
 \newpage
 
-\section{MIS of Ring} \label{section-ring} %TODO
+\section{MIS of Ring} \label{section-ring}
 
-\wss{You can reference SRS labels, such as R\ref{R_Inputs}.}
-
-\wss{It is also possible to use \LaTeX for hypperlinks to external documents.}
+The ring is the main data structure for \progname{}. It determines how the 
+potential solutions to the conformer optimization program are organized. The 
+constructor for the ring takes 5 arguments: num\_geoms, num\_atoms, num\_slots, 
+pmem\_dist, and parser. The ring begins empty and can be filled with pmem 
+objects by calling the ring.fill method. There is also the ring.update method, 
+which takes 2 arguments: parent\_index and child. This method is called during 
+a tournament after the children have been generated. The update occurs as 
+follows:
+\begin{enumerate}
+	\item Select a random slot in the range [parent\_index-pmem\_dist, 
+	parent\_index+pmem\_dist+1] from 
+	the parent.
+	\item Compare the fitness value of the child with the fitness value of the 
+	current occupant.
+	\item If there is no current occupant, or if the child has fitness $\geq$ 
+	the current occupant, put the child in the slot.
+	\item Increment the num\_filled attribute of the ring if an empty slot was 
+	filled.
+\end{enumerate}
+The ring also has the make\_zmatrix method, which generates a zmatrix as a 
+string based on the pmem index of interest. Calling ring.calc\_fitness will 
+determine the fitness for a given pmem index and its corresponding zmatrix 
+string.
 
 \subsection{Module}
 
-\wss{Short name for the module}
+ring
 
 \subsection{Uses}
 
+pmem (Section \ref{section-pmem}),
+fitg (Section \ref{section-fitg})
 
 \subsection{Syntax}
 
@@ -920,11 +946,18 @@ None \meow{Maybe good to reference SRS assumptions about inputs here?}
 \subsubsection{Exported Access Programs}
 
 \begin{center}
-	\begin{tabular}{p{2cm} p{4cm} p{4cm} p{2cm}}
+	\begin{tabular}{p{4cm} p{4cm} p{2cm} p{2cm}}
 		\hline
 		\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
 		\hline
-		\wss{accessProg} & - & - & - \\
+		\_\_init\_\_ & $\mathbb{N}, \mathbb{N}, \mathbb{N}, \mathbb{Z}, Parser$ 
+		& None & None \\
+		update & $\mathbb{Z}$, list(list[$\mathbb{Z}$]) & None & None \\
+		fill & $\mathbb{N}, \mathbb{Z}$ & None & RingOverflowError \\
+		make\_zmatrix & $\mathbb{Z}$ & str & ValueError \\
+		calc\_fitness & $\mathbb{Z}$, str & None & None \\
+		RingEmptyError  & - & - & - \\
+		RingOverflowError & - & - & - \\
 		\hline
 	\end{tabular}
 \end{center}
@@ -933,55 +966,96 @@ None \meow{Maybe good to reference SRS assumptions about inputs here?}
 
 \subsubsection{State Variables}
 
-\wss{Not all modules will have state variables.  State variables give the module
-	a memory.}
+\begin{itemize}
+\item ring.num\_geoms from ga\_input\_module
+\item ring.num\_atoms from ga\_input\_module
+\item ring.pmem\_dist from ga\_input\_module
+\item ring.fit\_form from ga\_input\_module
+\item ring.coef\_energy from ga\_input\_module
+\item ring.coef\_rmsd from ga\_input\_module
+\item ring.parser from the geometry module
+\item ring.num\_filled from ga\_input\_module; represents the number of pmems 
+present in the ring (dynamic)
+\item ring.pmems from ga\_input\_module
+\end{itemize}
 
 \subsubsection{Environment Variables}
 
-\wss{This section is not necessary for all modules.  Its purpose is to capture
-	when the module has external interaction with the environment, such as for a
-	device driver, screen interface, keyboard, file, etc.}
+None
 
 \subsubsection{Assumptions}
 
-\wss{Try to minimize assumptions and anticipate programmer errors via
-	exceptions, but for practical purposes assumptions are sometimes 
-	appropriate.}
+\begin{itemize}
+	\item the ring module will be written in such a way as to support the 
+	addition of extinction operators. These extinction operators delete 
+	segments and/or pmems with certain attributes from the ring.
+	\item a pmem cannot be initialized without a call by the ring to evaluate 
+	its fitness. This evaluation will not be a wasted computation.
+	\item The ring can be iterated and will not fall over when an index past 
+	zero or above the last slot is called (index wrapping).
+\end{itemize}
 
 \subsubsection{Access Routine Semantics}
 
-\noindent \wss{accessProg}():
+\noindent \_\_init\_\_(num\_geoms, num\_atoms, num\_slots, pmem\_dist, parser):
 \begin{itemize}
-	\item transition: \wss{if appropriate} 
-	\item output: \wss{if appropriate} 
-	\item exception: \wss{if appropriate} 
+	\item transition: generate a ring object.
+	\item output: None
+	\item exception: None
 \end{itemize}
 
-\wss{A module without environment variables or state variables is unlikely to
-	have a state transition.  In this case a state transition can only occur if
-	the module is changing the state of another module.}
+\noindent update(parent\_index, child):
+\begin{itemize}
+	\item transition: generate a pmem with the child (the sets of dihedral 
+	angles). Select a slot to place the child within [parent\_index-pmem\_dist, 
+	parent\_index+pmem\_dist+1]. If the slot is occupied, the child 
+	must have fitness that is no worse than the current occupant. Note: this 
+	will require wrapping for the Ring to ensure that an IndexError is not 
+	raised.
+	\item output: None
+	\item exception: None
+\end{itemize}
 
-\wss{Modules rarely have both a transition and an output.  In most cases you
-	will have one or the other.}
+\noindent fill(num\_pmems, current\_mev):
+\begin{itemize}
+	\item transition: if there are no pmems in the ring (num\_filled = 0), fill 
+	the ring with a contiguous segment of num\_pmems pmems. If there are pmems 
+	in the ring, fill empty slots with new pmems until num\_pmem pmems have 
+	been added. For each new pmem, calculate its fitness.
+	\item output: None
+	\item exception: RingOverflowError occurs when there is a request to add a 
+	set of pmems to the ring that the number of free slots does not accommodate.
+\end{itemize}
 
 \subsubsection{Local Functions}
 
-\wss{As appropriate} \wss{These functions are for the purpose of specification.
-	They are not necessarily something that is going to be implemented
-	explicitly.  Even if they are implemented, they are not exported; they only
-	have local scope.}
+\noindent make\_zmatrix(pmem\_index):
+\begin{itemize}
+	\item transition: None
+	\item output: zmatrix as a string where the geometry from ring.parser has 
+	been combined with the pmem.dihedrals to generate a full geometry. This 
+	string will also contain the multiplicity and charge of the input molecule, 
+	as these parameters are required for the energy calculations. This function 
+	is called by the fill and update methods in the ring as a step towards 
+	calculating new pmem fitness values.
+	\item exception: ValueError the slot number pmem\_index was empty 
+	(NoneType).
+\end{itemize}
+
+\noindent calc\_fitness(pmem\_index, zmatrix):
+\begin{itemize}
+	\item transition: updates the pmem.fitness and pmem.energies attributes.
+	\item output: None
+	\item exception: None
+\end{itemize}
 
 \newpage
 
-
-
-
-
 \section{MIS of Pmem} \label{section-pmem} %TODO
 
-\wss{You can reference SRS labels, such as R\ref{R_Inputs}.}
-
-\wss{It is also possible to use \LaTeX for hypperlinks to external documents.}
+This module is designed to hold the pmem data structure. A pmem is generated by 
+the ring module. The pmem holds the dihedrals list of lists, which is what the 
+\progname{} program is optimizing.
 
 \subsection{Module}
 
@@ -989,10 +1063,15 @@ pmem
 
 \subsection{Uses}
 
+None
 
 \subsection{Syntax}
 
 \subsubsection{Exported Constants}
+
+These two values restrict the dihedral angles that can be chosen.\\
+\indent MIN\_VALUE := 0\\
+\indent MAX\_VALUE := 360
 
 \subsubsection{Exported Access Programs}
 
@@ -1001,7 +1080,8 @@ pmem
 		\hline
 		\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
 		\hline
-		\wss{accessProg} & - & - & - \\
+		\_\_init\_\_ & $\mathbb{Z}, \mathbb{N}, \mathbb{N}, \mathbb{Z}$ & None 
+		& None \\
 		\hline
 	\end{tabular}
 \end{center}
@@ -1010,54 +1090,45 @@ pmem
 
 \subsubsection{State Variables}
 
-\wss{Not all modules will have state variables.  State variables give the module
-	a memory.}
+\begin{itemize}
+	\item pmem.ring\_loc := the ring index where the pmem is located.
+	\item pmem.dihedrals := $[[D_1], [D_2], ..., [D_{n_G}]]$, where each $D_i$ 
+	is a list of length num\_atoms-3 of 
+	integers representing the dihedral angles.
+	\item pmem.fitness := float representing result of a fitg calculation for 
+	the pmem's dihedral angles when combined with the other geometry 
+	specifications in ring.parser.
+	\item pmem.energies := list(float) length num\_geoms of energy values. The 
+	index of the energies list correlates with the $D_i$ for which it was 
+	calculated.
+	\item pmem.birthday := $\{x:\mathbb{Z} | num\_mevs > x \geq 0\}$ mating 
+	event 
+	for which the pmem was generated
+\end{itemize}
 
 \subsubsection{Environment Variables}
 
-\wss{This section is not necessary for all modules.  Its purpose is to capture
-	when the module has external interaction with the environment, such as for a
-	device driver, screen interface, keyboard, file, etc.}
+None
 
 \subsubsection{Assumptions}
 
-\wss{Try to minimize assumptions and anticipate programmer errors via
-	exceptions, but for practical purposes assumptions are sometimes 
-	appropriate.}
+After a pmem object is generated, its fitness will be calculated.
 
 \subsubsection{Access Routine Semantics}
 
-\noindent \wss{accessProg}():
+\noindent \_\_init\_\_(ring\_loc, num\_geoms, num\_atoms, current\_mev):
 \begin{itemize}
-	\item transition: \wss{if appropriate} 
-	\item output: \wss{if appropriate} 
-	\item exception: \wss{if appropriate} 
+	\item transition: generate a new pmem object. Raise a warning if the energy 
+	calculations do not converge.
+	\item output: None
+	\item exception: None
 \end{itemize}
-
-\wss{A module without environment variables or state variables is unlikely to
-	have a state transition.  In this case a state transition can only occur if
-	the module is changing the state of another module.}
-
-\wss{Modules rarely have both a transition and an output.  In most cases you
-	will have one or the other.}
 
 \subsubsection{Local Functions}
 
-\wss{As appropriate} \wss{These functions are for the purpose of specification.
-	They are not necessarily something that is going to be implemented
-	explicitly.  Even if they are implemented, they are not exported; they only
-	have local scope.}
+None
 
 \newpage
-
-
-
-
-
-
-
-
-
 
 \section{MIS of Output} \label{section-output}
 

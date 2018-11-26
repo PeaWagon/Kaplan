@@ -1,5 +1,7 @@
 
 from kaplan.pmem import Pmem
+from kaplan.fitg import 
+import numpy as np
 
 """
 Consider the conversion of cartesian coordinates
@@ -32,26 +34,34 @@ Important information that this object will contain:
 
 """
 
-
-import numpy as np
-
-
 class RingEmptyError(Exception):
-    """Error that occurs when the ring has no pmems in it."""
+    """Error that occurs when the ring has no pmems in it.
+
+    Note
+    ----
+    This error will only be relevant once the ring
+    extinction operators are enabled.
+
+    """
+    pass
+
+class RingOverflowError(Exception):
+    """Error that occurs when more pmems are added
+    to the ring than there is space available."""
     pass
 
 class Ring(object):
     """Data structure for genetic algorithm."""
 
-    def __init__(self, num_geoms, num_atoms, num_slots, 
-                 num_filled, pmem_dist, mol_input_file):
-#                 num_filled, dihedrals):
+    def __init__(self, num_geoms, num_atoms, num_slots,
+                 pmem_dist, fit_form, coef_energy, coef_rmsd,
+                 parser):
         """Constructor for ring data structure.
 
         Parameters
         ----------
         num_geoms : int
-            The number of geometries to optimise. Aka
+            The number of geometries to optimize. Aka
             number of conformers to find for the input
             molecule. This number should not change.
         num_atoms : int
@@ -61,51 +71,84 @@ class Ring(object):
             The total number of slots in the ring that
             can be filled with population members (pmems).
             This number should not change.
-        num_filled : int
-            The initial population size that goes into
-            the ring. Should be less than or equal to the
-            num_slots value. This variable is dynamic and
-            changes depending on how many slots are currently
-            filled in on the ring.
         pmem_dist : int
             The distance that a pmem can be placed from
             the parent in number of slots.
+        fit_form : int
+            The number for the fitness function to use.
+        coef_energy : float
+            The coefficient for the sum of energies term
+            for the fitness function.
+        coef_rmsd : float
+            The coefficient for the sum of rmsd values
+            for the fitness function.
+        parser : object
+            The parser object from Vetee that contains
+            information about molecular structure and
+            energy calculations.
+
+        Parameters
+        ----------
+        num_filled : int
+            The population size contained within
+            the ring. Should be less than or equal to the
+            num_slots value. This variable is dynamic and
+            changes depending on how many slots are currently
+            filled in on the ring. Starts with a value of 0.
 
         Returns
         -------
         None
 
         """
-        # my test
-        # how many segments away from the parent a child can be
-        # placed... will make this an input later
-        self.max_distance = 2
-        # make sure inputs are sound
-        # TODO remove when complete
-        try:
-            assert num_slots >= num_filled
-            assert isinstance(num_geoms, int)
-            assert isinstance(num_atoms, int)
-            assert isinstance(num_slots, int)
-            assert isinstance(num_filled, int)
-
-#            assert isinstance(dihedrals, list)
-#            assert len(dihedrals) == num_atoms - 3
-        except AssertionError as e:
-            raise ValueError("Invalid input for Ring.")
-
-#        self.dihedrals = dihedrals
-
         self.num_geoms = num_geoms
         self.num_atoms = num_atoms
         self.num_slots = num_slots
-        self.num_filled = num_filled
         self.pmem_dist = pmem_dist
-        self.mol_input_file = mol_input_file
-        # Fill contiguous segment of ring with pmems.
-        self.pmems = np.array([Pmem(i, num_geoms, mol_input_file) if i <= self.num_filled else None for i in range(self.num_slots)], dtype=object)
-        # check that pmems have the same number of atoms as the mol_input_file
-        assert self.num_atoms == self.pmems[0].num_atoms
+        self.fit_form = fit_form
+        if fit_form != 0:
+            raise NotImplementedError("Only fit_form0 is available at this time.")
+        self.coef_energy = coef_energy
+        self.coef_rmsd = coef_rmsd
+        self.parser = parser
+        # make an empty ring
+        self.num_filled = 0
+        self.pmems = np.full(self.num_slots, None)
+
+    def make_zmatrix(self, pmem_index):
+        # generate a full geometry specification
+        # in the form of a zmatrix using the dihedrals
+        # found in the slot at pmem_index
+        zmatrix = ""
+        if self.pmems[pmem_index] == None:
+            raise ValueError(f"Empty slot: {pmem_index}. No dihedrals with which to generate a zmatrix.")
+        # generate zmatrix based on initial geom (parser)
+        # replace the dihedrals with the dihedrals from the
+        # pmem object
+        # return a string
+        return zmatrix
+
+    def calc_fitness(self, pmem_index, zmatrix):
+        """Calculate the fitness of a pmem.
+
+        Parameters
+        ----------
+        pmem_index : int
+            The location of the pmem in the ring.
+        zmatrix : str
+            The full geometry specification for
+            the pmem at pmem_index.
+
+        Notes
+        -----
+        Sets the value of pmem.fitness
+
+        Returns
+        -------
+        None
+
+        """
+        pass
 
     def update(self, parent_index, child):
         """Add child to ring based on parent location.
@@ -113,7 +156,7 @@ class Ring(object):
         Parameters
         ----------
         parent_index : int
-        children : pmem
+        children : pmem.dihedrals
 
         Returns
         -------
@@ -147,7 +190,7 @@ class Ring(object):
 #        self.pmems[loser1] = child1
 #        self.pmems[loser2] = child2
 
-    def fill(self, num_pmems):
+    def fill(self, num_pmems, current_mev):
         """Fill the ring with additional pmems.
 
         Notes
@@ -162,24 +205,38 @@ class Ring(object):
         ----------
         num_pmems : int
             Number of pmems to add to the ring.
+        current_mev : int
+            The current mating event (used to determine
+            pmem age).
 
         Raises
         ------
-        AssertionError
+        RingOverflowError
             Trying to add more pmems than slots available
             in ring.
 
         """
         # check that adding pmems doesn't overflow ring
         num_avail = self.num_slots - self.num_filled
-        assert num_avail >= num_pmems
+        try:
+            assert num_avail >= num_pmems
+        except AssertionError:
+            raise RingOverflowError("Cannot add more pmems than space available in the ring.")
+        # if self.num_filled == 0
         for i in range(self.num_filled, self.num_filled + num_pmems + 1):
-            self.pmems[i] = Pmem(i, self.num_geoms, self.mol_input_file)
+            self.pmems[i] = Pmem(i, self.num_geoms,
+                                 self.num_atoms, current_mev)
+            # update pmem energies and fitness
+        # if there are some pmems in the ring
+        # they might not represent a contiguous segment
+        # so go over each slot first and check that
+        # it is empty
             
 
 ###############################################################
 
 # attempt to enable ring indexing
+# want to be able to do ring[30] and get the 30th pmem
 
 #    def __iter__(self, i):
 #        pass
@@ -190,19 +247,5 @@ class Ring(object):
 #                
 #        while i <
 
-
-
-
-
-###############################################################
-    def count_occupied(self):
-        """Determine number of filled slots in the ring."""
-        filled = 0
-        for pmem in self.pmems:
-            if pmem is not None:
-                filled += 1
-        return filled
-
-
-    
+###############################################################    
     
