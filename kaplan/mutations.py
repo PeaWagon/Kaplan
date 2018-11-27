@@ -27,16 +27,11 @@ def generate_children(parent1, parent2, num_muts, num_swaps):
         maximum number of mutations to perform
     num_swaps : int
         maximum number of swaps to perform
-    ring : object
 
     Returns
     -------
-    two new pmems for the ring [pmem, pmem]
-
-    Notes
-    -----
-    actually the return value will be two lists
-    of lists representing the new dihedral angles
+    two new sets of dihedral angles with which
+    to make pmem objects (list(list(int))x2
 
     """
     # make copies of the two parent pmems

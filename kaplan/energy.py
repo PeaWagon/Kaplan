@@ -1,5 +1,10 @@
 
 
+# TODO: make these functions callable from a function
+# that checks the program being used (i.e. psi4 vs horton
+# vs gaussian)
+
+
 import psi4
 # link to relevant documentation
 # http://www.psicode.org/psi4manual/1.2/psiapi.html
@@ -65,25 +70,28 @@ def run_energy_calc(geom, method="scf",basis="aug-cc-pVTZ",
         psi4.set_options({"reference": "uhf"})
     energy = psi4.energy(method+'/'+basis)
     return energy
-    
 
-def prep_psi4_geom(mol_obj):
+def prep_psi4_geom(coords, charge, multip):
     """Make a psi4 compliant geometry string.
 
     Parameters
     ----------
-    mol_obj : object
-        Should have a coords attribute,
-        a multiplicity (multip) attribute,
-        and a charge attribute.
+    coords : list(list)
+        Atomic cartesian coordinates and atom types.
+        Example for H_2:
+        [['H', 0.0, 0.0, 0.0], ['H', 0.0, 0.0, 1.0]]
+    charge : int
+        The charge of the molecule.
+    multip : int
+        The multiplicity of the molecule.
 
     Returns
     -------
     A string as per psi4 input.
 
     """
-    psi4_str = f"{mol_obj.charge} {mol_obj.multip}\n"
-    for atom in mol_obj.coords:
+    psi4_str = f"{charge} {multip}\n"
+    for atom in coords:
         psi4_str += f"{atom[0]} {atom[1]} {atom[2]} {atom[3]}\n"
     return psi4_str
     

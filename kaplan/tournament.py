@@ -36,7 +36,9 @@ def select_pmems(number, ring):
 
     Note
     ----
-    Maybe move this to the ring as a method.
+    Maybe move this to the ring as a method. Or turn
+    into a generator (calling next on the ring returns
+    a random pmem).
 
     """
     selection = []
@@ -62,7 +64,7 @@ def select_parents(selected_pmems, ring):
 
     Returns
     -------
-    list : int,int
+    tuple : int,int
         Indices of two best pmems to be used as parents.
 
     """
@@ -71,56 +73,6 @@ def select_parents(selected_pmems, ring):
     # https://stackoverflow.com/questions/6910641/how-do-i-get-indices-of-n-maximum-values-in-a-numpy-array
     # use numpy to get the two best fitness value indices
     # from the list and link it to ring index
-    parents = [selected_pmems[parent] for parent in np.argpartition(fit_vals, -2)[-2:]]
+    parents = (selected_pmems[parent] for parent in np.argpartition(fit_vals, -2)[-2:])
     return parents
-    
-    
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#def refill_ring(t_size, ring):
-#    """Determine which pmems are selected from the ring."""
-#    # check ring has enough pmems for a tournament
-#    # if ring.num_filled >= t_size:
-#    try:
-#        # Generate a uniform random sample from num_filled of
-#        # size t_size without replacement, aka don't pick
-#        # same pmem twice
-#        selected_pmems = np.random.choice(ring.num_filled,
-#                                          t_size, replace=False)
-#        return selected_pmems
-#    # Cannot take a larger sample than population when
-#    # 'replace=False'
-#    # aka size of set is larger than available pmems
-#    except ValueError:
-#        # generate new pmems randomly or by using available pmems
-#        pass
-#    
-
-
-
-    

@@ -61,6 +61,7 @@ urlcolor=cyan          % color of external links
 \toprule {\bf Date} & {\bf Version} & {\bf Notes}\\
 \midrule
 November 20, 2018 (Tuesday) & 1.0 & Initial draft \\
+November 26, 2018 (Monday) & 1.1 & Complete first draft \\
 \bottomrule
 \end{tabularx}
 
@@ -103,10 +104,8 @@ with the addition that template modules have been adapted from
 \cite{GhezziEtAl2003}.  The mathematical notation comes from Chapter 3 of
 \citet{HoffmanAndStrooper1995}.  For instance, the symbol := is used for a
 multiple assignment statement and conditional rules follow the form $(c_1
-\Rightarrow r_1 | c_2 \Rightarrow r_2 | ... | c_n \Rightarrow r_n )$.
-
-Jen is also using \href{https://proofwiki.org/wiki/Symbols:R}{this link} for 
-now. Also, the PEP8 style guide from Python will be used for naming conventions.
+\Rightarrow r_1 | c_2 \Rightarrow r_2 | ... | c_n \Rightarrow r_n )$. Also, the 
+PEP8 style guide from Python will be used for naming conventions.
 
 The following table summarizes the primitive data types used by \progname. 
 
@@ -175,7 +174,10 @@ NoneType & None & empty data type \\
 
 In addition, \progname \ uses functions, which
 are defined by the data types of their inputs and outputs. Local functions are
-described by giving their type signature followed by their specification.
+described by giving their type signature followed by their specification. There 
+is one generator function in this program, which uses the yield keyword instead 
+of the return keyword. Every time a generator is called, it returns the next 
+value in what is usually a for loop.
 
 Note that obvious errors (such as missing inputs) that are handled by the 
 Python interpreter are not listed under the exceptions in any of the 
@@ -222,9 +224,8 @@ The following table is taken directly from the Module Guide document for this pr
 
 \section{MIS of GA Input} \label{section-ga_input}
 
-\wss{You can reference SRS labels, such as R\ref{R_Inputs}.}
-
-\wss{It is also possible to use \LaTeX for hypperlinks to external documents.}
+\meow{Right now the link does not open the SRS document. Not sure if that was 
+supposed to happen.}
 
 The purpose of this module is to provide a utility for reading and verifying 
 input related to the genetic algorithm (GA). There are two main functions: 
@@ -250,9 +251,10 @@ These values are read into a Python dictionary, called ga\_input\_dict. The
 order of the inputs does not matter, but \progname{} will throw an error if one 
 of the keys is missing. This dictionary is then passed to the second function, 
 which checks that the values are correct and that all keys have been given. 
-From the SRS document, $n_G$ and $n_a$ are represented here as num\_geoms and 
-num\_atoms respectively. Also, coef\_energy and coef\_rmsd are $C_\text{E}$ and 
-$C_\text{RMSD}$ from the SRS. All keys are case insensitive.
+From the SRS document (see SRS Section \ref{SRS-symbols}), $n_G$ and $n_a$ are 
+represented here as num\_geoms and num\_atoms respectively. Also, coef\_energy 
+and coef\_rmsd are $C_\text{E}$ and $C_\text{RMSD}$ from the SRS. All keys are 
+case insensitive.
 
 \meow{I may have to check if SMILES strings are case sensitive for the programs 
 I am parsing them with.}
@@ -287,7 +289,8 @@ NUM\_GA\_ARGS := 12
 
 \subsubsection{State Variables}
 
-\noindent num\_args := $+(x : list | key \in x \land value \in x \land 
+\noindent num\_args := for each line in the ga\_input\_file $+(x : list | key 
+\in x \land value \in x \land 
 length(x) = 2 : 1)$ \\
 
 \noindent ga\_input\_dict, which is a dictionary that contains:
@@ -323,12 +326,11 @@ in \ref{section-mol_input}).
 
 \noindent read\_ga\_input(ga\_input\_file):
 \begin{itemize}
-	\item transition: open ga\_input\_file and read its contents
+	\item transition: open ga\_input\_file and read its contents.
 	\item output: dictionary (ga\_input\_dict) that contains the values listed 
-	in State Variables
+	in State Variables.
 	\item exception: FileNotFoundError := ga\_input\_file $\notin$ current 
-	working 
-	directory
+	working directory.
 \end{itemize}
 
 \noindent verify\_ga\_input(ga\_input\_dict):
@@ -353,13 +355,7 @@ in \ref{section-mol_input}).
 
 None
 
-\newpage
-
 \section{MIS of Molecule Input} \label{section-mol_input}
-
-\wss{You can reference SRS labels, such as R\ref{R_Inputs}.}
-
-\wss{It is also possible to use \LaTeX for hypperlinks to external documents.}
 
 The purpose of this module is to provide a utility for reading and verifying 
 input related to the molecule, including its structure and energy calculations. 
@@ -387,9 +383,9 @@ run a calculation on the input molecule. If this calculation converges, then
 the manipulation of the dihedral angles are more likely to afford calculations 
 that converge. After this final verification, the Parser object is passed back 
 to the gac module, and eventually gets used by the pmem module 
-(Section \ref{section-pmem}). From the SRS document, $QCM$ and $BS$ are 
-represented here as qcm and basis respectively. All keys and string values are 
-case insensitive.
+(Section \ref{section-pmem}). From the SRS document (see SRS Section 
+\ref{SRS-symbols}), $QCM$ and $BS$ are represented here as qcm and basis 
+respectively. All keys and string values are case insensitive.
 
 \subsection{Module}
 
@@ -423,7 +419,8 @@ NUM\_MOL\_ARGS := 7
 
 \subsubsection{State Variables}
 
-\noindent num\_args := $+(x : list | key \in x \land value \in x \land 
+\noindent num\_args := for each line in the mol\_input\_file $+(x : list | key 
+\in x \land value \in x \land 
 length(x) = 2 : 1)$ \\
 
 \noindent mol\_input\_dict, which is a dictionary that contains:
@@ -454,11 +451,11 @@ input.
 
 \noindent read\_mol\_input(mol\_input\_file):
 \begin{itemize}
-	\item transition: open mol\_input\_file and read its contents
+	\item transition: open mol\_input\_file and read its contents.
 	\item output: dictionary (mol\_input\_dict) that contains the values listed 
-	in State Variables
+	in State Variables.
 	\item exception: FileNotFoundError := mol\_input\_file $\notin$ current 
-	working directory
+	working directory.
 \end{itemize}
 
 \noindent verify\_mol\_input(mol\_input\_dict):
@@ -471,19 +468,17 @@ input.
 		\item basis $\notin$ prog $\lor$ basis unavailable for molecule
 		\item unable to parse SMILES string, name, cid, or input file
 		\item struct\_type not available
-		\item not a string type (for all except charge (integer) and multip 
-		(natural number))
+		\item not a string type (for all except charge $\mathbb{Z}$ and multip 
+		$\mathbb{N}$)
 		\item missing key/unknown key
 		\item too many keys (i.e. repeated keys), where num\_args $\neq$ 
-		NUM\_MOL\_ARGS 
+		NUM\_MOL\_ARGS
 	\end{itemize}
 \end{itemize}
 
 \subsubsection{Local Functions}
 
 None
-
-\newpage
 
 \section{MIS of GA Control} \label{section-gac} 
 
@@ -569,7 +564,8 @@ input files and only need to access this module to complete their task.
 
 \noindent run\_kaplan(ga\_input\_file, mol\_input\_file):
 \begin{itemize}
-	\item transition: The desired conformers are produced and passed to the 
+	\item transition: The set of conformers with large negative energy and high 
+	RMSD are produced and passed to the 
 	output module (\ref{section-output}).
 	\item output: None
 	\item exception: None
@@ -582,13 +578,18 @@ None
 in local functions? Technically the user will have to import it somewhere to 
 use it.}
 
-\newpage
+\section{MIS of $Fit_G$} \label{section-fitg}
 
-\section{MIS of $Fit_G$} \label{section-fitg} %TODO
-
-\wss{You can reference SRS labels, such as R\ref{R_Inputs}.}
-
-\wss{It is also possible to use \LaTeX for hypperlinks to external documents.}
+The purpose of this module is to calculate the fitness of the Pmem object. In 
+ga\_input\_file, the user specifies the fit\_form (the formula number to use 
+for calculating fitness), the coefficients for the energy and RMSD terms, the 
+method (QCM), and the basis set (BS). These values are used here to assign a 
+fitness to a pmem. A change of dihedral angles may make it impossible for an 
+energy calculation to converge; in this case the energy will be set to zero, 
+but the RMSD value will most likely be high for the set of conformers. The 
+contribution of the RMSD value to the fitness should therefore be smaller than 
+the energetic component (otherwise the user may end up with multiple 
+non-convergent geometries with high RMSD).
 
 \subsection{Module}
 
@@ -600,23 +601,33 @@ energy (Section \ref{section-energies}), rmsd (Section \ref{section-rmsd})
 
 \subsection{Syntax}
 
-I am using Pmem to indicate usage of the Pmem class. Lowercase p - pmem - will 
-be used to indicate that this is a specific instance of the Pmem class.
-
 \subsubsection{Exported Constants}
 
+None
+
 \subsubsection{Exported Access Programs}
+
+The sum\_energies function should raise a warning if an energy calculation did 
+not converge.
 
 \begin{center}
 	\begin{tabular}{p{2cm} p{4cm} p{4cm} p{2cm}}
 		\hline
 		\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
 		\hline
-		\wss{accessProg} & - & - & - \\
-		sum\_energies & Pmem & float & - \\
-		sum\_rmsd & Pmem & float & - \\
-		fitness & int, float, float, Pmem & float & - \\
-		fit\_form0 & float, float, float, float & float & - \\
+		get\_fitness & list(list(str,$\mathbb{R}$,$\mathbb{R}$,$\mathbb{R}$)), 
+		str, str, $\mathbb{Z}$, $\mathbb{R}$, 
+		$\mathbb{R}$, $\mathbb{Z}$, $\mathbb{N}$ & $\mathbb{R}$ & None \\
+		sum\_energies &  
+		list(list(str,$\mathbb{R}$,$\mathbb{R}$,$\mathbb{R}$)), $\mathbb{Z}$, 
+		$\mathbb{N}$, str, str & $\mathbb{R}$ 
+		& None \\
+		sum\_rmsd &  list(list(str,$\mathbb{R}$,$\mathbb{R}$,$\mathbb{R}$)) & 
+		$\mathbb{R}$ & None \\
+		all\_pairs\_gen & $\mathbb{Z}$ & tuple($\mathbb{Z}, \mathbb{Z}$) & None 
+		\\
+		calc\_fitness & $\mathbb{Z}$, $\mathbb{R}$, $\mathbb{R}$, $\mathbb{R}$, 
+		$\mathbb{R}$ & $\mathbb{R}$ & None \\
 		\hline
 	\end{tabular}
 \end{center}
@@ -625,8 +636,12 @@ be used to indicate that this is a specific instance of the Pmem class.
 
 \subsubsection{State Variables}
 
-\wss{Not all modules will have state variables.  State variables give the module
-	a memory.}
+\begin{itemize}
+	\item the generator function, all\_pairs\_gen, will need to keep track of 
+	the i and j iteration values.
+	\item num\_pairs is the number of next() calls needed for the generator. := 
+	$\{<y,n> | n = \text{num\_geoms} : \mathbb{N} \land y = n!/(2*(n-2)!) \}$
+\end{itemize}
 
 \subsubsection{Environment Variables}
 
@@ -635,73 +650,57 @@ None
 \subsubsection{Assumptions}
 
 New fitness functions will be added. Each new fitness functions should be 
-incrementally labelled. The first fitness function is called fit\_form0. 
-Subsequent functions will be called fit\_form1, fit\_form2, etc. Any new 
+incrementally labelled and added to the calc\_fitness function. Any new 
 fitness functions that are added should account for the possibility of divide 
 by zero errors.
 
 \subsubsection{Access Routine Semantics}
 
-
-\noindent sum\_energies(pmem): $pmem \rightarrow \mathbb{R} $
+\noindent get\_fitness(xyz\_coords, method, basis, fit\_form, coef\_energy, 
+coef\_rmsd, charge, multip):
 \begin{itemize}
-	\item transition: \wss{if appropriate} 
-	\item output: \textit{out} := $+(x: \mathbb{R}|x \in \text{pmem.energies}: 
-	|x|)$
-	\item exception: \wss{if appropriate} 
+	\item transition: None
+	\item output: \textit{out} := $(x: \mathbb{R}| x \geq 0 : x)$
+	\item exception: None
 \end{itemize}
-
-\noindent sum\_rmsd(pmem): $pmem \rightarrow \mathbb{R} $
-\begin{itemize}
-	\item transition: \wss{if appropriate} 
-	\item output: \textit{out} := $+(x: \mathbb{R}|x \in \text{pmem.rmsd} 
-	\wedge 
-	x \neq \text{None}
-	: |x|)$
-	\item exception: \wss{if appropriate} 
-\end{itemize}
-
-\noindent fitness(pmem, fit\_form, coef\_energy, coef\_rmsd):
-\begin{itemize}
-	\item transition: \wss{if appropriate} 
-	
-	
-	\item output: \textit{out} := ()
-	
-	
-	\item exception: \wss{if appropriate} 
-\end{itemize}
-
-\noindent fit\_form0(sum\_energy, sum\_rmsd, coef\_energy, coef\_rmsd):
-\begin{itemize}
-	\item transition: \wss{if appropriate} 
-	\item output: \textit{out} := (coef\_energy*sum\_energy + 
-	coef\_rmsd*sum\_rmsd)
-	\item exception: \wss{if appropriate} 
-\end{itemize}
-
-\noindent \wss{accessProg}():
-\begin{itemize}
-	\item transition: \wss{if appropriate} 
-	\item output: \wss{if appropriate} 
-	\item exception: \wss{if appropriate} 
-\end{itemize}
-
-\wss{A module without environment variables or state variables is unlikely to
-	have a state transition.  In this case a state transition can only occur if
-	the module is changing the state of another module.}
-
-\wss{Modules rarely have both a transition and an output.  In most cases you
-	will have one or the other.}
 
 \subsubsection{Local Functions}
 
-\wss{As appropriate} \wss{These functions are for the purpose of specification.
-	They are not necessarily something that is going to be implemented
-	explicitly.  Even if they are implemented, they are not exported; they only
-	have local scope.}
+\noindent sum\_energies(xyz\_coords, charge, multip, method, basis):
+\begin{itemize}
+	\item transition: read in the xyz\_coords. 
+	\item output: \textit{out} := $+(x: \mathbb{R}|x = \text{energy of 
+	xyz\_coords with charge, multiplicity, QCM, BS}: |x|)$
+	\item exception: None
+\end{itemize}
 
-\newpage
+\noindent sum\_rmsds(xyz\_coords):
+\begin{itemize}
+	\item transition: read in the xyz\_coords.
+	\item output: \textit{out} := $+(x(i,j): \mathbb{R}| \text{RMSD between 
+	coords i and j where } i,j \text{ are indices } \forall i,j \in 
+	\text{xyz\_coords}: x)$
+	\item exception: None
+\end{itemize}
+
+\noindent all\_pairs\_gen(num\_geoms):
+\begin{itemize}
+	\item transition: increment iterators i and j in the generator function.
+	\item output: \textit{out} := $\{<i,j>: \mathbb{Z} | 0 \leq i \leq 
+	\text{num\_geoms}-1 \land i+1 \leq j \leq \text{num\_geoms}\}$
+	\item exception: None
+\end{itemize}
+
+
+\noindent calc\_fitness(fit\_form, sum\_energy, coef\_energy, sum\_rmsd, 
+coef\_rmsd):
+\begin{itemize}
+	\item transition: None
+	\item output: when fit\_form = 0, then \textit{out} := \{
+	$<<C_E,S_E,C_{\text{RMSD}},S_{\text{RMSD}}>,y> : \mathbb{R} | y = 
+	C_E*S_E+C_{\text{RMSD}}*S_{\text{RMSD}} \}$
+	\item exception: ValueError fit\_form is not available.
+\end{itemize}
 
 \section{MIS of Tournament} \label{section-tournament} 
 
@@ -738,8 +737,9 @@ None
 		\hline
 		run\_tournament & $\mathbb{N}$, $\mathbb{Z}$, $\mathbb{Z}$, Ring & None 
 		& EmptyRingError \\
-		select\_pmems & $\mathbb{N}$, Ring & list & None \\
-		select\_parents & list, Ring & list & None \\
+		select\_pmems & $\mathbb{N}$, Ring & list($\mathbb{Z}$) & None \\
+		select\_parents & list, Ring & tuple($\mathbb{Z}$,$\mathbb{Z}$) & None 
+		\\
 		\hline
 	\end{tabular}
 \end{center}
@@ -776,12 +776,13 @@ None \meow{May have to think on this more.}
 
 \subsubsection{Access Routine Semantics}
 
-\noindent run\_tournament(t\_size, num\_muts, num\_swaps, ring):
+\noindent run\_tournament(t\_size, num\_muts, num\_swaps, ring, current\_mev):
 \begin{itemize}
-	\item transition: new ring members may be added (changes ring.num\_filled), 
-	deleted (replace old pmem with a new one)
+	\item transition: new ring members may be added with birthday equal to the 
+	current\_mev (increments ring.num\_filled), and old pmems may be replaced 
+	with a new pmem.
 	\item output: None 
-	\item exception: EmptyRingError when t\_size > ring.num\_filled
+	\item exception: EmptyRingError when t\_size $>$ ring.num\_filled
 \end{itemize}
 
 \subsubsection{Local Functions}
@@ -791,20 +792,17 @@ None \meow{May have to think on this more.}
 	\item transition: None
 	\item output: selection, which is a list of length \textit{number} of 
 	random ring indices containing a pmem; no pmem can appear twice in the 
-	selection
+	selection.
 	\item exception: None
 \end{itemize}
 
 \noindent select\_parents(selected\_pmems, ring):
 \begin{itemize}
 	\item transition: None
-	\item output: list of length 2 representing the ring indices of the pmems 
-	with the best fitness out of the selected\_pmems indicies according to 
-	fitness value
+	\item output: tuple of length 2 representing the ring indices of the pmems 
+	with the best fitness values out of the selected\_pmems indices.
 	\item exception: None
 \end{itemize}
-
-\newpage
 
 \section{MIS of Crossover \& Mutation} \label{section-mutations}
 
@@ -859,8 +857,10 @@ MIN\_VALUE : 0\\
 \subsubsection{State Variables}
 
 \begin{itemize}
-	\item number of chosen swaps
-	\item number of chosen mutations
+	\item number of chosen swaps := $\{ x : \mathbb{Z} | 0 \leq x \leq 
+	\text{num\_swaps from ga\_input\_dict}\}$
+	\item number of chosen mutations := $\{ x : \mathbb{Z} | 0 \leq x \leq 
+	\text{num\_muts from ga\_input\_dict}\}$
 \end{itemize}
 
 \subsubsection{Environment Variables}
@@ -887,7 +887,7 @@ None \meow{Maybe good to reference SRS assumptions about inputs here?}
 \noindent mutate(dihedrals, num\_muts):
 \begin{itemize}
 	\item transition: locally update num\_muts with a random number (min 0, max 
-	num\_muts)
+	num\_muts).
 	\item output: a list of lists of integers between MIN\_VALUE and 
 	MAX\_VALUE representing dihedrals for one mutated population member.
 	\item exception: None
@@ -896,13 +896,11 @@ None \meow{Maybe good to reference SRS assumptions about inputs here?}
 \noindent swap(parent1, parent2, num\_swaps):
 \begin{itemize}
 	\item transition: locally update num\_swaps with a random number (min 0, 
-	max num\_swaps)
+	max num\_swaps).
 	\item output: two list of lists of integers between MIN\_VALUE and 
 	MAX\_VALUE representing dihedrals for two swapped population members.
 	\item exception: None
 \end{itemize}
-
-\newpage
 
 \section{MIS of Ring} \label{section-ring}
 
@@ -925,10 +923,9 @@ follows:
 	\item Increment the num\_filled attribute of the ring if an empty slot was 
 	filled.
 \end{enumerate}
-The ring also has the make\_zmatrix method, which generates a zmatrix as a 
-string based on the pmem index of interest. Calling ring.calc\_fitness will 
-determine the fitness for a given pmem index and its corresponding zmatrix 
-string.
+The ring also uses the geometry module (Section \ref{section-geometry}) to 
+generate a zmatrix as a string based on the pmem index of interest. Calling 
+ring.calc\_fitness will determine the fitness for a given pmem index.
 
 \subsection{Module}
 
@@ -937,7 +934,8 @@ ring
 \subsection{Uses}
 
 pmem (Section \ref{section-pmem}),
-fitg (Section \ref{section-fitg})
+fitg (Section \ref{section-fitg}),
+geometry (Section \ref{section-geometry})
 
 \subsection{Syntax}
 
@@ -950,12 +948,11 @@ fitg (Section \ref{section-fitg})
 		\hline
 		\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
 		\hline
-		\_\_init\_\_ & $\mathbb{N}, \mathbb{N}, \mathbb{N}, \mathbb{Z}, Parser$ 
-		& None & None \\
+		\_\_init\_\_ & $\mathbb{N}, \mathbb{N}, \mathbb{N}, \mathbb{Z}, 
+		\mathbb{Z}, \mathbb{Z}, \mathbb{Z}$ Parser & None & None \\
+		set\_fitness & $\mathbb{Z}$ & None & ValueError \\
 		update & $\mathbb{Z}$, list(list[$\mathbb{Z}$]) & None & None \\
 		fill & $\mathbb{N}, \mathbb{Z}$ & None & RingOverflowError \\
-		make\_zmatrix & $\mathbb{Z}$ & str & ValueError \\
-		calc\_fitness & $\mathbb{Z}$, str & None & None \\
 		RingEmptyError  & - & - & - \\
 		RingOverflowError & - & - & - \\
 		\hline
@@ -976,7 +973,8 @@ fitg (Section \ref{section-fitg})
 \item ring.parser from the geometry module
 \item ring.num\_filled from ga\_input\_module; represents the number of pmems 
 present in the ring (dynamic)
-\item ring.pmems from ga\_input\_module
+\item ring.pmems is a list of pmem objects (pmem module) or NoneType objects 
+(depends if slot is filled or empty)
 \end{itemize}
 
 \subsubsection{Environment Variables}
@@ -997,7 +995,8 @@ None
 
 \subsubsection{Access Routine Semantics}
 
-\noindent \_\_init\_\_(num\_geoms, num\_atoms, num\_slots, pmem\_dist, parser):
+\noindent \_\_init\_\_(num\_geoms, num\_atoms, num\_slots, pmem\_dist, 
+fit\_form, coef\_energy, coef\_rmsd, parser):
 \begin{itemize}
 	\item transition: generate a ring object.
 	\item output: None
@@ -1007,11 +1006,12 @@ None
 \noindent update(parent\_index, child):
 \begin{itemize}
 	\item transition: generate a pmem with the child (the sets of dihedral 
-	angles). Select a slot to place the child within [parent\_index-pmem\_dist, 
-	parent\_index+pmem\_dist+1]. If the slot is occupied, the child 
-	must have fitness that is no worse than the current occupant. Note: this 
-	will require wrapping for the Ring to ensure that an IndexError is not 
-	raised.
+	angles), and calculate its fitness. Select a slot to place the child within 
+	[parent\_index-pmem\_dist, parent\_index+pmem\_dist+1]. If the slot is 
+	occupied, the child must have fitness that is no worse than the current 
+	occupant. Note: this will require wrapping for the Ring to ensure that an 
+	IndexError is not raised. Increment the num\_filled attribute if a slot 
+	that was once empty is filled.
 	\item output: None
 	\item exception: None
 \end{itemize}
@@ -1029,27 +1029,14 @@ None
 
 \subsubsection{Local Functions}
 
-\noindent make\_zmatrix(pmem\_index):
+\noindent set\_fitness(pmem\_index):
 \begin{itemize}
-	\item transition: None
-	\item output: zmatrix as a string where the geometry from ring.parser has 
-	been combined with the pmem.dihedrals to generate a full geometry. This 
-	string will also contain the multiplicity and charge of the input molecule, 
-	as these parameters are required for the energy calculations. This function 
-	is called by the fill and update methods in the ring as a step towards 
-	calculating new pmem fitness values.
-	\item exception: ValueError the slot number pmem\_index was empty 
-	(NoneType).
-\end{itemize}
-
-\noindent calc\_fitness(pmem\_index, zmatrix):
-\begin{itemize}
-	\item transition: updates the pmem.fitness and pmem.energies attributes.
+	\item transition: updates the pmem.fitness attribute by constructing a 
+	zmatrix using the geometry module and calling get\_fitness from the fitg 
+	module.
 	\item output: None
-	\item exception: None
+	\item exception: ValueError occurs if the slot is empty at pmem\_index.
 \end{itemize}
-
-\newpage
 
 \section{MIS of Pmem} \label{section-pmem} %TODO
 
@@ -1080,11 +1067,13 @@ These two values restrict the dihedral angles that can be chosen.\\
 		\hline
 		\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
 		\hline
-		\_\_init\_\_ & $\mathbb{Z}, \mathbb{N}, \mathbb{N}, \mathbb{Z}$ & None 
+		\_\_init\_\_ & $\mathbb{Z}, \mathbb{N}, \mathbb{N}, \mathbb{Z}, 
+		list(list(\mathbb{Z}))*$ & None 
 		& None \\
 		\hline
 	\end{tabular}
 \end{center}
+* the default value is None
 
 \subsection{Semantics}
 
@@ -1093,14 +1082,13 @@ These two values restrict the dihedral angles that can be chosen.\\
 \begin{itemize}
 	\item pmem.ring\_loc := the ring index where the pmem is located.
 	\item pmem.dihedrals := $[[D_1], [D_2], ..., [D_{n_G}]]$, where each $D_i$ 
-	is a list of length num\_atoms-3 of 
-	integers representing the dihedral angles.
+	is a list of length num\_atoms-3 of $\mathbb{Z}$ representing the dihedral 
+	angles. If the constructor is called without a given set of dihedrals, then 
+	the default will be to randomly fill in those values between MIN\_VALUE and 
+	MAX\_VALUE.
 	\item pmem.fitness := float representing result of a fitg calculation for 
 	the pmem's dihedral angles when combined with the other geometry 
 	specifications in ring.parser.
-	\item pmem.energies := list(float) length num\_geoms of energy values. The 
-	index of the energies list correlates with the $D_i$ for which it was 
-	calculated.
 	\item pmem.birthday := $\{x:\mathbb{Z} | num\_mevs > x \geq 0\}$ mating 
 	event 
 	for which the pmem was generated
@@ -1116,10 +1104,10 @@ After a pmem object is generated, its fitness will be calculated.
 
 \subsubsection{Access Routine Semantics}
 
-\noindent \_\_init\_\_(ring\_loc, num\_geoms, num\_atoms, current\_mev):
+\noindent \_\_init\_\_(ring\_loc, num\_geoms, num\_atoms, current\_mev, 
+dihedrals=None):
 \begin{itemize}
-	\item transition: generate a new pmem object. Raise a warning if the energy 
-	calculations do not converge.
+	\item transition: generate a new pmem object.
 	\item output: None
 	\item exception: None
 \end{itemize}
@@ -1127,8 +1115,6 @@ After a pmem object is generated, its fitness will be calculated.
 \subsubsection{Local Functions}
 
 None
-
-\newpage
 
 \section{MIS of Output} \label{section-output}
 
@@ -1162,10 +1148,14 @@ OUTPUT\_FORMAT = ``xyz"
 		\hline
 		\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
 		\hline
-		run\_output & ring & None & None \\
+		run\_output & Ring & $\mathbb{R}, \mathbb{R}$, list($\mathbb{R}$), Ring 
+		& None* \\
 		\hline
 	\end{tabular}
 \end{center}
+
+*Need an exception in case the program does not have the permissions 
+needed to write to the output directory.
 
 \subsection{Semantics}
 
@@ -1173,11 +1163,12 @@ OUTPUT\_FORMAT = ``xyz"
 
 \begin{itemize}
 \item total\_fit : the total sum of all fitness values for pmems in the Ring 
-(that aren't None), float $\geq$ 0
+(that aren't None), $\mathbb{R} \geq$ 0
+\item average\_fit := total\_fit / ring.num\_filled
 \item best\_pmem : the ring index for the pmem in the ring with the highest 
-fitness value, $\mathbb{Z} \geq$ 0
-\item best\_fit : the value of the best fitness as found in the ring, float 
-$\geq$ 0 
+fitness value, $\text{ring.num\_slots} \geq \mathbb{Z} \geq$ 0
+\item best\_fit : the value of the best fitness as found in the ring,  
+$\mathbb{R} \geq$ 0
 \end{itemize}
 
 
@@ -1207,16 +1198,16 @@ None
 
 None
 
-\newpage
-
-
-
-
 \section{MIS of Geometry} \label{section-geometry}
 
-\wss{You can reference SRS labels, such as R\ref{R_Inputs}.}
-
-\wss{It is also possible to use \LaTeX for hypperlinks to external documents.}
+The geometry module is used by the output module (Section 
+\ref{section-geometry}), the ring module (Section \ref{section-ring}), and the 
+mol\_input module (Section \ref{section-mol_input}). It uses the external 
+program Vetee to make a Parser object that is used by the ring. The Parser 
+object can represent a few file formats: xyz, com, Gaussian log file (glog). 
+The Parser object can also be initialized using a SMILES string, a cid 
+(chemical identifier used by pubchem), or a molecule name. This module also 
+converts zmatrices to xyz coordinates and vice versa. 
 
 \subsection{Module}
 
@@ -1224,6 +1215,7 @@ geometry
 
 \subsection{Uses}
 
+None
 
 \subsection{Syntax}
 
@@ -1236,7 +1228,10 @@ geometry
 		\hline
 		\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
 		\hline
-		\wss{accessProg} & - & - & - \\
+		generate\_parser & dict & Parser & NotImplementedError \\
+		zmatrix\_to\_xyz & str & list(list(str, $\mathbb{R}, \mathbb{R}, 
+		\mathbb{R}$)) & None \\
+		generate\_zmatrix & Parser, list(list($\mathbb{Z}$)) & str & None \\
 		\hline
 	\end{tabular}
 \end{center}
@@ -1245,53 +1240,60 @@ geometry
 
 \subsubsection{State Variables}
 
-\wss{Not all modules will have state variables.  State variables give the module
-	a memory.}
+The Vetee Parser object has the following attributes:
+\begin{itemize}
+	\item comments: str
+	\item charge: charge of the molecule, $\mathbb{Z}$
+	\item multip: multiplicity of the molecule, $\mathbb{N}$
+	\item calc\_type: str (optimization, single-point, etc.)
+	\item coords: list(list(str, $\mathbb{R}, \mathbb{R}, \mathbb{R}$))
+	\item gkeywords: dict (keys are Gaussian keywords, values are the arguments 
+	for the Gaussian keywords)
+	\item fpath: filepath for the input file, str
+	\item fname: filename for the input file, str
+\end{itemize}
 
 \subsubsection{Environment Variables}
 
-\wss{This section is not necessary for all modules.  Its purpose is to capture
-	when the module has external interaction with the environment, such as for a
-	device driver, screen interface, keyboard, file, etc.}
+None
 
 \subsubsection{Assumptions}
 
-\wss{Try to minimize assumptions and anticipate programmer errors via
-	exceptions, but for practical purposes assumptions are sometimes 
-	appropriate.}
+None
 
 \subsubsection{Access Routine Semantics}
 
-\noindent \wss{accessProg}():
+\noindent generate\_parser(mol\_input\_dict):
 \begin{itemize}
-	\item transition: \wss{if appropriate} 
-	\item output: \wss{if appropriate} 
-	\item exception: \wss{if appropriate} 
+	\item transition: None
+	\item output: Parser object.
+	\item exception: NotImplementedError : struct\_type is not covered by Vetee.
 \end{itemize}
 
-\wss{A module without environment variables or state variables is unlikely to
-	have a state transition.  In this case a state transition can only occur if
-	the module is changing the state of another module.}
+\noindent zmatrix\_to\_xyz(zmatrix):
+\begin{itemize}
+	\item transition: None
+	\item output: list(list[atom type (str), x-coord, y-coord, z-coord]) the 
+	xyz coordinates and the atomic types.
+	\item exception: None
+\end{itemize}
 
-\wss{Modules rarely have both a transition and an output.  In most cases you
-	will have one or the other.}
+\noindent generate\_zmatrix(parser, dihedrals):
+\begin{itemize}
+	\item transition: None
+	\item output: zmatrix (str) that is the combination of the parser.coords 
+	and the list(list(dihedral-angles)).
+	\item exception: None
+\end{itemize}
 
 \subsubsection{Local Functions}
 
-\wss{As appropriate} \wss{These functions are for the purpose of specification.
-	They are not necessarily something that is going to be implemented
-	explicitly.  Even if they are implemented, they are not exported; they only
-	have local scope.}
+None
 
-\newpage
+\section{MIS of Energy} \label{section-energies}
 
-
-
-\section{MIS of Energies} \label{section-energies}
-
-\wss{You can reference SRS labels, such as R\ref{R_Inputs}.}
-
-\wss{It is also possible to use \LaTeX for hypperlinks to external documents.}
+Using the psi4 program, this module is responsible for running energy 
+calculations.
 
 \subsection{Module}
 
@@ -1299,10 +1301,13 @@ energy
 
 \subsection{Uses}
 
+None
 
 \subsection{Syntax}
 
 \subsubsection{Exported Constants}
+
+None
 
 \subsubsection{Exported Access Programs}
 
@@ -1311,7 +1316,9 @@ energy
 		\hline
 		\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
 		\hline
-		\wss{accessProg} & - & - & - \\
+		run\_energy\_calc & str, str, str, bool & $\mathbb{R}$ & None \\
+		prep\_psi4\_geom & list(list[str, $\mathbb{R}, \mathbb{R}, 
+		\mathbb{R}$]), $\mathbb{Z}, \mathbb{N}$ & str & None \\
 		\hline
 	\end{tabular}
 \end{center}
@@ -1320,62 +1327,65 @@ energy
 
 \subsubsection{State Variables}
 
-\wss{Not all modules will have state variables.  State variables give the module
-	a memory.}
+\begin{itemize}
+	\item psi4\_str : str representing the geometry specification in the format 
+	needed for a psi4 energy calculation.
+\end{itemize}
+
 
 \subsubsection{Environment Variables}
 
-\wss{This section is not necessary for all modules.  Its purpose is to capture
-	when the module has external interaction with the environment, such as for a
-	device driver, screen interface, keyboard, file, etc.}
+None
 
 \subsubsection{Assumptions}
 
-\wss{Try to minimize assumptions and anticipate programmer errors via
-	exceptions, but for practical purposes assumptions are sometimes 
-	appropriate.}
+This module can be modified to support multiple programs depending on the 
+user's preference for calculation software.
 
 \subsubsection{Access Routine Semantics}
 
-\noindent \wss{accessProg}():
+\noindent run\_energy\_calc(geom, method=``scf", basis=``aug-cc-pVTZ",
+restricted=False):
 \begin{itemize}
-	\item transition: \wss{if appropriate} 
-	\item output: \wss{if appropriate} 
-	\item exception: \wss{if appropriate} 
+	\item transition: None
+	\item output: energy ($\mathbb{R}$) of the geometry with the specified QCM 
+	and BS (which may be a restricted vs unrestricted calculation depending on 
+	the restricted bool).
+	\item exception: None
 \end{itemize}
 
-\wss{A module without environment variables or state variables is unlikely to
-	have a state transition.  In this case a state transition can only occur if
-	the module is changing the state of another module.}
-
-\wss{Modules rarely have both a transition and an output.  In most cases you
-	will have one or the other.}
+\noindent prep\_psi4\_geom(coords, charge, multip):
+\begin{itemize}
+	\item transition: None
+	\item output: str of the psi4 geometry specification needed to perform 
+	calculations using a list of cartesian coordinates and atom names, the 
+	charge, and the multiplicity of the molecule.
+	\item exception: None
+\end{itemize}
 
 \subsubsection{Local Functions}
 
-\wss{As appropriate} \wss{These functions are for the purpose of specification.
-	They are not necessarily something that is going to be implemented
-	explicitly.  Even if they are implemented, they are not exported; they only
-	have local scope.}
-
-\newpage
+None
 
 \section{MIS of RMSD} \label{section-rmsd}
 
-\wss{You can reference SRS labels, such as R\ref{R_Inputs}.}
-
-\wss{It is also possible to use \LaTeX for hypperlinks to external documents.}
+Uses the rmsd repository from github to calculate the root-mean-square 
+deviation between all sets of conformer geometries in a pmem. Each pair is sent 
+as xyz files to this module independently.
 
 \subsection{Module}
 
-\wss{Short name for the module}
+rmsd
 
 \subsection{Uses}
 
+None
 
 \subsection{Syntax}
 
 \subsubsection{Exported Constants}
+
+None
 
 \subsubsection{Exported Access Programs}
 
@@ -1384,7 +1394,7 @@ energy
 		\hline
 		\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
 		\hline
-		\wss{accessProg} & - & - & - \\
+		calc\_rmsd & str, str & $\mathbb{R}$ & None \\
 		\hline
 	\end{tabular}
 \end{center}
@@ -1393,56 +1403,42 @@ energy
 
 \subsubsection{State Variables}
 
-\wss{Not all modules will have state variables.  State variables give the module
-	a memory.}
+\begin{itemize}
+	\item output := standard output from the rmsd module that is converted into 
+	a float and returned to the fitg module.
+\end{itemize}
 
 \subsubsection{Environment Variables}
 
-\wss{This section is not necessary for all modules.  Its purpose is to capture
-	when the module has external interaction with the environment, such as for a
-	device driver, screen interface, keyboard, file, etc.}
+Both files are in cartesian coordinates (can also have a pdb file extension).
+
+\begin{itemize}
+	\item f1 := file name 1 for the first geometry.
+	\item f2 := file name 2 for the second geometry.
+\end{itemize}
 
 \subsubsection{Assumptions}
 
-\wss{Try to minimize assumptions and anticipate programmer errors via
-	exceptions, but for practical purposes assumptions are sometimes 
-	appropriate.}
+The rmsd repository calculates a rotation matrix such that comparing molecules 
+that have only undergone translation and rotation gives an rmsd of 0.
 
 \subsubsection{Access Routine Semantics}
 
-\noindent \wss{accessProg}():
+\noindent calc\_rmsd(f1, f2):
 \begin{itemize}
-	\item transition: \wss{if appropriate} 
-	\item output: \wss{if appropriate} 
-	\item exception: \wss{if appropriate} 
+	\item transition: open f1 and f2.
+	\item output: calculated rmsd.
+	\item exception: None
 \end{itemize}
-
-\wss{A module without environment variables or state variables is unlikely to
-	have a state transition.  In this case a state transition can only occur if
-	the module is changing the state of another module.}
-
-\wss{Modules rarely have both a transition and an output.  In most cases you
-	will have one or the other.}
 
 \subsubsection{Local Functions}
 
-\wss{As appropriate} \wss{These functions are for the purpose of specification.
-	They are not necessarily something that is going to be implemented
-	explicitly.  Even if they are implemented, they are not exported; they only
-	have local scope.}
-
-\newpage
-
-
+None
 
 
 \bibliographystyle {plainnat}
 \bibliography {../../../ReferenceMaterial/References}
 
-\newpage
-
-\section{Appendix} \label{Appendix}
-
-\wss{Extra information if required}
+%\section{Appendix} \label{Appendix}
 
 \end{document}

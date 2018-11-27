@@ -45,7 +45,7 @@ def verify_mol_input(mol_input_dict):
     # in the selected program
     parser = generate_parser(mol_input_dict)
     # check here if error message is raised
-    run_energy_calc(prep_psi4_geom(parser))
+    run_energy_calc(prep_psi4_geom(parser.coords, parser.charge, parser.multip))
     # if no error message, initial geometry converges, we are good
     return parser
     

@@ -1,5 +1,7 @@
 
-OUTPUT_FORMAT = 'xyz'
+from kaplan.geometry import generate_zmatrix, zmatrix_to_xyz
+
+# OUTPUT_FORMAT = 'xyz'
 
 def run_output(ring):
     """Run the output module.
@@ -25,5 +27,6 @@ def run_output(ring):
     average_fit = total_fit / ring.num_filled
 
     # generate the output file for the best pmem
+    zmatrix_to_xyz(generate_zmatrix(ring.parser, ring.pmems[best_pmem].dihedrals))
 
 

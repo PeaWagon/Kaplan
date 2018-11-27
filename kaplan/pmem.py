@@ -9,7 +9,7 @@ class Pmem(object):
     """Population member of the ring."""
 
     def __init__(self, ring_loc, num_geoms, num_atoms,
-                 current_mev):
+                 current_mev, dihedrals=None):
         """Constructor for pmem object.
 
         Parameters
@@ -24,6 +24,8 @@ class Pmem(object):
             list for each conformer.
         current_mev : int
             The mating event at which the pmem was constructed.
+        dihedrals : list(list(int))
+            The dihedrals for the pmem. Defaults to None.
 
         Attributes
         ----------
@@ -41,11 +43,13 @@ class Pmem(object):
 
         """
         self.ring_loc = ring_loc
-        # generate random dihedral angles (degrees)
-        # each row is a set of dihedral angles for one conformer
-        self.dihedrals = np.random.randint(MIN_VALUE, MAX_VALUE,
-                         size=(num_geoms, num_atoms-3))
+        if dihedrals is None:
+            # generate random dihedral angles (degrees)
+            # each row is a set of dihedral angles for one conformer
+            self.dihedrals = np.random.randint(MIN_VALUE, MAX_VALUE,
+                             size=(num_geoms, num_atoms-3))
+        else:
+            self.dihedrals = dihedrals
         self.fitness = None
-        self.energies = np.zeros(num_geoms, float)
         self.birthday = current_mev
 

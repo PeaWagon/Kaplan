@@ -1,6 +1,7 @@
 
 from kaplan.pmem import Pmem
-from kaplan.fitg import 
+from kaplan.fitg import get_fitness
+from kaplan.geometry import generate_zmatrix, zmatrix_to_xyz
 import numpy as np
 
 """
@@ -115,40 +116,36 @@ class Ring(object):
         self.num_filled = 0
         self.pmems = np.full(self.num_slots, None)
 
-    def make_zmatrix(self, pmem_index):
-        # generate a full geometry specification
-        # in the form of a zmatrix using the dihedrals
-        # found in the slot at pmem_index
-        zmatrix = ""
-        if self.pmems[pmem_index] == None:
-            raise ValueError(f"Empty slot: {pmem_index}. No dihedrals with which to generate a zmatrix.")
-        # generate zmatrix based on initial geom (parser)
-        # replace the dihedrals with the dihedrals from the
-        # pmem object
-        # return a string
-        return zmatrix
-
-    def calc_fitness(self, pmem_index, zmatrix):
-        """Calculate the fitness of a pmem.
+    def set_fitness(self, pmem_index):
+        """Set the fitness value for a pmem.
 
         Parameters
         ----------
         pmem_index : int
             The location of the pmem in the ring.
-        zmatrix : str
-            The full geometry specification for
-            the pmem at pmem_index.
 
         Notes
         -----
         Sets the value of pmem.fitness
+
+        Raises
+        ------
+        ValueError
+            Slot is empty for given pmem_index.
 
         Returns
         -------
         None
 
         """
-        pass
+        if self.pmems[pmem_index] == None:
+            raise ValueError(f"Empty slot: {pmem_index}.")
+        # construct zmatrices
+        zmatrices = [generate_zmatrix(self.parser, self.pmems[pmem_index].dihedrals[i]) for i in range(self.num_geoms)]
+        xyz_coords = [zmatrix_to_xyz(zmatrix) for zmatrix in zmatrices]
+        self.pmems[pmem_index].fitness = get_fitness(xyz_coords, self.parser.method, self.parser.basis, self.fit_form, self.coef_energy, self.coef_rmsd, self.parser.charge, self.parser.multip)
+        # delete any created files************** 
+        
 
     def update(self, parent_index, child):
         """Add child to ring based on parent location.
