@@ -71,4 +71,4 @@ def verify_ga_input(ga_input_dict):
 #    except AssertionError as e:
 #        raise ValueError("GA input values do not satisfy their constraints.")
     except ValueError as e:
-        raise ValueError("GA input values should be of integer type.")
+        raise ValueError("GA input values should be of integer or float type.")

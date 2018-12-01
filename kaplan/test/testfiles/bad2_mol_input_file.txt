@@ -1,7 +1,6 @@
-qcm = hf
-basis = sto-3g
+qcm = hartree-fock
+basis = aug-cc-pvtz
 struct_input = C=CC=C
-struct_type = smiles
 prog = psi4
 charge = 0
 multip = 1

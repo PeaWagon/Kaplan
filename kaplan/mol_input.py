@@ -1,6 +1,6 @@
 
 from kaplan.geometry import generate_parser
-from kaplan.energy import prep_psi4_geom, run_energy_calc
+from kaplan.energy import prep_psi4_geom, run_energy_calc, check_psi4_inputs
 
 """
 This module reads in the mol_input_file and
@@ -35,15 +35,44 @@ def read_mol_input(mol_input_file):
     return mol_input_dict
 
 def verify_mol_input(mol_input_dict):
+    # make sure dict is non-empty
     assert len(mol_input_dict)
+    # make sure it is actually a dictionary
     assert isinstance(mol_input_dict, dict)
+    # key names
+    key_names = {'qcm', 'basis', 'struct_input', 'struct_type', 'prog',
+                 'charge', 'multip'}
+    for key in key_names:
+        try:
+            assert key in mol_input_dict
+        except AssertionError:
+            raise ValueError(f"Misspelled/incorrectly formatted mol input parameter: {key}.")
+    # ensure program used is psi4
+    assert mol_input_dict["prog"] == "psi4"
+    # check method and basis are in psi4
+    assert check_psi4_inputs(mol_input_dict["qcm"], mol_input_dict["basis"])
     # make sure the inputs are of the correct format
-    assert mol_input_dict['struct_type'] in ('smiles', 'com', 'xyz', 'glog')
+    assert mol_input_dict['struct_type'] in ('smiles', 'com', 'xyz', 'glog', "name", "cid")
+    # check the structure file exists (if applicable)
+    if mol_input_dict["struct_type"] in ("xyz", "glog", "com"):
+        try:
+            with open(mol_input_dict["struct_input"], 'r') as f:
+                pass
+        except FileNotFoundError:
+            raise FileNotFoundError("No such struct_input file.")
+    # check the charge and multiplicity are integers
+    try:
+        mol_input_dict["multip"] = int(mol_input_dict["multip"])
+        mol_input_dict["charge"] = int(mol_input_dict["charge"])
+    except ValueError:
+        raise ValueError(f"Charge and multiplicity should be integer values.")
+    assert mol_input_dict["multip"] > 0
     # try to make the struct object using vetee
-    # somehow run an energy calculation to test its convergence
-    # and to ensure that the method and basis set are available
-    # in the selected program
-    parser = generate_parser(mol_input_dict)
+    try:
+        parser = generate_parser(mol_input_dict)
+    except Exception as e:
+        print(e)
+        raise ValueError("Error when generating Parser object. Check the struct_input value.")
     # check here if error message is raised
     run_energy_calc(prep_psi4_geom(parser.coords, parser.charge, parser.multip))
     # if no error message, initial geometry converges, we are good

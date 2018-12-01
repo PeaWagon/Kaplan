@@ -1,4 +1,5 @@
 
+import os
 
 # TODO: make these functions callable from a function
 # that checks the program being used (i.e. psi4 vs horton
@@ -65,11 +66,51 @@ def run_energy_calc(geom, method="scf",basis="aug-cc-pVTZ",
     assert isinstance(method, str)
     assert isinstance(basis, str)
     assert isinstance(geom, str)
-    molecule = psi4.geoemtry(geom)
+    molecule = psi4.geometry(geom)
     if restricted:
         psi4.set_options({"reference": "uhf"})
     energy = psi4.energy(method+'/'+basis)
     return energy
+
+def check_psi4_inputs(qcm, basis):
+    """Check that a method and a basis set are available in psi4.
+
+    Parameters
+    ----------
+    qcm : str
+        The name of the method to use (lowercase).
+    basis : str
+        The name of the basis set (lowercase).
+
+    Returns
+    -------
+    bool
+        True if calculation can be run with basis
+        set and method given. False otherwise.
+
+    Notes
+    -----
+    For now, this function will do a try accept to
+    determine if the calculation is legitimate.
+    Later on, this might be changed to reading in
+    datafiles containing lists of acceptable inputs
+    and comparing those lists to the program input.
+
+    """
+    # directory for data files
+    avail_basis = os.path.join(os.path.dirname(os.path.realpath(__file__)),\
+                               'data/psi4-basis-sets.txt')
+    avail_qcm = os.path.join(os.path.dirname(os.path.realpath(__file__)),\
+                               'data/psi4-methods.txt')
+    geom = """O
+              H 1 0.96
+              H 1 0.96 2 104.5"""
+    try:
+        run_energy_calc(geom, qcm, basis)
+        return True
+    except Exception as e:
+        print(e)
+        return False
 
 def prep_psi4_geom(coords, charge, multip):
     """Make a psi4 compliant geometry string.

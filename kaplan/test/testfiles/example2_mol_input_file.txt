@@ -1,0 +1,14 @@
+qcm = mp2
+
+basis = cc-pvdz
+
+struct_input = butane
+
+struct_type = name
+
+prog = psi4
+
+charge = 0
+
+multip = 1
+

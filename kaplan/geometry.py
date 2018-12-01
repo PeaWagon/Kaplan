@@ -1,4 +1,6 @@
 
+import vetee
+
 def generate_parser(mol_input_dict):
     """Returns parser object (from vetee)."""
     if mol_input_dict['struct_type'] == 'xyz':

@@ -1,6 +1,6 @@
 # here is a list of all of the functions and objects in kaplan
 # this list is imported when the user writes "from kaplan import *"
-from kaplan.energy import run_energy_calc, prep_psi4_geom
+from kaplan.energy import run_energy_calc, prep_psi4_geom, check_psi4_inputs
 from kaplan.fitg import get_fitness, sum_energies, sum_rmsds, all_pairs_gen, calc_fitness
 from kaplan.gac import run_kaplan
 from kaplan.ga_input import read_ga_input, verify_ga_input
