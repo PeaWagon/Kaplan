@@ -1,0 +1,24 @@
+num_mevs = 500
+
+num_slots = 50
+
+num_filled = 10
+
+num_geoms = 2
+
+num_atoms = 30
+
+t_size = 5
+
+num_muts = 5
+
+num_swaps = 0
+
+pmem_dist = 24
+
+fit_form = 0
+
+coef_energy = 0.75
+
+coef_rmsd = 0.25
+

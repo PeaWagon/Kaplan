@@ -30,3 +30,8 @@ $
 With the environment active:
 1. psi4
 (kenv) $ conda install -c psi4 psi4
+2. openbabel
+(kenv) $ conda install -c openbabel openbabel
+3. pubchempy
+(kenv) $ conda install -c mcs07 pubchempy
+

@@ -2,6 +2,7 @@
 
 import numpy as np
 from random import sample
+from copy import deepcopy
 
 # values for dihedral angles in degrees
 MIN_VALUE = 0
@@ -34,6 +35,7 @@ def generate_children(parent1, parent2, num_muts, num_swaps):
     to make pmem objects (list(list(int))x2
 
     """
+    child1 = deepcopy(parent1)
     # make copies of the two parent pmems
     # apply swap
     # apply mutate

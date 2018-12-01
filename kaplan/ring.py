@@ -223,6 +223,7 @@ class Ring(object):
         for i in range(self.num_filled, self.num_filled + num_pmems + 1):
             self.pmems[i] = Pmem(i, self.num_geoms,
                                  self.num_atoms, current_mev)
+        self.num_filled += num_pmems
             # update pmem energies and fitness
         # if there are some pmems in the ring
         # they might not represent a contiguous segment

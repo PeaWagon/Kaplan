@@ -3,7 +3,7 @@ import sys
 
 from kaplan.ga_input import read_ga_input, verify_ga_input
 from kaplan.mol_input import read_mol_input, verify_mol_input
-from kaplan.ring import Ring
+from kaplan.ring import Ring, RingEmptyError
 from kaplan.tournament import run_tournament
 from kaplan.output import run_output
 
@@ -58,7 +58,7 @@ def run_kaplan(ga_input_file, mol_input_file):
                            ga_input_dict['num_muts'],
                            ga_input_dict['num_swaps'],
                            ring, current_mev)
-        except EmptyRingError:
+        except RingEmptyError:
             ring.fill(ga_input_dict['num_filled'])
 
     # run output
