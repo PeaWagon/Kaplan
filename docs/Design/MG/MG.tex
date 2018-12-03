@@ -16,6 +16,8 @@
     urlcolor=blue
 }
 
+
+
 \input{../../Comments}
 
 \newcounter{acnum}
@@ -32,10 +34,12 @@
 
 % jen stuff
 \newcommand{\progname}{Kaplan} % PUT YOUR PROGRAM NAME HERE
+\usepackage{xr} % for external document referencing
+\externaldocument{../../SRS/SRS}
 
 \begin{document}
 
-\title{Module Guide: \progname{} \wss{include software's name}} 
+\title{Module Guide: \progname{}} 
 \author{Jen Garner}
 \date{\today}
 
@@ -49,6 +53,8 @@
 \toprule {\bf Date} & {\bf Version} & {\bf Notes}\\
 \midrule
 November 5th, 2018 (Monday) & 1.0 & First draft \\
+December 3rd, 2018 (Monday) & 1.1 & Update uses hierarchy and apply some 
+updates from github issues \\
 \bottomrule
 \end{tabularx}
 
@@ -134,41 +140,59 @@ change.
 \item[\refstepcounter{acnum} \actheacnum \label{acHardware}:] Hardware used to 
 run the software.
 \item[\refstepcounter{acnum} \actheacnum \label{acInput}:] Format of the input 
-data.
-\item[\refstepcounter{acnum} \actheacnum \label{acRMSD}:] RMSD module may be
-  rewritten as a behaviour hiding module. \wss{A module doesn't really change
-    its classification.  You can rewrite modules, but this isn't considered in
-    this list of anticipated changes.  The anticipated changes imply that code
-    will be re-written.  You might be getting confused because the software
-    decision hiding modules are generic services that are often already
-    available from other libraries.  However, even if you write the generic
-    services yourself, it is still a software decision hiding module.}
+data. The number of inputs may also change, which is dependent on the data 
+structure used. \meow{For example, the Ring updating rule is dependent on 
+inputs, but a vanilla GA wouldn't need such an updating rule. There might also 
+be a data structure where more inputs would be required.}
+\item[\refstepcounter{acnum} \actheacnum \label{acRMSD}:] The RMSD module may 
+be re-written or changed to use another library. The reasons for switching the 
+RMSD library would be either an increase in performance or an easier 
+installation process.
 \item[\refstepcounter{acnum} \actheacnum \label{acRing}:] The ring may change 
 to another data structure. \wss{Can you create an abstract data structure that
-  anticipates the future possibilities?}
+  anticipates the future possibilities?} 
+\meow{See my comments below. I think I accounted for all of my changes.}
 \item[\refstepcounter{acnum} \actheacnum \label{acFit_G}:] The calculation for 
 $Fit_G$ may be expanded to include more formats than initially described in the 
 SRS document.
-\item[\refstepcounter{acnum} \actheacnum \label{acHorton}:] \progname{} may be 
-incorporated into another software package, thus making it a library not a 
-standalone program. \wss{This isn't what is meant by anticipated changes.}
-\item[\refstepcounter{acnum} \actheacnum \label{acOutputDevice}:] As per 
-AC\ref{acHorton}, \progname{} may be required to run on cell phones through a 
-web 
+
+\item[\refstepcounter{acnum} \actheacnum \label{acOutputDevice}:] \progname{} 
+may be required to run on cell phones through a web 
 interface. The input/output device therefore will change from a keyboard and 
 mouse to a touchscreen.
-\item[\refstepcounter{acnum} \actheacnum \label{acProgLang}:] The programming 
-language may change to improve performance. \wss{This isn't what is meant by anticipated changes.}
 \item[\refstepcounter{acnum} \actheacnum \label{acEnergy}:] The external 
 program used to run the energy calculations may change or multiple choices may 
 become available (depending on user input).
+\item[\refstepcounter{acnum} \actheacnum \label{acGeometry}:] The format of the 
+solutions to the GA may change. The dihedral angles may be generated 
+differently, and thus it may not be viable how the dihedral angles are 
+recombined with the original geometry as in the Geometry module.
+\meow{This AC is to accommodate for my supervisor's comments, where my 
+assumptions about the ordering of atoms and generation of valid dihedral angles 
+was incorrect. A\ref{A:atom-ordering} was incorrect.}.
 \end{description}
 
-\wss{There seems to be some misunderstanding about the anticipated changes.
-  These are what become the secrets of your modules.  The interface to your
-  modules will be abstract so that you can hide the anticipated changes in one
-  module.  Changing programming language is not something you can ``hide'' in
-  one module.  It would mean changing all of your modules.}
+In order to accommodate for a change in data structure, the input parameters 
+could be expanded/modified to include:
+\begin{enumerate}
+	\item Add num\_levels parameter.
+	\item Add ga\_type; choose from Vanilla, Ring, and King of the Hill (KOTH).
+\end{enumerate}
+
+The Vanilla data structure should be filled throughout the optimization, 
+whereas the Ring and KOTH data structures can have empty slots. To initialize a 
+KOTH data structure, this step would involve making many Ring data structures 
+of varying sizes. The updating rule would also change such that unless the 
+smallest (``top") ring was being updated, then the tournament would be 
+conducted across Rings. Therefore, a num\_rings input would be required to see 
+how many Rings are in the data structure. Tournament selection for a Vanilla 
+data structure occurs whereby the two worst population members from a selection 
+are replaced with two children as generated from the two best population 
+members from the selection. The other change needed in going from Vanilla 
+and/or Ring to KOTH would be to have lists for num\_filled and num\_slots 
+(since these values would simply be 1 item long for the Vanilla and Ring). A 
+constraint on these values for Vanilla would be that num\_filled has to be 
+equal to num\_slots.
 
 \subsection{Unlikely Changes} \label{SecUchange}
 
@@ -508,7 +532,7 @@ because they use modules from the lower levels.
 \begin{figure}[H]
 \centering
 %\includegraphics[width=0.7\textwidth]{UsesHierarchy.png}
-\includegraphics[width=\textwidth]{MG_hierarchy_draft4.png}
+\includegraphics[width=\textwidth]{MG_hierarchy_draft5.png}
 \caption{Use hierarchy among modules. Note the hardware-hiding module has been 
 omitted for clarity.}
 \label{FigUH}
@@ -517,6 +541,14 @@ omitted for clarity.}
 \wss{Do any other modules use the Input module?  It is usually the case that
   other modules will ask the Input module for its values.  Or will the Control
   module be the only one that needs these values?}
+\meow{The gac module will be the only one that directly accesses the two input 
+modules. The gac module knows all of the inputs so that it can pass them to the 
+relevant data structures/routines. In the cases where the inputs are used, they 
+will be as part of the data structures or as a simple string or number. I could 
+write my code such that the inputs module was an object that other modules 
+could call; I just didn't think of that structure until I read your comments. 
+I'm also unclear as to how that would reduce the amount of data being passed in 
+my program or make it easier to follow.}
 
 %\section*{References}
 
