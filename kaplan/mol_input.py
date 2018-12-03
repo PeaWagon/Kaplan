@@ -74,7 +74,8 @@ def verify_mol_input(mol_input_dict):
         print(e)
         raise ValueError("Error when generating Parser object. Check the struct_input value.")
     # check here if error message is raised
-    run_energy_calc(prep_psi4_geom(parser.coords, parser.charge, parser.multip))
+    run_energy_calc(prep_psi4_geom(parser.coords, parser.charge, parser.multip),
+                    mol_input_dict["qcm"], mol_input_dict["basis"])
     # if no error message, initial geometry converges, we are good
     return parser
     

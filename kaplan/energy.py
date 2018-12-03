@@ -23,7 +23,7 @@ RAM = "2 GB"
 psi4.set_memory(RAM)
 
 
-def run_energy_calc(geom, method="scf",basis="aug-cc-pVTZ",
+def run_energy_calc(geom, method="hf",basis="sto-3g",
                     restricted=False):
     """Run an energy calculation using psi4.
 
@@ -63,13 +63,20 @@ def run_energy_calc(geom, method="scf",basis="aug-cc-pVTZ",
     Restricted might not work for non-hf methods.
 
     """
+    RAM = "2 GB"
+    psi4.set_memory(RAM)
     assert isinstance(method, str)
     assert isinstance(basis, str)
-    assert isinstance(geom, str)
-    molecule = psi4.geometry(geom)
+    print(geom)
+    print(type(geom))
+#    assert isinstance(geom, str)
+    print(geom)
+    #molecule = psi4.geometry(geom)
     if restricted:
         psi4.set_options({"reference": "uhf"})
+    print('here')
     energy = psi4.energy(method+'/'+basis)
+    print('also here')
     return energy
 
 def check_psi4_inputs(qcm, basis):
@@ -102,13 +109,14 @@ def check_psi4_inputs(qcm, basis):
                                'data/psi4-basis-sets.txt')
     avail_qcm = os.path.join(os.path.dirname(os.path.realpath(__file__)),\
                                'data/psi4-methods.txt')
-    geom = """O
-              H 1 0.96
-              H 1 0.96 2 104.5"""
+    geom = psi4.geometry("""
+                         H 0.0 0.0 0.0
+                         H 0.0 0.0 1.0
+                         """)
     try:
         run_energy_calc(geom, qcm, basis)
         return True
-    except Exception as e:
+    except psi4.driver.p4util.exceptions.ValidationError as e:
         print(e)
         return False
 
@@ -131,10 +139,12 @@ def prep_psi4_geom(coords, charge, multip):
     A string as per psi4 input.
 
     """
-    psi4_str = f"{charge} {multip}\n"
+    psi4_str = f"\n{charge} {multip}\n"
     for atom in coords:
         psi4_str += f"{atom[0]} {atom[1]} {atom[2]} {atom[3]}\n"
-    return psi4_str
+    print(psi4_str)
+    print('moooo')
+    return psi4.geometry(psi4_str)
     
     
 

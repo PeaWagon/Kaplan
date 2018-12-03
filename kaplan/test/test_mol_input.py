@@ -42,6 +42,7 @@ def test_read_mol_input():
 def test_verify_mol_input():
     # good input with extra spaces
     mol_input_dict = read_mol_input(os.path.join(test_dir, "example2_mol_input_file.txt"))
+    print(mol_input_dict)
     verify_mol_input(mol_input_dict)
 
     # check the good file
@@ -55,31 +56,32 @@ def test_verify_mol_input():
     assert_raises(ValueError, verify_mol_input, mol_input_dict2)
 
     mol_input_dict["qcm"] = "not-a-method"
-    assert_raises(AssertionError, verfiy_mol_input, mol_input_dict)
+    assert_raises(AssertionError, verify_mol_input, mol_input_dict)
     mol_input_dict["qcm"] = "hf"
 
     mol_input_dict["basis"] = "not-a-basis"
-    assert_raises(AssertionError, verfiy_mol_input, mol_input_dict)
+    assert_raises(AssertionError, verify_mol_input, mol_input_dict)
     mol_input_dict["basis"] = "sto-3g"
 
     mol_input_dict["struct_input"] = "very-bad-smiles-string"
-    assert_raises(AssertionError, verfiy_mol_input, mol_input_dict)
+    verify_mol_input(mol_input_dict)
+    assert_raises(AssertionError, verify_mol_input, mol_input_dict)
     mol_input_dict["struct_input"] = "c=cc=c"
 
     mol_input_dict["struct_type"] = "not-an-option"
-    assert_raises(AssertionError, verfiy_mol_input, mol_input_dict)
+    assert_raises(AssertionError, verify_mol_input, mol_input_dict)
     mol_input_dict["struct_type"] = "smiles"
 
     mol_input_dict["prog"] = "unavailable-prog"
-    assert_raises(AssertionError, verfiy_mol_input, mol_input_dict)
+    assert_raises(AssertionError, verify_mol_input, mol_input_dict)
     mol_input_dict["prog"] = "psi4"
 
     mol_input_dict["charge"] = "0.34"
-    assert_raises(AssertionError, verfiy_mol_input, mol_input_dict)
+    assert_raises(AssertionError, verify_mol_input, mol_input_dict)
     mol_input_dict["charge"] = "0"
 
     mol_input_dict["multip"] = "-2"
-    assert_raises(AssertionError, verfiy_mol_input, mol_input_dict)
+    assert_raises(AssertionError, verify_mol_input, mol_input_dict)
 
 if __name__ == "__main__":
     test_read_mol_input()

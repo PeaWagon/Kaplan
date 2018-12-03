@@ -1,6 +1,6 @@
-qcm = mp2
+qcm = hf
 
-basis = cc-pvdz
+basis = sto-3g
 
 struct_input = butane
 

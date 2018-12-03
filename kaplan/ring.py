@@ -1,8 +1,9 @@
 
+import numpy as np
+
 from kaplan.pmem import Pmem
 from kaplan.fitg import get_fitness
-from kaplan.geometry import generate_zmatrix, zmatrix_to_xyz
-import numpy as np
+from kaplan.geometry import get_zmatrix_template, update_zmatrix, zmatrix_to_xyz
 
 """
 Consider the conversion of cartesian coordinates
@@ -96,6 +97,13 @@ class Ring(object):
             num_slots value. This variable is dynamic and
             changes depending on how many slots are currently
             filled in on the ring. Starts with a value of 0.
+        pmems : np.ndarray(dtype=object)
+            The list of pmem objects that are contained
+            within the ring.
+        zmatrix : str
+            The original zmatrix specification (gzmat format)
+            from the input geometry. Generated using geometry
+            module (which uses openbabel).
 
         Returns
         -------
@@ -115,6 +123,7 @@ class Ring(object):
         # make an empty ring
         self.num_filled = 0
         self.pmems = np.full(self.num_slots, None)
+        self.zmatrix = get_zmatrix_template(self.parser)
 
     def set_fitness(self, pmem_index):
         """Set the fitness value for a pmem.
