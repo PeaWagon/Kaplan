@@ -50,7 +50,10 @@ def verify_mol_input(mol_input_dict):
     # ensure program used is psi4
     assert mol_input_dict["prog"] == "psi4"
     # check method and basis are in psi4
-    assert check_psi4_inputs(mol_input_dict["qcm"], mol_input_dict["basis"])
+    try:
+        check_psi4_inputs(mol_input_dict["qcm"], mol_input_dict["basis"])
+    except ValueError:
+        raise ValueError(f"Invalid basis set and/or method for psi4: {mol_input_dict['basis'], mol_input_dict['qcm']}")
     # make sure the inputs are of the correct format
     assert mol_input_dict['struct_type'] in ('smiles', 'com', 'xyz', 'glog', "name", "cid")
     # check the structure file exists (if applicable)
@@ -71,11 +74,10 @@ def verify_mol_input(mol_input_dict):
     try:
         parser = generate_parser(mol_input_dict)
     except Exception as e:
-        print(e)
         raise ValueError("Error when generating Parser object. Check the struct_input value.")
     # check here if error message is raised
-    run_energy_calc(prep_psi4_geom(parser.coords, parser.charge, parser.multip),
-                    mol_input_dict["qcm"], mol_input_dict["basis"])
+    geom = prep_psi4_geom(parser.coords, parser.charge, parser.multip)
+    run_energy_calc(geom, mol_input_dict["qcm"], mol_input_dict["basis"])
     # if no error message, initial geometry converges, we are good
     return parser
     

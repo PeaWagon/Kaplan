@@ -67,16 +67,14 @@ def run_energy_calc(geom, method="hf",basis="sto-3g",
     psi4.set_memory(RAM)
     assert isinstance(method, str)
     assert isinstance(basis, str)
-    print(geom)
-    print(type(geom))
-#    assert isinstance(geom, str)
-    print(geom)
-    #molecule = psi4.geometry(geom)
     if restricted:
         psi4.set_options({"reference": "uhf"})
-    print('here')
-    energy = psi4.energy(method+'/'+basis)
-    print('also here')
+    try:
+        energy = psi4.energy(method+'/'+basis)
+    except psi4.driver.p4util.exceptions.ValidationError:
+        raise psi4.driver.p4util.exceptions.ValidationError(f"Invalid method: {method}")
+    except psi4.driver.qcdb.exceptions.BasisSetNotFound:
+        raise psi4.driver.qcdb.exceptions.BasisSetNotFound(f"Invalid basis set: {basis}")
     return energy
 
 def check_psi4_inputs(qcm, basis):
@@ -93,7 +91,8 @@ def check_psi4_inputs(qcm, basis):
     -------
     bool
         True if calculation can be run with basis
-        set and method given. False otherwise.
+        set and method given. Otherwise raise
+        the ValueError.
 
     Notes
     -----
@@ -110,15 +109,17 @@ def check_psi4_inputs(qcm, basis):
     avail_qcm = os.path.join(os.path.dirname(os.path.realpath(__file__)),\
                                'data/psi4-methods.txt')
     geom = psi4.geometry("""
+                         0 1
                          H 0.0 0.0 0.0
                          H 0.0 0.0 1.0
                          """)
     try:
         run_energy_calc(geom, qcm, basis)
         return True
-    except psi4.driver.p4util.exceptions.ValidationError as e:
-        print(e)
-        return False
+    except psi4.driver.p4util.exceptions.ValidationError:
+        raise ValueError(f"Invalid method: {qcm}")
+    except psi4.driver.qcdb.exceptions.BasisSetNotFound:
+        raise ValueError(f"Invalid basis: {basis}")
 
 def prep_psi4_geom(coords, charge, multip):
     """Make a psi4 compliant geometry string.
@@ -142,8 +143,6 @@ def prep_psi4_geom(coords, charge, multip):
     psi4_str = f"\n{charge} {multip}\n"
     for atom in coords:
         psi4_str += f"{atom[0]} {atom[1]} {atom[2]} {atom[3]}\n"
-    print(psi4_str)
-    print('moooo')
     return psi4.geometry(psi4_str)
     
     

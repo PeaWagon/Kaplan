@@ -36,7 +36,7 @@ def verify_ga_input(ga_input_dict):
         try:
             assert key in ga_input_dict
         except AssertionError:
-            raise ValueError(f"Misspelled/incorrectly formatted ga input parameter: {key}.")
+            raise ValueError(f"Parameter missing from the ga input file: {key}. Check spelling and for duplicates.")
     # make sure the inputs are of the correct format
     try:
         for key, value in ga_input_dict.items():

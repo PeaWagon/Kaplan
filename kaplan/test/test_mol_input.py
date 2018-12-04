@@ -56,16 +56,15 @@ def test_verify_mol_input():
     assert_raises(ValueError, verify_mol_input, mol_input_dict2)
 
     mol_input_dict["qcm"] = "not-a-method"
-    assert_raises(AssertionError, verify_mol_input, mol_input_dict)
+    assert_raises(ValueError, verify_mol_input, mol_input_dict)
     mol_input_dict["qcm"] = "hf"
 
     mol_input_dict["basis"] = "not-a-basis"
-    assert_raises(AssertionError, verify_mol_input, mol_input_dict)
+    assert_raises(ValueError, verify_mol_input, mol_input_dict)
     mol_input_dict["basis"] = "sto-3g"
 
     mol_input_dict["struct_input"] = "very-bad-smiles-string"
-    verify_mol_input(mol_input_dict)
-    assert_raises(AssertionError, verify_mol_input, mol_input_dict)
+    assert_raises(ValueError, verify_mol_input, mol_input_dict)
     mol_input_dict["struct_input"] = "c=cc=c"
 
     mol_input_dict["struct_type"] = "not-an-option"
@@ -77,7 +76,7 @@ def test_verify_mol_input():
     mol_input_dict["prog"] = "psi4"
 
     mol_input_dict["charge"] = "0.34"
-    assert_raises(AssertionError, verify_mol_input, mol_input_dict)
+    assert_raises(ValueError, verify_mol_input, mol_input_dict)
     mol_input_dict["charge"] = "0"
 
     mol_input_dict["multip"] = "-2"
