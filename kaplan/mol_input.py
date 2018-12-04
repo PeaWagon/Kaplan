@@ -20,12 +20,12 @@ def read_mol_input(mol_input_file):
                 # remove \n char and separate keys and values
                 # make everything lowercase to avoid
                 # non-matching strings
-                line = line[:-1].lower().split(' = ')
+                line = line[:-1].split(' = ')
                 # ignore blank lines/long input
                 if len(line) != 2:
                     print(f"Warning: line - {line} - was ignored from the mol_input_file.")
                     continue
-                mol_input_dict[line[0]] = line[1]
+                mol_input_dict[line[0].lower()] = line[1]
                 num_args += 1
                 # go through each line and pull data and key
     except FileNotFoundError:
@@ -47,6 +47,15 @@ def verify_mol_input(mol_input_dict):
             assert key in mol_input_dict
         except AssertionError:
             raise ValueError(f"Misspelled/incorrectly formatted mol input parameter: {key}.")
+    # convert all but smiles string to lowercase
+    for key in mol_input_dict:
+        if key != "struct_input":
+            # string is in case dictionary has
+            # already been converted to integers/floats
+            # pre-emptively
+            mol_input_dict[key] = str(mol_input_dict[key]).lower()
+    if mol_input_dict["struct_type"] != "smiles":
+        mol_input_dict["struct_type"] = mol_input_dict["struct_type"].lower()
     # ensure program used is psi4
     assert mol_input_dict["prog"] == "psi4"
     # check method and basis are in psi4

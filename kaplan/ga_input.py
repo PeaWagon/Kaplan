@@ -20,7 +20,6 @@ def read_ga_input(ga_input_file):
         raise FileNotFoundError("No such ga_input_file.")
     if num_args != NUM_GA_ARGS:
         raise ValueError(f"Incorrect number of GA arguments. Given: {num_args}. Needed: {NUM_GA_ARGS}")
-    print(ga_input_dict)
     return ga_input_dict
 
 def verify_ga_input(ga_input_dict):

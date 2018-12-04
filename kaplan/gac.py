@@ -36,7 +36,7 @@ def run_kaplan(ga_input_file, mol_input_file):
     parser = verify_mol_input(mol_input_dict)
 
     # check that inputs agree on a very trivial level
-    assert ga_input_dict['num_atoms'] == parser.num_atoms
+    assert ga_input_dict['num_atoms'] == len(parser.coords)
 
     # make a ring
     ring = Ring(ga_input_dict['num_geoms'], 

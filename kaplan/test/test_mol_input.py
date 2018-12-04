@@ -42,14 +42,16 @@ def test_read_mol_input():
 def test_verify_mol_input():
     # good input with extra spaces
     mol_input_dict = read_mol_input(os.path.join(test_dir, "example2_mol_input_file.txt"))
-    print(mol_input_dict)
     verify_mol_input(mol_input_dict)
 
     # check the good file
-    # {'qcm': 'hf', 'basis': 'sto-3g', 'struct_input': 'c=cc=c',
+    # {'qcm': 'hf', 'basis': 'sto-3g', 'struct_input': 'C=CC=C',
     #  'struct_type': 'smiles', 'prog': 'psi4', 'charge': '0', 'multip': '1'}
     mol_input_dict = read_mol_input(os.path.join(test_dir, "example_mol_input_file.txt"))
     verify_mol_input(mol_input_dict)
+    # reset all params that are modified by verification
+    mol_input_dict["charge"] = '0'
+    mol_input_dict["multip"] = '1'
 
     # struct input is spelt wrong
     mol_input_dict2 = read_mol_input(os.path.join(test_dir, "bad3_mol_input_file.txt"))
@@ -58,26 +60,43 @@ def test_verify_mol_input():
     mol_input_dict["qcm"] = "not-a-method"
     assert_raises(ValueError, verify_mol_input, mol_input_dict)
     mol_input_dict["qcm"] = "hf"
+    # reset all params that are modified by verification
+    mol_input_dict["charge"] = '0'
+    mol_input_dict["multip"] = '1'
 
     mol_input_dict["basis"] = "not-a-basis"
     assert_raises(ValueError, verify_mol_input, mol_input_dict)
     mol_input_dict["basis"] = "sto-3g"
+    # reset all params that are modified by verification
+    mol_input_dict["charge"] = '0'
+    mol_input_dict["multip"] = '1'
 
     mol_input_dict["struct_input"] = "very-bad-smiles-string"
     assert_raises(ValueError, verify_mol_input, mol_input_dict)
-    mol_input_dict["struct_input"] = "c=cc=c"
+    mol_input_dict["struct_input"] = "C=CC=C"
+    # reset all params that are modified by verification
+    mol_input_dict["charge"] = '0'
+    mol_input_dict["multip"] = '1'
 
     mol_input_dict["struct_type"] = "not-an-option"
     assert_raises(AssertionError, verify_mol_input, mol_input_dict)
     mol_input_dict["struct_type"] = "smiles"
+    # reset all params that are modified by verification
+    mol_input_dict["charge"] = '0'
+    mol_input_dict["multip"] = '1'
 
     mol_input_dict["prog"] = "unavailable-prog"
     assert_raises(AssertionError, verify_mol_input, mol_input_dict)
     mol_input_dict["prog"] = "psi4"
+    # reset all params that are modified by verification
+    mol_input_dict["charge"] = '0'
+    mol_input_dict["multip"] = '1'
 
     mol_input_dict["charge"] = "0.34"
     assert_raises(ValueError, verify_mol_input, mol_input_dict)
     mol_input_dict["charge"] = "0"
+    # reset all params that are modified by verification
+    mol_input_dict["multip"] = '1'
 
     mol_input_dict["multip"] = "-2"
     assert_raises(AssertionError, verify_mol_input, mol_input_dict)
