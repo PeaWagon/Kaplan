@@ -1,0 +1,252 @@
+b1lyp	B1LYP Hyb-GGA Exchange-Correlation Functional
+b1lyp-d3bj	 
+b1pw91	B1PW91 Hyb-GGA Exchange-Correlation Functional
+b1wc	B1WC Hyb-GGA Exchange-Correlation Functional
+b2gpplyp	B2GPPLYP Double Hybrid Exchange-Correlation Functional
+b2gpplyp-d3bj	 
+b2gpplyp-nl	B2GPPLYP Double Hybrid Exchange-Correlation Functional
+b2plyp	B2PLYP Double Hybrid Exchange-Correlation Functional
+b2plyp-d3bj	 
+b2plyp-d3mbj	 
+b2plyp-nl	B2PLYP Double Hybrid Exchange-Correlation Functional
+b3lyp	B3LYP Hyb-GGA Exchange-Correlation Functional
+b3lyp-d3bj	 
+b3lyp-d3mbj	 
+b3lyp-nl	B3LYP-nl Hyb-GGA Exchange-Correlation Functional
+b3lyp5	B3LYP5 Hyb-GGA Exchange-Correlation Functional
+b3lyps	B3LYPs Hyb-GGA Exchange-Correlation Functional
+b3p86	B3P86 Hyb-GGA Exchange-Correlation Functional
+b3p86-d3bj	 
+b3pw91	B3PW91 Hyb-GGA Exchange-Correlation Functional
+b3pw91-d3bj	 
+b3pw91-nl	B3PW91-nl Hyb-GGA Exchange-Correlation Functional
+b5050lyp	B5050LYP Hyb-GGA Exchange-Correlation Functional
+b86b95	B86B95 Hyb-GGA Exchange-Correlation Functional
+b86bpbe	B86BPBE GGA Exchange-Correlation Functional
+b88b95	B88B95 Hyb-GGA Exchange-Correlation Functional
+b88b95-d3bj	 
+b97	B97 Hyb-GGA Exchange-Correlation Functional
+b97-1	B97-1 Hyb-GGA Exchange-Correlation Functional
+b97-1-d3bj	 
+b97-1p	B97-1p Hyb-GGA Exchange-Correlation Functional
+b97-2	B97-2 Hyb-GGA Exchange-Correlation Functional
+b97-2-d3bj	 
+b97-3	B97-3 Hyb-GGA Exchange-Correlation Functional
+b97-d	 
+b97-d3	 
+b97-d3bj	 
+b97-d3m	 
+b97-d3mbj	 
+b97-gga1	B97-GGA1 GGA Exchange-Correlation Functional
+b97-k	B97-K Hyb-GGA Exchange-Correlation Functional
+b97m-v	B97M-V GGA Exchange-Correlation Functional
+bb1k	BB1K Hyb-GGA Exchange-Correlation Functional
+bhandh	BHandH Hyb-GGA Exchange-Correlation Functional
+bhandhlyp	BHandHLYP Hyb-GGA Exchange-Correlation Functional
+blyp	BLYP GGA Exchange-Correlation Functional
+blyp-d3bj	 
+blyp-d3mbj	 
+blyp-nl	BLYP GGA Exchange-Correlation Functional
+bop	BOP GGA Exchange-Correlation Functional
+bop-d3bj	 
+bp86	BP86 GGA Exchange-Correlation Functional
+bp86-d3bj	 
+bp86-d3mbj	 
+bp86-nl	BP86 GGA Exchange-Correlation Functional
+cam-b3lyp	CAM-B3LYP Hyb-GGA Exchange-Correlation Functional
+cam-b3lyp-d3bj	 
+camy-b3lyp	CAMY-B3LYP Hyb-GGA Exchange-Correlation Functional
+camy-blyp	CAMY-BLYP Hyb-GGA Exchange-Correlation Functional
+cap0	CAP0 Hyb-GGA Exchange-Correlation Functional
+core-dsd-blyp	 
+core-dsd-blyp-d3bj	 
+dldf	Dispersionless Hybrid Meta-GGA XC Functional
+dldf+d09	Dispersionless Hybrid Meta-GGA XC Functional
+dldf+d10	Dispersionless Hybrid Meta-GGA XC Functional
+dsd-blyp	DSD-BLYP SCS Double Hybrid XC Functional (not dispersion corrected)
+dsd-blyp-d3bj	 
+dsd-blyp-nl	DSD-BLYP-NL (D3BJ,FC parameters) VV10 SCS Double Hybrid XC Functional
+dsd-pbeb95	DSD-PBEB95 SCS Double Hybrid Meta-GGA XC Functional (not dispersion corrected)
+dsd-pbeb95-d3bj	 
+dsd-pbeb95-nl	DSD-PBEB95-NL (D3BJ parameters) VV10 SCS Double Hybrid Meta-GGA XC Functional
+dsd-pbep86	DSD-PBEP86 SCS Double Hybrid XC Functional (not dispersion corrected)
+dsd-pbep86-d3bj	 
+dsd-pbep86-nl	DSD-PBEP86-NL (D3BJ parameters) VV10 SCS Double Hybrid XC Functional
+dsd-pbepbe	DSD-PBEPBE SCS Double Hybrid XC Functional (not dispersion corrected)
+dsd-pbepbe-d3bj	 
+dsd-pbepbe-nl	DSD-PBEPBE-NL (D3BJ parameters) VV10 SCS Double Hybrid XC Functional
+edf1	EDF1 GGA Exchange-Correlation Functional
+edf2	EDF2 Hyb-GGA Exchange-Correlation Functional
+ft97	FT97 GGA Exchange-Correlation Functional
+gam	GAM GGA Minessota Exchange-Correlation Functional
+hcth120	HCTH120 GGA Exchange-Correlation Functional
+hcth120-d3bj	 
+hcth147	HCTH147 GGA Exchange-Correlation Functional
+hcth407	HCTH407 GGA Exchange-Correlation Functional
+hcth407-d3bj	 
+hcth407p	HCTH407P GGA Exchange-Correlation Functional
+hcth93	HCTH93 GGA Exchange-Correlation Functional
+hcthp14	HCTHP14 GGA Exchange-Correlation Functional
+hcthp76	HCTHP76 GGA Exchange-Correlation Functional
+hf	 
+hf+d	 
+hf-d3bj	 
+hf-nl	 
+hf3c	Hartree Fock based 3C composite method with minimal basis set, gCP and D3(BJ)
+hjs-b88	HJS-B88 Hyb-GGA Exchange-Correlation Functional
+hjs-b97x	HJS-B97X Hyb-GGA Exchange-Correlation Functional
+hjs-pbe	HJS-PBE Hyb-GGA Exchange-Correlation Functional
+hjs-pbe-sol	HJS-PBE-SOL Hyb-GGA Exchange-Correlation Functional
+hpbeint	HPBEINT Hyb-GGA Exchange-Correlation Functional
+hse03	HSE03 Hyb-GGA Exchange-Correlation Functional
+hse03-d3bj	 
+hse06	HSE06 Hyb-GGA Exchange-Correlation Functional
+hse06-d3bj	 
+ksdt	KSDT Exchange-Correlation Functional
+kt2	KT2 GGA Exchange-Correlation Functional
+lc-vv10	LC-VV10 GGA Exchange-Correlation Functional
+lcy-blyp	LCY-BLYP GGA Exchange-Correlation Functional
+lcy-pbe	LCY-PBE GGA Exchange-Correlation Functional
+lrc-wpbe	LRC-WPBE GGA Exchange-Correlation Functional
+lrc-wpbeh	LRC-wPBEh Hyb-GGA Exchange-Correlation Functional
+m05	M05 Meta-GGA XC Functional
+m05-2x	Heavily Parameterized Hybrid M05-2X Meta-GGA XC Functional
+m06	M06 Meta-GGA XC Functional
+m06-2x	Hybrid M06-2X Meta-GGA XC Functional
+m06-hf	Minnesota M06-HF Hybrid XC Functional
+m06-l	M06-L Meta-GGA XC Functional
+m08-hx	Minnesota M08-HX Hybrid XC Functional
+m08-so	Minnesota M08-SO Hybrid XC Functional
+m11	M11 Meta-GGA XC Functional
+m11-d3bj	 
+m11-l	M11-L Meta-GGA XC Functional
+m11-l-d3bj	 
+mb3lyp-rc04	MB3LYP-RC04 Hyb-GGA Exchange-Correlation Functional
+mgga_ms0	MGGA_MS0 Meta-GGA XC Functional
+mgga_ms1	MGGA_MS1 Meta-GGA XC Functional
+mgga_ms2	MGGA_MS2 Meta-GGA XC Functional
+mgga_ms2h	MGGA_MS2h Hybrid Meta-GGA XC Functional
+mgga_mvs	MGGA_MVS Meta-GGA XC Functional
+mgga_mvsh	MGGA_MV2h Hybrid Meta-GGA XC Functional
+mn12-l	MN12-L Meta-GGA XC Functional
+mn12-l-d3bj	 
+mn12-sx	MN12-SX Meta-GGA Hybrid Screened Exchange-Correlation Functional
+mn12-sx-d3bj	 
+mn15	MN15 Hybrid Meta-GGA Exchange-Correlation Functional
+mn15-d3bj	 
+mn15-l	MN15-L Meta-GGA XC Functional
+mohlyp	MOHLYP GGA Exchange-Correlation Functional
+mohlyp2	MOHLYP2 GGA Exchange-Correlation Functional
+mpw1b95	mPW1B95 Hyb-GGA Exchange-Correlation Functional
+mpw1b95-d3bj	 
+mpw1k	mPW1K Hyb-GGA Exchange-Correlation Functional
+mpw1lyp	mPW1LYP Hybrid GGA Exchange-Correlation Functional
+mpw1pbe	mPW1PBE Hybrid GGA Exchange-Correlation Functional
+mpw1pw	mPW1PW Hyb-GGA Exchange-Correlation Functional
+mpw1pw-d3bj	 
+mpw3lyp	mPW3LYP Hyb-GGA Exchange-Correlation Functional
+mpw3pw	mPW3PW Hyb-GGA Exchange-Correlation Functional
+mpwb1k	mPWB1K Hyb-GGA Exchange-Correlation Functional
+mpwb1k-d3bj	 
+mpwlyp1m	mPWLYP1M Hyb-GGA Exchange-Correlation Functional
+mpwlyp1w	mPWLYP1W GGA Exchange-Correlation Functional
+mpwpw	mPWPW GGA Exchange-Correlation Functional
+n12	N12 nonseparable GGA Exchange-Correlation Functional
+n12-d3bj	 
+n12-sx	N12-SX Hybrid nonseparable GGA Exchange-Correlation Functional
+n12-sx-d3bj	 
+o3lyp	O3LYP Hyb-GGA Exchange-Correlation Functional
+o3lyp-d3bj	 
+oblyp-d	 
+op-pbe	BP86 GGA Exchange-Correlation Functional
+opbe-d	 
+opwlyp-d	 
+otpss-d	 
+pbe	PBE GGA Exchange-Correlation Functional
+pbe-d3bj	 
+pbe-d3mbj	 
+pbe-nl	PBE GGA Exchange-Correlation Functional
+pbe0	PBE0 Hyb-GGA Exchange-Correlation Functional
+pbe0-13	PBE0-13 Hyb-GGA Exchange-Correlation Functional
+pbe0-2	PBE0-2 Double Hybrid Exchange-Correlation Functional
+pbe0-d3bj	 
+pbe0-d3mbj	 
+pbe0-dh	 
+pbe0-nl	PBE0-nl Hyb-GGA Exchange-Correlation Functional
+pbe1w	PBE1W GGA Exchange-Correlation Functional
+pbe50	PBE50 Hybrid GGA Exchange-Correlation Functional
+pbeh3c	PBE Hybrid based 3C composite method with a small basis set, gCP and D3(BJ)
+pbelyp1w	PBELYP1W GGA Exchange-Correlation Functional
+pkzb	PKZB Meta-GGA XC Functional
+ptpss	PTPSS SOS Double Hybrid XC Functional
+ptpss-d3bj	 
+pw6b95	PW6B95 Hybrid Meta-GGA XC Functional
+pw6b95-d3bj	 
+pw86b95	PW86B95 Hyb-GGA Exchange-Correlation Functional
+pw86pbe	PW86PBE GGA Exchange-Correlation Functional
+pw91	PW91 GGA Exchange-Correlation Functional
+pw91-d3bj	 
+pwb6k	PWB6K Hyb-GGA Exchange-Correlation Functional
+pwb6k-d3bj	 
+pwpb95	PWPB95 SOS Double Hybrid XC Functional
+pwpb95-d3bj	 
+pwpb95-nl	PWPB95 SOS Double Hybrid XC Functional
+revb3lyp	revB3LYP Hyb-GGA Exchange-Correlation Functional
+revpbe	revPBE GGA Exchange-Correlation Functional
+revpbe-d3bj	 
+revpbe-nl	revPBE GGA Exchange-Correlation Functional
+revpbe0	revPBE0 Hybrid GGA Exchange-Correlation Functional
+revpbe0-d3bj	 
+revpbe0-nl	revPBE0 Hybrid GGA Exchange-Correlation Functional
+revtpss	revised TPSS Meta-GGA XC Functional
+revtpss-d3bj	 
+revtpssh	revTPSSh Hyb-GGA Exchange-Correlation Functional
+revtpssh-d3bj	 
+rpbe	RPBE GGA Exchange-Correlation Functional
+rpbe-d3bj	 
+sb98-1a	SB98-1a Hyb-GGA Exchange-Correlation Functional
+sb98-1b	SB98-1b Hyb-GGA Exchange-Correlation Functional
+sb98-1c	SB98-1c Hyb-GGA Exchange-Correlation Functional
+sb98-2a	SB98-2a Hyb-GGA Exchange-Correlation Functional
+sb98-2b	SB98-2b Hyb-GGA Exchange-Correlation Functional
+sb98-2c	SB98-2c Hyb-GGA Exchange-Correlation Functional
+sogga	SOGGA Exchange + PBE Correlation Functional
+sogga11	SOGGA11 Exchange-Correlation Functional
+sogga11-x	SOGGA11-X Hybrid Exchange-Correlation Functional
+sogga11-x-d3bj	 
+svwn	SVWN3 (RPA) LSDA Functional
+teter93	TETER93 Exchange-Correlation Functional
+th-fc	TH-FC GGA Exchange-Correlation Functional
+th-fcfo	TH-FCFO GGA Exchange-Correlation Functional
+th-fco	TH-FCO GGA Exchange-Correlation Functional
+th-fl	TH-FL GGA Exchange-Correlation Functional
+th1	TH1 GGA Exchange-Correlation Functional
+th2	TH2 GGA Exchange-Correlation Functional
+th3	TH3 GGA Exchange-Correlation Functional
+th4	TH4 GGA Exchange-Correlation Functional
+tpss	TPSS Meta-GGA XC Functional
+tpss-d3bj	 
+tpss-nl	TPSS Meta-GGA XC Functional
+tpssh	TPSSh Hyb-GGA Exchange-Correlation Functional
+tpssh-d3bj	 
+tpssh-nl	TPSSh-nl Hyb-GGA Exchange-Correlation Functional
+tpsslyp1w	TPSSLYP1W GGA Exchange-Correlation Functional
+tuned-cam-b3lyp	TUNED-CAM-B3LYP Hyb-GGA Exchange-Correlation Functional
+vsxc	VSXC Meta-GGA XC Functional
+vv10	VV10 GGA Exchange-Correlation Functional
+wb97	wB97 GGA Exchange-Correlation Functional
+wb97m-v	wB97M-V Hyb-GGA Exchange-Correlation Functional
+wb97x	wB97X Hyb-GGA Exchange-Correlation Functional
+wb97x-d	 
+wb97x-v	wB97X-V Hyb-GGA Exchange-Correlation Functional
+wpbe	PBE SR-XC Functional (HJS Model)
+wpbe-d3bj	 
+wpbe-d3mbj	 
+wpbe0	PBE0 SR-XC Functional (HJS Model)
+x1b95	X1B95 Hyb-GGA Exchange-Correlation Functional
+x3lyp	X3LYP Hyb-GGA Exchange-Correlation Functional
+x3lyp-d3bj	 
+xb1k	XB1K Hyb-GGA Exchange-Correlation Functional
+xlyp	XLYP GGA Exchange-Correlation Functional
+xlyp-d3bj	 
+zlp	ZLP GGA Exchange-Correlation Functional

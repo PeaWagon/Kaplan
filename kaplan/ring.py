@@ -2,7 +2,7 @@
 import numpy as np
 
 from kaplan.pmem import Pmem
-from kaplan.fitg import get_fitness
+from kaplan.fitg import sum_energies, sum_rmsds, calc_fitness
 from kaplan.geometry import get_zmatrix_template, update_zmatrix, zmatrix_to_xyz
 
 """
@@ -152,9 +152,11 @@ class Ring(object):
         # construct zmatrices
         zmatrices = [generate_zmatrix(self.parser, self.pmems[pmem_index].dihedrals[i]) for i in range(self.num_geoms)]
         xyz_coords = [zmatrix_to_xyz(zmatrix) for zmatrix in zmatrices]
-        self.pmems[pmem_index].fitness = get_fitness(xyz_coords, self.parser.method, self.parser.basis, self.fit_form, self.coef_energy, self.coef_rmsd, self.parser.charge, self.parser.multip)
-        # delete any created files************** 
-        
+        # get fitness
+        energy = sum_energies(xyz_coords, self.parser.charge, self.parser.multip, self.parser.method, self.parser.basis)
+        rmsd = sum_rmsds(xyz_coords)
+        fitness = calc_fitness(self.fit_form, sum_energy, self.coef_energy, sum_rmsd, self.coef_rmsd)
+        self.pmems[pmem_index].fitness = fitness
 
     def update(self, parent_index, child):
         """Add child to ring based on parent location.

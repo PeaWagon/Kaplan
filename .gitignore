@@ -15,3 +15,7 @@ kaplan.egg-info/*
 kaplan/__pycache__/
 kaplan/test/__pycache__/
 kaplan/test/kaplan.egg-info/
+
+*timer.dat
+*psi.*.clean
+*.ipynb_checkpoints

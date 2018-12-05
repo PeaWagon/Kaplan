@@ -6,7 +6,7 @@ Num_filled = 10
 
 Num_geoms = 2
 
-Num_atoms = 30
+Num_atoms = 21
 
 T_size = 5
 

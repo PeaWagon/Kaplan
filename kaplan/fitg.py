@@ -1,22 +1,24 @@
 
 from math import factorial
+
 from kaplan.energy import run_energy_calc, prep_psi4_geom
 from kaplan.rmsd import calc_rmsd
 
-def get_fitness(xyz_coords, method, basis, fit_form, coef_energy, coef_rmsd, charge, multip):
-    return calc_fitness(fit_form, sum_energies(xyz_coords, charge, multip, method, basis), coef_energy, sum_rmsds(xyz_coords), coef_rmsd)
+# getting rid of this function because it seems redundant
+#def get_fitness(xyz_coords, method, basis, fit_form, coef_energy, coef_rmsd, charge, multip):
+#    return calc_fitness(fit_form, sum_energies(xyz_coords, charge, multip, method, basis), coef_energy, sum_rmsds(xyz_coords), coef_rmsd)
 
 def sum_energies(xyz_coords, charge, multip, method, basis):
-    energies = np.zeros(len(xyz_files), float)
-    for i, xyz_file in enumerate(xyz_files):
-        energies[i] = run_energy_calc(prep_psi4_geom(xyz_file, charge, multip), method, basis)
+    energies = np.zeros(len(xyz_coords), float)
+    for i, xyz in enumerate(xyz_coords):
+        energies[i] = run_energy_calc(prep_psi4_geom(xyz, charge, multip), method, basis)
     return abs(sum(energies))
 
 def sum_rmsds(xyz_coords):
-    rmsd_values = np.zeros(len(xyz_files), float)
+    rmsd_values = np.zeros(len(xyz_coords), float)
     # n choose k = n!/(k!(n-k)!)
     num_pairs = factorial(num_geoms)/(2*factorial(num_geoms-2))
-    pairs = all_pairs_gen(len(xyz_files))
+    pairs = all_pairs_gen(len(xyz_coords))
     for i in range(num_pairs):
         ind1, ind2 = next(pairs)
         rmsd_values[i] = calc_rmsd(xyz_files[ind1], xyz_files[ind2])

@@ -2,6 +2,10 @@
 # NOTE: you need to have rmsd installed
 # for the rmsd module to work
 
+# NOTE: this function is going to change since I now
+# know how to call the pieces of the relevant rmsd
+# program (without piping input from the terminal).
+
 from subprocess import run, PIPE
 
 def calc_rmsd(f1, f2):

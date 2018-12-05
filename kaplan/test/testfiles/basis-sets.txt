@@ -1,0 +1,84 @@
+STO-3G	 	 	 	 	 
+3-21G	 	 	 	 	 
+ 	 	 	 	 	 
+6-31G	 	6-31+G	 	6-31++G	 
+6-31G(d)	6-31G*	6-31+G(d)	6-31+G*	6-31++G(d)	6-31++G*
+6-31G(d,p)	6-31G**	6-31+G(d,p)	6-31+G**	6-31++G(d,p)	6-31++G**
+ 	 	 	 	 	 
+6-311G	 	6-311+G	 	6-311++G	 
+6-311G(d)	6-311G*	6-311+G(d)	6-311+G*	6-311++G(d)	6-311++G*
+6-311G(d,p)	6-311G**	6-311+G(d,p)	6-311+G**	6-311++G(d,p)	6-311++G**
+6-311G(2d)	 	6-311+G(2d)	 	6-311++G(2d)	 
+6-311G(2d,p)	 	6-311+G(2d,p)	 	6-311++G(2d,p)	 
+6-311G(2d,2p)	 	6-311+G(2d,2p)	 	6-311++G(2d,2p)	 
+6-311G(2df)	 	6-311+G(2df)	 	6-311++G(2df)	 
+6-311G(2df,p)	 	6-311+G(2df,p)	 	6-311++G(2df,p)	 
+6-311G(2df,2p)	 	6-311+G(2df,2p)	 	6-311++G(2df,2p)	 
+6-311G(2df,2pd)	 	6-311+G(2df,2pd)	 	6-311++G(2df,2pd)	 
+6-311G(3df)	 	6-311+G(3df)	 	6-311++G(3df)	 
+6-311G(3df,p)	 	6-311+G(3df,p)	 	6-311++G(3df,p)	 
+6-311G(3df,2p)	 	6-311+G(3df,2p)	 	6-311++G(3df,2p)	 
+6-311G(3df,2pd)	 	6-311+G(3df,2pd)	 	6-311++G(3df,2pd)	 
+6-311G(3df,3pd)	 	6-311+G(3df,3pd)	 	6-311++G(3df,3pd)	 
+
+cc-pVXZ	DTQ56	6	56	Q56	TQ56	DTQ56	DTQ56	DTQ56	DTQ56
+cc-pV(X+d)Z	DTQ56	6	56	Q56	TQ56	DTQ56	DTQ56	DTQ56	DTQ56
+cc-pCVXZ	DTQ56	6	56	Q56	TQ56	DTQ56	DTQ56	DTQ56	DTQ56
+cc-pCV(X+d)Z	DTQ56	6	56	Q56	TQ56	DTQ56	DTQ56	DTQ56	DTQ56
+cc-pwCVXZ	DTQ5	 	5	Q5	TQ5	DTQ5	DTQ5	DTQ5	DTQ5
+cc-pwCV(X+d)Z	DTQ5	 	5	Q5	TQ5	DTQ5	DTQ5	DTQ5	DTQ5
+
+aug-cc-pVXZ	s, p, ⋯, ℓmax−2, ℓmax−1, ℓmax	s, p, ⋯, ℓmax−1	aDZ	aTZ	aQZ
+heavy-aug-cc-pVXZ [2]	s, p, ⋯, ℓmax−2, ℓmax−1, ℓmax	 	haDZ	haTZ	haQZ
+jun-cc-pVXZ	s, p, ⋯, ℓmax−2, ℓmax−1	 	jaDZ	jaTZ	jaQZ
+may-cc-pVXZ	s, p, ⋯, ℓmax−2	 	 	maTZ	maQZ
+⋯	s, p	 	 	 	aaQZ
+cc-pVXZ	 	 	DZ	TZ	QZ
+cc-pVXZ-DK	DTQ5	 	 	 	 	 	DTQ5	DTQ5	 
+cc-pV(X+d)Z-DK	 	 	 	 	 	 	 	 	 
+cc-pCVXZ-DK	DTQ5	 	 	 	 	 	DTQ5	DTQ5	 
+cc-pCV(X+d)Z-DK	 	 	 	 	 	 	 	 	 
+cc-pwCVXZ-DK	–TQ5	 	 	 	 	 	–TQ5	–TQ5	 
+cc-pwCV(X+d)Z-DK	 	 	 	 	 	 	 	 	 
+
+cc-pVXZ-JKFIT [3]	DTQ5	 	5	Q5	TQ5	DTQ5	DTQ5	DTQ5	 
+cc-pV(X+d)Z-JKFIT	DTQ5	 	5	Q5	TQ5	DTQ5	DTQ5	DTQ5	 
+cc-pCVXZ-JKFIT [3]	 	 	 	 	 	 	 	 	 
+cc-pCV(X+d)Z-JKFIT	 	 	 	 	 	 	 	 	 
+cc-pwCVXZ-JKFIT [3]	 	 	 	 	 	 	 	 	 
+cc-pwCV(X+d)Z-JKFIT	
+
+cc-pVXZ-RI	DTQ56	6	56	Q56	TQ56	DTQ56	DTQ56	DTQ56	 
+cc-pV(X+d)Z-RI	DTQ56	6	56	Q56	TQ56	DTQ56	DTQ56	DTQ56	 
+cc-pCVXZ-RI	 	 	 	 	 	 	 	 	 
+cc-pCV(X+d)Z-RI	 	 	 	 	 	 	 	 	 
+cc-pwCVXZ-RI	DTQ5	 	5	Q5	TQ5	DTQ5	DTQ5	DTQ5	 
+cc-pwCV(X+d)Z-RI	DTQ5	 	5	Q5	TQ5	DTQ5	DTQ5	DTQ5	 
+
+
+cc-pVXZ-DUAL	TQ	 	 	 	 	 	TQ	DTQ	 
+cc-pV(X+d)Z-DUAL	 	 	 	 	 	 	 	 	 
+cc-pCVXZ-DUAL	 	 	 	 	 	 	 	 	 
+cc-pCV(X+d)Z-DUAL	 	 	 	 	 	 	 	 	 
+cc-pwCVXZ-DUAL	 	 	 	 	 	 	 	 	 
+cc-pwCV(X+d)Z-DUAL	 	 	 	 	 	 	 	 	 
+
+def2-SV(P)	 
+def2-SVP	def2-SVPD
+def2-TZVP	def2-TZVPD
+def2-TZVPP	def2-TZVPPD
+def2-QZVP	def2-QZVPD
+def2-QZVPP	def2-QZVPPD
+
+pcseg-N	01234 [5]	 	 	 
+aug-pcseg-N	 	01234	 	 
+pcSseg-N	 	 	01234	 
+aug-pcSseg-N	 	 	 	01234
+
+DZP
+TZ2P
+TZ2PF
+Sadlej-LPol-ds
+Sadlej-LPol-dl
+Sadlej-LPol-fs
+Sadlej-LPol-fl
