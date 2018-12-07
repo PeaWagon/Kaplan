@@ -90,7 +90,7 @@ vetee = private database repository on github
 
 \section{Introduction}
 
-The following document details the Module Interface Specifications for 
+The following document details the Module Interface Specifications (MIS) for 
 \progname{}. This program is designed to search a potential energy space for a 
 set of conformers for a given input molecule. The energy and RMSD are used to 
 optimize dihedral angles, which can then be combined with an original geometry 
@@ -184,7 +184,7 @@ value in what is usually a for loop.
 
 Note that obvious errors (such as missing inputs) that are handled by the 
 Python interpreter are not listed under the exceptions in any of the 
-\progname{} modules.
+\progname{} modules. \wss{good}
 
 \section{Module Decomposition}
 
@@ -228,7 +228,8 @@ The following table is taken directly from the Module Guide document for this pr
 \section{MIS of GA Input} \label{section-ga_input}
 
 \meow{Right now the link does not open the SRS document. Not sure if that was 
-supposed to happen.}
+supposed to happen.} \wss{There are ways to get the external links to work, but
+don't worry about it; it isn't worth your time to fiddle with that right now.}
 
 The purpose of this module is to provide a utility for reading and verifying 
 input related to the genetic algorithm (GA). There are two main functions: 
@@ -254,13 +255,16 @@ These values are read into a Python dictionary, called ga\_input\_dict. The
 order of the inputs does not matter, but \progname{} will throw an error if one 
 of the keys is missing. This dictionary is then passed to the second function, 
 which checks that the values are correct and that all keys have been given. 
-From the SRS document (see SRS Section \ref{SRS-symbols}), $n_G$ and $n_a$ are 
+From the SRS document (see SRS Section \ref{SRS-symbols}), \wss{I like that you
+  have external references, but they only work if the SRS document is compiled.
+  It would be nice if you had a makefile that made all of the documents, like
+  the one in the Blank Project example in our repo.} $n_G$ and $n_a$ are 
 represented here as num\_geoms and num\_atoms respectively. Also, coef\_energy 
 and coef\_rmsd are $C_\text{E}$ and $C_\text{RMSD}$ from the SRS. All keys are 
 case insensitive.
 
 \meow{I may have to check if SMILES strings are case sensitive for the programs 
-I am parsing them with.}
+I am parsing them with.} \wss{okay}
 
 \subsection{Module}
 
@@ -294,7 +298,7 @@ NUM\_GA\_ARGS := 12
 
 \noindent num\_args := for each line in the ga\_input\_file $+(x : list | key 
 \in x \land value \in x \land 
-length(x) = 2 : 1)$ \\
+length(x) = 2 : 1)$ \\ \wss{what list is this based on?}
 
 \noindent ga\_input\_dict, which is a dictionary that contains:
 \begin{itemize}
@@ -313,6 +317,15 @@ length(x) = 2 : 1)$ \\
 \item coef\_energy: $\mathbb{R}$
 \item coef\_rmsd: $\mathbb{R}$
 \end{itemize}
+
+\wss{You don't actually have state variables for the above, since you are
+  outputting this information in a dictionary.  What you have done is partially defined
+   the abstract data type for your dictionary.  I don't understand why you need
+   a dictionary?  I don't see what the key value is?  Can't you just have input
+   data have the state variables that you have mentioned and skip the idea of
+   outputting a dictionary?  The input module would be available to any module
+   that needed these inputs and, if it is implemented as a singleton object, you
+ don't even need to pass an object.}
 
 \subsubsection{Environment Variables}
 
@@ -357,6 +370,9 @@ in \ref{section-mol_input}).
 \subsubsection{Local Functions}
 
 None
+
+\wss{For ease of reference, it is nice if there is a newpage before each
+  module.}
 
 \section{MIS of Molecule Input} \label{section-mol_input}
 
@@ -438,6 +454,10 @@ length(x) = 2 : 1)$ \\
 	\item charge := $\mathbb{Z}$
 	\item multip := $\mathbb{N}$
 \end{itemize}
+
+\wss{The same comment applies about the dictionary as for the previous module.
+  Rather than using strings for the structure types,  you could considering
+  using an enumerated type.}
 
 \subsubsection{Environment Variables}
 
@@ -522,7 +542,8 @@ tournament (Section \ref{section-tournament})
 
 \meow{Not sure if I should list the exceptions raised by imported modules here? 
 For example, reading the input may give an error, but this error is not 
-explicitly raised by the gac module. Do I still have to list it here?}
+explicitly raised by the gac module. Do I still have to list it here?} \wss{No,
+only listed exceptions that are the responsibility of this module to raise.}
 
 \begin{center}
 	\begin{tabular}{p{2cm} p{4cm} p{4cm} p{2cm}}
@@ -553,6 +574,23 @@ gac?}
 	\item mev : $\{x : \mathbb{Z} | \text{mum\_mevs} > x \geq 0 : x\}$
 \end{itemize}
 
+\wss{I don't entirely understand your design.  The confusion about the role of
+  state variables is muddying the water for me.  I can tell you have done a
+  great deal of work and have thought deeply about the design.  My guess is that
+  you have thought about the design in Python and you are trying to document
+  your Python design using the 741 MIS.  I think this has led to a more
+  complicated MIS document than necessary}
+
+\wss{I've been trying to think of practical advice that can help the
+  documentation, but not consume too much of your time.  What I've come up with
+  is that you should replace each of your dictionaries with newly defined types.
+  The new types will be tuples, in the Hoffmann and Strooper sense, but they
+  will be implemented by dictionaries.  A dictionary gives a set of key value
+  pairs.  A tuple is a set of field names and values.  This would let you
+  introduce the new types using the H\&S notation, but you don't have to
+  document them as ADTs because the implementation as dictionaries is so
+  straightforward.  You can define all of your new types in section 4, or in a
+  type defining module.}
 
 \subsubsection{Environment Variables}
 
@@ -569,10 +607,15 @@ input files and only need to access this module to complete their task.
 \begin{itemize}
 	\item transition: The set of conformers with large negative energy and high 
 	RMSD are produced and passed to the 
-	output module (\ref{section-output}).
+	output module (\ref{section-output}). \wss{if you are passing something,
+          it isn't a state variable.}
 	\item output: None
 	\item exception: None
 \end{itemize}
+
+\wss{I think you have a misunderstanding about the state variables.  The fields
+  of an object are specified as state variables.  If you have state variables,
+  you should have state transitions that show how the values are changed.}
 
 \subsubsection{Local Functions}
 
@@ -643,7 +686,9 @@ not converge.
 	\end{tabular}
 \end{center}
 
-\noindent * local function
+\noindent * local function \wss{If they are local functions, they shouldn't
+  appear in the exported access programs.  This comment applies where ever this
+  is done in the MIS.}
 
 \subsection{Semantics}
 
@@ -655,6 +700,9 @@ not converge.
 	\item num\_pairs is the number of next() calls needed for the generator. := 
 	$\{<y,n> | n = \text{num\_geoms} : \mathbb{N} \land y = n!/(2*(n-2)!) \}$
 \end{itemize}
+
+\wss{State variables should have a name and type.  I'm not sure how to interpret
+  this.}
 
 \subsubsection{Environment Variables}
 
@@ -966,6 +1014,10 @@ geometry (Section \ref{section-geometry})
 		\hline
 	\end{tabular}
 \end{center}
+
+\wss{You should specify a constructor, not \_\_init\_\_.  Your specification is
+  very Pythoncentric.  The goal should be to make it as language agnostic as
+  possible.}
 
 \subsection{Semantics}
 
