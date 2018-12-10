@@ -62,11 +62,6 @@ particularly see Section 2 (Reference Material).
   \bottomrule
 \end{tabular}\\
 
-\wss{symbols, abbreviations or acronyms -- you can simply reference the SRS
-  tables, if appropriate}
-
-\wss{You should comment out my original comments.  They are confusing now.}
-
 \newpage
 
 \tableofcontents
@@ -95,9 +90,6 @@ of the non-functional requirements. All requirements are listed in the SRS
 documentation. Section \ref{section-tables} gives traceability for these 
 requirements. A usability questionnaire is given in Appendix \ref{survey}.
 
-\wss{provide an introductory blurb and roadmap of the
-  Verification and Validation plan}
-
 \section{General Information}
 
 \subsection{Summary}
@@ -105,11 +97,8 @@ requirements. A usability questionnaire is given in Appendix \ref{survey}.
 \progname{} is designed to search the potential energy space of molecules for 
 possible conformational isomers. The inputs will be some geometry specification 
 for the molecule(s) of interest, a quantum chemical method (QCM), and a basis 
-set (BS). The output will be a geometry specification and a list of relevant 
-energies. \wss{A geometry specification, or potentially a set of geometry specifications?}
-
-\wss{Say what software 
-is being tested.  Give its name and a brief overview of its general functions.}
+set (BS). The output will be a set of geometry specifications and a list of relevant 
+energies.
 
 \subsection{Objectives}
 
@@ -133,30 +122,20 @@ structures are chemically meaningful. The performance of \progname{} should be
 easily tracked and it should be evident to the user if their method and basis 
 set are too computationally expensive for the input molecule.
 
-\wss{State what is intended to be accomplished.  The objective will be around
-  the qualities that are most important for your project.  You might have
-  something like: ``build confidence in the software correctness,''
-  ``demonstrate adequate usability.'' etc.  You won't list all of the qualities,
-  just those that are most important.}
-
 \subsection{Relevant Documentation}
 
 The Software Requirements Specification (SRS) document included in the 
 \progname{} repository should be referenced for any definitions. It may be 
 necessary to reference the documentation for external software such as Psi4 
 \cite{psi4}, Openbabel \cite{obabel}, \cite{obabel-web}, or Gaussian \cite{g16}.
-
-\wss{Reference relevant documentation.  This will definitely include your SRS}
-
-\wss{You should include the url for the other \progname{} documents.}
+The \progname{} repository can be found here:
+\url{https://github.com/PeaWagon/Kaplan}.
 
 \section{Plan} \label{section-plans}
 	
 \subsection{Verification and Validation Team}
 
 Mulder, c'est moi.
-
-\wss{Probably just you.  :-)}
 
 \subsection{SRS Verification Plan}
 
@@ -196,9 +175,6 @@ solution or find lower energy conformers? For example, does the set of dihedral
 angles, $D_i$, with heavier atoms converge more rapidly? Does $D_i$ outperform 
 when atoms are chosen with more bonded atoms?
 
-\wss{I like that you have thought about how your SRS might change as a result of
-  your test cases.  Nice.}
-
 As for the SRS document itself, the author will review it again once the rest 
 of the program has been written to see if its requirements have been met. The 
 author can ask her supervisor to review the paper as well as a few lab members. 
@@ -206,16 +182,11 @@ Brooks MacLachlan has already raised some github issues for the SRS document
 that the author will address by the end of this semester (Fall 2018). Professor 
 Spencer Smith will also review the SRS and give feedback.
 
-\wss{List any approaches you intend to use for SRS verification.  This may just
-  be ad hoc feedback from reviewers, like your classmates, or you may have
-  something more rigorous/systematic in mind..}
-
 \subsection{Design Verification Plan}
 
-The design will be reviewed during a meeting with the author's supervisor.
-\wss{Your classmates and myself will also review  your design.}
-
-\wss{Plans for design verification}
+The design will be reviewed during a meeting with the author's supervisor. 
+Professor Spencer Smith and fellow classmates from CAS 741 will review the
+design, specifically Oluwaseun Owojaiye and Karol Sekis.
 
 \subsection{Implementation Verification Plan}
 
@@ -231,8 +202,38 @@ docstrings). \wss{These ideas are good, but they aren't very specific.  I would
   document if you change your mind later.} The implementation will also be
 tested by classmate, Malavika Srinivasan, and Professor Spencer Smith.
 
-\wss{You should at least point to the tests listed in this document and the unit
-  testing plan.}
+
+It is assumed that any external programs that are used by \progname{} have 
+their own tests and that these tests will be run (and hopefully pass) on the 
+applicable systems.
+
+Planned external tests for these programs (note: cannot test Gaussian as it is 
+not open-source):
+
+\begin{itemize}
+	\item Openbabel: https://openbabel.org/docs/dev/Contributing/Testing.html
+	\item Psi4: http://www.psicode.org/psi4manual/1.2/testsuite.html
+	\item rmsd: https://github.com/charnley/rmsd/blob/master/tests.py
+\end{itemize}
+
+The author will provide a code review for this project at a lab meeting. The 
+other lab members will answer the usability survey questions as outlined in the 
+appendix section \ref{survey}.
+				
+Travis will be used to verify the build when a commit is made to the 
+\progname{} repository. Travis will attempt to install \progname{} as a Conda 
+package inside a Conda environment. 
+
+Here are some important style links:
+
+\begin{itemize}
+	
+\item https://www.python.org/dev/peps/pep-0008/
+\item https://pypi.org/project/pycodestyle/
+\item 
+https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example\_numpy.html
+
+\end{itemize}
 
 \subsection{Software Validation Plan}
 
@@ -241,19 +242,9 @@ used as a reference, for example see \cite{butane-conformers}. Using the same
 input molecule, determine whether 
 \progname{} can find the same conformers.
 
-\wss{Great!  Nice to see someone with a validation plan.}
-
-\wss{If there is any external data that can be used for validation, you should
-  point to it here.  If there are no plans for validation, you should state that
-  here.}
-
 \section{System Test Description} \label{section-tests}
 	
 \subsection{Tests for Functional Requirements}
-
-\wss{Subsets of the tests may be in related, so this section is divided into
-  different areas.  If there are no identifiable subsets for the tests, this
-  level of document structure can be removed.}
 
 \subsubsection{FT1 - Data Input and Output}
 
@@ -642,7 +633,7 @@ from \progname{} (at least until the case can be determined).
 	(x) using Matplotlib. Inspect this plot to ensure that the slope of this 
 	plot is not negative (i.e. increasing cores increases performance). This 
 	will likely be part of a later phase of implementation and
-        testing. \wss{I like that you are planning on plotting these results.}
+        testing.
 	
 	\item Testing on HPC cluster.
 	
@@ -664,9 +655,6 @@ from \progname{} (at least until the case can be determined).
 
 \subsection{Traceability Between Test Cases and 
 Requirements}\label{section-tables}
-
-\wss{Provide a table that shows which test cases are supporting which
-  requirements.}
 
 \begin{table}[H]
 	\begin{center}
@@ -712,46 +700,6 @@ Requirements}\label{section-tables}
 \caption{traceability table for non-functional requirements and tests.}
 \end{table}
 
-\section{Static Verification Techniques}
-
-\wss{In this section give the details of any plans for static verification of
-  the implementation.  Potential techniques include code walkthroughs, code
-  inspection, static analyzers, etc.}
-
-It is assumed that any external programs that are used by \progname{} have 
-their own tests and that these tests will be run (and hopefully pass) on the 
-applicable systems.
-
-Planned external tests for these programs (note: cannot test Gaussian as it is 
-not open-source):
-
-\begin{itemize}
-	\item Openbabel: https://openbabel.org/docs/dev/Contributing/Testing.html
-	\item Psi4: http://www.psicode.org/psi4manual/1.2/testsuite.html
-	\item rmsd: https://github.com/charnley/rmsd/blob/master/tests.py
-\end{itemize}
-
-The author will provide a code review for this project at a lab meeting. The 
-other lab members will answer the usability survey questions as outlined in the 
-appendix section \ref{survey}.
-				
-Travis will be used to verify the build when a commit is made to the 
-\progname{} repository. Travis will attempt to install \progname{} as a Conda 
-package inside a Conda environment. 
-
-Here are some important style links:
-
-\begin{itemize}
-	
-\item https://www.python.org/dev/peps/pep-0008/
-\item https://pypi.org/project/pycodestyle/
-\item 
-https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example\_numpy.html
-
-\end{itemize}
-
-\wss{You can remove this section and add the relevant material to Section 4.4.}
-
 \bibliographystyle{plainnat}
 
 %\bibliography{SRS}\\
@@ -769,8 +717,6 @@ The definition of the test cases will call for SYMBOLIC\_CONSTANTS.
 Their values are defined in this section for easy maintenance.
 
 \subsection{Usability Survey Questions} \label{survey}
-
-\wss{This is a section that would be appropriate for some projects.}
 
 \begin{enumerate}
 	\item Were you able to install the program using the instructions alone, or 
