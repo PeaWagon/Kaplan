@@ -24,7 +24,6 @@ install:
   - conda install -c psi4 psi4
   - conda install -c mcs07 pubchempy
   - conda install -c openbabel openbabel
-#  - python setup.py install
   - pip install rmsd
   - pip install -i https://pypi.anaconda.org/kumrud/simple vetee
   - pip install -e ./
