@@ -261,10 +261,15 @@ From the SRS document (see SRS Section \ref{SRS-symbols}), \wss{I like that you
   the one in the Blank Project example in our repo.} $n_G$ and $n_a$ are 
 represented here as num\_geoms and num\_atoms respectively. Also, coef\_energy 
 and coef\_rmsd are $C_\text{E}$ and $C_\text{RMSD}$ from the SRS. All keys are 
-case insensitive.
+case insensitive. The values are case insensitive except for the SMILES string 
+(if chosen struct\_type is smiles), which is case sensitive by definition.
 
 \meow{I may have to check if SMILES strings are case sensitive for the programs 
 I am parsing them with.} \wss{okay}
+
+\meow{Turns out that SMILES strings are case sensitive, since lowercase 
+indicates an aromatic atom. I was able to catch this problem during my testing 
+and I have addressed the issue in the code.}
 
 \subsection{Module}
 
@@ -677,32 +682,17 @@ not converge.
 		& None \\
 		sum\_rmsd &  list(list(str,$\mathbb{R}$,$\mathbb{R}$,$\mathbb{R}$)) & 
 		$\mathbb{R}$ & None \\
-		all\_pairs\_gen* & $\mathbb{Z}$ & tuple($\mathbb{Z}, \mathbb{Z}$) & 
-		None 
-		\\
 		calc\_fitness & $\mathbb{Z}$, $\mathbb{R}$, $\mathbb{R}$, $\mathbb{R}$, 
 		$\mathbb{R}$ & $\mathbb{R}$ & None \\
 		\hline
 	\end{tabular}
 \end{center}
 
-\noindent * local function \wss{If they are local functions, they shouldn't
-  appear in the exported access programs.  This comment applies where ever this
-  is done in the MIS.}
-
 \subsection{Semantics}
 
 \subsubsection{State Variables}
 
-\begin{itemize}
-	\item the generator function, all\_pairs\_gen, will need to keep track of 
-	the i and j iteration values.
-	\item num\_pairs is the number of next() calls needed for the generator. := 
-	$\{<y,n> | n = \text{num\_geoms} : \mathbb{N} \land y = n!/(2*(n-2)!) \}$
-\end{itemize}
-
-\wss{State variables should have a name and type.  I'm not sure how to interpret
-  this.}
+None
 
 \subsubsection{Environment Variables}
 
@@ -719,18 +709,24 @@ by zero errors.
 
 \noindent sum\_energies(xyz\_coords, charge, multip, method, basis):
 \begin{itemize}
-	\item transition: read in the xyz\_coords. 
+	\item transition: None
 	\item output: \textit{out} := $+(x: \mathbb{R}|x = \text{energy of 
 		xyz\_coords with charge, multiplicity, QCM, BS}: |x|)$
+	\item sum together the energies of the conformer geometries for one 
+	solution 
+	instance (one pmem).
 	\item exception: None
 \end{itemize}
 
 \noindent sum\_rmsds(xyz\_coords):
 \begin{itemize}
-	\item transition: read in the xyz\_coords.
+	\item transition: None
 	\item output: \textit{out} := $+(x(i,j): \mathbb{R}| \text{RMSD between 
 		coords i and j where } i,j \text{ are indices } \forall i,j \in 
 	\text{xyz\_coords}: x)$
+	\item determine possible pairs of conformers (with all\_pairs\_gen) and 
+	calculate 
+	their rmsd by using rmsd module.
 	\item exception: None
 \end{itemize}
 
@@ -741,10 +737,13 @@ coef\_rmsd):
 	\item output: when fit\_form = 0, then \textit{out} := \{
 	$<<C_E,S_E,C_{\text{RMSD}},S_{\text{RMSD}}>,y> : \mathbb{R} | y = 
 	C_E*S_E+C_{\text{RMSD}}*S_{\text{RMSD}} \}$
-	\item exception: ValueError fit\_form is not available.
+	\item exception: None (may complain if inputs have not been previously 
+	checked i.e. fit\_form is not available)
 \end{itemize}
 
 \subsubsection{Local Functions}
+
+$\mathbb{Z}$ $\rightarrow$ tuple($\mathbb{Z}, \mathbb{Z}$)
 
 \noindent all\_pairs\_gen(num\_geoms):
 \begin{itemize}
@@ -752,7 +751,12 @@ coef\_rmsd):
 	\item output: \textit{out} := $\{<i,j>: \mathbb{Z} | 0 \leq i \leq 
 	\text{num\_geoms}-1 \land i+1 \leq j \leq \text{num\_geoms}\}$
 	\item exception: None
+	\item the generator function, all\_pairs\_gen, will need to keep track of 
+	the i and j iteration values.
+	\item num\_pairs is the number of next() calls needed for the generator. := 
+	$\{<y,n> | n = \text{num\_geoms} : \mathbb{N} \land y = n!/(2*(n-2)!) \}$
 \end{itemize}
+
 
 \section{MIS of Tournament} \label{section-tournament} 
 
