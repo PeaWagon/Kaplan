@@ -157,7 +157,7 @@ $Fit_G$ may be expanded to include more formats than initially described in the
 SRS document.
 
 \item[\refstepcounter{acnum} \actheacnum \label{acOutputDevice}:] \progname{} 
-may be required to run on cell phones through a web 
+may be required to run on cell phones through a mobile application or web 
 interface. The input/output device therefore will change from a keyboard and 
 mouse to a touchscreen.
 \item[\refstepcounter{acnum} \actheacnum \label{acEnergy}:] The external 
@@ -208,8 +208,6 @@ decisions will be changed.
 component is unlikely to be exchanged for another algorithm.
 \item[\refstepcounter{ucnum} \uctheucnum \label{ucEnery}:] The energy is 
 unlikely to be calculated using methods other than those from quantum mechanics.
-\item[\refstepcounter{ucnum} \uctheucnum \label{ucgoal}:] The goal of 
-\progname{} is unlikely to change from locating conformers.
 \end{description}
 
 \section{Module Hierarchy} \label{SecMH}
@@ -318,12 +316,13 @@ selected.
 \subsubsection{GA Input Module (\mref{mGAIn})}
 
 \begin{description}
-\item[Secrets:]The format and structure of the input data for the genetic 
+\item[Secrets:] The format and structure of the input data for the genetic 
 algorithm, including how the input data is verified.
-\item[Services:] Communicates the size of the Ring data structure, the number 
+\item[Services:] Opens the input file that contains information on how to run 
+the genetic algorithm. Verifies the size of the Ring data structure, the number 
 of mating events to perform, the maximum number of mutations, the maximum 
 number of swaps, the number of conformers in the optimization, the size of the 
-initial population, and which fitness function to use to \mref{mGAC}. Ensures 
+initial population, and which fitness function to use. Ensures 
 all input data is of the correct type and within reasonable 
 bounds. These values are static and should not change during the optimization.
 \item[Implemented By:] \progname{}
@@ -491,9 +490,7 @@ to a format acceptable to another external program might change the results
 significantly). Furthermore, one of the goals of the program is to make the 
 package work on high-performance computing clusters. If there are fewer 
 external programs necessary to run \progname{}, then it will be easier to 
-install the program. All modules will change upon change of the programming 
-language, hence the reason \acref{acProgLang} is linked to all Behaviour-Hiding 
-and Software Decision modules.
+install the program.
 
 \begin{table}[H]
 \centering
@@ -506,9 +503,7 @@ and Software Decision modules.
 \acref{acRMSD} & \mref{mRMSD} \\
 \acref{acRing} & \mref{mRing} \\
 \acref{acFit_G} & \mref{mFitg} \\
-\acref{acHorton} & \mref{mGAC} \\
 \acref{acOutputDevice} & \mref{mOut} \\
-\acref{acProgLang} & M2-M11 \\
 \acref{acEnergy} & \mref{mE} \\
 \bottomrule
 \end{tabular}
