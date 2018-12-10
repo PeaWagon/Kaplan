@@ -229,7 +229,7 @@ actually be implemented.
 \item [\refstepcounter{mnum} \mthemnum \label{mPmem}:] Pmem
 \item [\refstepcounter{mnum} \mthemnum \label{mOut}:] Output
 \item [\refstepcounter{mnum} \mthemnum \label{mGeometry}:] Geometry
-\item [\refstepcounter{mnum} \mthemnum \label{mE}:] Energies
+\item [\refstepcounter{mnum} \mthemnum \label{mE}:] Energy
 \item [\refstepcounter{mnum} \mthemnum \label{mRMSD}:] RMSD
 \end{description}
 
@@ -257,7 +257,7 @@ actually be implemented.
 \midrule
 
 \multirow{3}{0.3\textwidth}{Software Decision Module} & Geometry \\
-													  & Energies \\
+													  & Energy \\
 													  & RMSD \\
 \bottomrule
 
@@ -430,7 +430,7 @@ bounds. These values are static and should not change during the optimization.
 	\item[Implemented By:] Vetee, Openbabel \citet{obabel} \citet{obabel-web}
 \end{description}
 
-\subsubsection{Energies Module (\mref{mE})}
+\subsubsection{Energy Module (\mref{mE})}
 \begin{description}
 	\item[Secrets:] How to calculate the energy of a conformer geometry.
 	\item[Services:] Calculates the energy for a given geometry based on 
@@ -461,14 +461,16 @@ requirements and between the modules and the anticipated changes.
 \toprule
 \textbf{Req.} & \textbf{Modules}\\
 \midrule
-R1 & \mref{mMolIn} \\
-R2 & \mref{mFitg}, \mref{mRing} \\
+R1 & \mref{mMolIn}, \mref{mGAIn} \\
+R2 & \mref{mFitg}, \mref{mPmem} \\
 R3 & \mref{mFitg}, \mref{mRMSD}, \mref{mE} \\
-R4 & \mref{mFitg}, \mref{mE} \\
-R5 & \mref{mOut}, \mref{mMolIn} \\
+R4 & \mref{mFitg}, \mref{mE}, \mref{mGeometry}, \mref{mMolIn} \\
+R5 & \mref{mOut}, \mref{mGeometry}, \mref{mPmem} \\
+R6 & Satisfied in testing \\
+R7 & \mref{mTour}, \mref{mCM}, \mref{mRing}, \mref{mGAC} \\
 NFR1 & \mref{mFitg} \\
-NFR2 & M2-M11, but especially \mref{mGAC} \\
-NFR3 & M2-M11 \\
+NFR2 & M2-M13, but especially \mref{mGAC} \\
+NFR3 & M2-M13 \\
 NFR4 & \mref{mMolIn}, \mref{mGAIn} \\
 NFR5 & \mref{mE}, \mref{mRMSD}, \mref{mMolIn}, \mref{mOut} \\
 \bottomrule
@@ -492,6 +494,24 @@ package work on high-performance computing clusters. If there are fewer
 external programs necessary to run \progname{}, then it will be easier to 
 install the program.
 
+The anticipated change, \acref{acGeometry}, affects multiple modules for the 
+following reasons. By adding this new dihedral angles format, the current 
+design will not be rendered obsolete or incorrect - it will be sufficient to 
+add features to the code such that the new dihedral angles format can be 
+accommodated.
+\begin{enumerate}
+	\item If new dihedrals are added, then the format of the solution instances 
+	will change (hence change to \mref{mPmem}). Mostly this change will impact 
+	the size of the solution (i.e. the number of dihedral angles to optimize 
+	will no longer be $n_a$-3).
+	\item The \mref{mGeometry} (geometry) module will have to change in order 
+	to construct the solutions to the full geometry specification (since now 
+	the format of the dihedrals no longer fits into a zmatrix).
+	\item The verification of the molecular inputs may change as a result of 
+	changing how the dihedrals are produced and manipulated (this is a weak 
+	change of \mref{mMolIn} - the molecular input module).
+\end{enumerate}
+
 \begin{table}[H]
 \centering
 \begin{tabular}{p{0.2\textwidth} p{0.6\textwidth}}
@@ -505,6 +525,7 @@ install the program.
 \acref{acFit_G} & \mref{mFitg} \\
 \acref{acOutputDevice} & \mref{mOut} \\
 \acref{acEnergy} & \mref{mE} \\
+\acref{acGeometry} & \mref{mGeometry}, \mref{mPmem}, \mref{mMolIn} \\
 \bottomrule
 \end{tabular}
 \caption{Trace between anticipated changes and modules.}
