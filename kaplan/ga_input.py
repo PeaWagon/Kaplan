@@ -10,7 +10,7 @@ def read_ga_input(ga_input_file):
                 # remove \n char and separate keys and values
                 line = line[:-1].lower().split(' = ')
                 # ignore blank lines/long input
-                if len(line) != 2:
+                if len(line) != 2 and line != "":
                     print(f"Warning: line - {line} - was ignored from the ga_input_file.")
                     continue
                 ga_input_dict[line[0]] = line[1]
@@ -65,8 +65,8 @@ def verify_ga_input(ga_input_dict):
         assert ga_input_dict["coef_energy"] >= 0
         # coef_rmsd
         assert ga_input_dict["coef_rmsd"] >= 0
-        # t_size
-        assert ga_input_dict["t_size"] <= ga_input_dict["num_filled"]
+        # t_size must be at least 2 (for 2 parents)
+        assert 2 <= ga_input_dict["t_size"] <= ga_input_dict["num_filled"]
 #    except AssertionError as e:
 #        raise ValueError("GA input values do not satisfy their constraints.")
     except ValueError as e:

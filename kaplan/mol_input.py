@@ -22,7 +22,7 @@ def read_mol_input(mol_input_file):
                 # non-matching strings
                 line = line[:-1].split(' = ')
                 # ignore blank lines/long input
-                if len(line) != 2:
+                if len(line) != 2 and line != "":
                     print(f"Warning: line - {line} - was ignored from the mol_input_file.")
                     continue
                 mol_input_dict[line[0].lower()] = line[1]

@@ -1,36 +1,51 @@
 
-# NOTE: you need to have rmsd installed
-# for the rmsd module to work
+import numpy as np
+import rmsd
 
-# NOTE: this function is going to change since I now
-# know how to call the pieces of the relevant rmsd
-# program (without piping input from the terminal).
-
-from subprocess import run, PIPE
-
-def calc_rmsd(f1, f2):
-    """Calculate the root-mean-square deviation.
+def calc_rmsd(coords1, coords2):
+    """Calculate root-mean square deviation.
 
     Parameters
     ----------
-    f1 : str
-        The filename for the first geometry. Should
-        be xyz or pdb.
-    f2 : str
-        The filename for the second geometry. Should
-        be xyz or pdb.
+    coords1 : list(list(str,int,int,int))
+        The coordinates for the first
+        molecule (conformer).
+    coords2 : list(list(str,int,int,int))
+        The coordinates for the second
+        molecule (conformer).
+
+    Notes
+    -----
+    The coordinates are given as follows:
+    atom name, x coord, y coord, z coord
+    Example for carbon monoxide:
+    [[C, 0.0, 0.0, 0.0],[O, 1.0, 0.0, 0.0]]
+    The distances are in Angstroms.
 
     Returns
     -------
     rmsd : float
-        The rmsd for the two molecular geometries.
-        This value is after the rotation matrix
-        is calculated and applied.
+        The rmsd between two molecular
+        geometries. This rmsd is calculated
+        after applying centering and a
+        rotation matrix (calculated via
+        the Kabsch algorithm).
 
     """
-    r = run(['calculate_rmsd', f1, f2], stdout=PIPE)
-    output = r.stdout
-    output = str(output)[2:]
-    output = output.replace('\\n', ', ')
-    output = output[:-3]
-    return float(output)
+    # trivial check
+    assert len(coords1) == len(coords2)
+    # first turn lists into numpy arrays (otherwise 
+    # cannot perform some rmsd operations)
+    # and excise atom names (not needed for rmsd)
+    coordsA = np.array([[coords1[i][1], coords1[i][2], coords1[i][3]] for i in range(len(coords1))])
+    coordsB = np.array([[coords2[i][1], coords2[i][2], coords2[i][3]] for i in range(len(coords2))])
+    # first center each molecule
+    coordsA -= rmsd.centroid(coordsA)
+    coordsB -= rmsd.centroid(coordsB)
+    # calculate the rotation matrix
+    rot_matrix = rmsd.kabsch(coordsA, coordsB)
+    # apply the rotation matrix
+    coordsA = np.dot(coordsA, rot_matrix)
+    # finally get the rmsd
+    return rmsd.rmsd(coordsA, coordsB)
+

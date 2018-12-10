@@ -54,12 +54,13 @@ def run_kaplan(ga_input_file, mol_input_file):
     # run the mevs
     for mev in range(ga_input_dict['num_mevs']):
         try:
+            print(mev)
             run_tournament(ga_input_dict['t_size'],
                            ga_input_dict['num_muts'],
                            ga_input_dict['num_swaps'],
-                           ring, current_mev)
+                           ring, mev)
         except RingEmptyError:
-            ring.fill(ga_input_dict['num_filled'])
+            ring.fill(ga_input_dict['num_filled'], mev)
 
     # run output
     run_output(ring)

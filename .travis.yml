@@ -1,0 +1,37 @@
+# taken from:
+# https://conda.io/docs/user-guide/tasks/use-conda-with-travis-ci.html
+
+language: python
+
+python:
+    - "3.6"
+
+install:
+  # miniconda installation
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  # Useful for debugging any issues with conda
+  - conda info -a
+
+  # Create a conda environment and install dependencies
+  - conda create -n test-kaplan python=$TRAVIS_PYTHON_VERSION numpy matplotlib nose pylint pycodestyle coverage
+  - source activate test-kaplan
+  - conda install -c conda-forge pydocstyle
+  - conda install -c psi4 psi4
+  - conda install -c mcs07 pubchempy
+  - conda install -c openbabel openbabel
+#  - python setup.py install
+  - pip install rmsd
+  - pip install -i https://pypi.anaconda.org/kumrud/simple vetee
+  - pip install -e ./
+
+script:
+  # Your test script goes here
+  - nosetests --with-coverage --cover-package=kaplan -v kaplan
+  - pylint kaplan
+  - pycodestyle kaplan
+  - pydocstyle --convention=numpy

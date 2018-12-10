@@ -1,7 +1,7 @@
 
 
 import numpy as np
-from random import sample
+from random import sample, randint
 from copy import deepcopy
 
 # values for dihedral angles in degrees
@@ -35,12 +35,18 @@ def generate_children(parent1, parent2, num_muts, num_swaps):
     to make pmem objects (list(list(int))x2
 
     """
+    # check parent sizes
+    assert len(parent1) == len(parent2)
+    # check num_swaps
+    assert num_swaps <= len(parent1)
+    # check num_muts
+    assert num_muts <= len(parent1[0])
     child1 = deepcopy(parent1)
-    # make copies of the two parent pmems
-    # apply swap
-    # apply mutate
-    # return two pmems (children)
-    pass
+    child2 = deepcopy(parent2)
+    child1, child2 = swap(child1, child2, num_swaps)
+    child1 = mutate(child1, num_muts)
+    child2 = mutate(child2, num_muts)
+    return child1, child2
 
 def mutate(dihedrals, num_muts):
     """Mutate a list of dihedral angles.
@@ -58,94 +64,26 @@ def mutate(dihedrals, num_muts):
         Dihedral angles after mutations.
 
     """
-    # choose how many mutations to do
-    # choose where to do the mutations
-    # for each new mutation:
-    #     create a new number for angle
-    # return dihedrals after mutation
-    pass
+    for geom in range(len(dihedrals)):
+        # choose how many mutations to do
+        num_muts = randint(0, num_muts)
+        # choose where to do the mutations
+        mut_ind = sample(range(len(dihedrals[0])), num_muts)
+        for m in mut_ind:
+            dihedrals[geom][m] = randint(MIN_VALUE, MAX_VALUE-1)
+    return dihedrals
 
-def swap(pmem1, pmem2, num_swaps):
+def swap(child1, child2, num_swaps):
+
     # choose how many swaps to do
+    num_swaps = randint(0, num_swaps)
     # choose where to do the swaps
+    swap_ind = sample(range(len(child1)), num_swaps)
     # apply swaps
+    for s in swap_ind:
+        child1_value = child1[s]
+        child1[s] = child2[s]
+        child2[s] = child1_value
     # return updated pmems
-    pass
+    return child1, child2
 
-#def mutate(input_list, min_muts, max_muts, test=False):
-#    """Mutate an input list of dihedral angles.
-
-#    Parameters
-#    ----------
-#    input_list : list
-#        A list of dihedral angles (integers).
-#    min_muts : int
-#        The minimum number of mutations to perform.
-#    max_muts : int
-#        The maximum number of mutations to perform.
-#    test : bool, list
-#        If False, no test is being performed.
-#        Otherwise, test is a list of lists, where
-#        the first value is a list specifying the
-#        locations to mutate and the second value
-#        is a list of new values to use in the
-#        returned list.
-
-#    Returns
-#    -------
-#    A list of dihedral angles after mutation.
-
-#    Notes
-#    -----
-#    If the number of mutations is greater than the
-#    number of elements in the input_list, then the
-#    whole list will be regenerated. The number of
-#    mutations is chosen randomly, starting with
-#    min_muts up until max_muts.
-
-#    The new values for the dihedral angles will be
-#    any integer value between the minimum and the
-#    maximum value (as specified by the global
-#    variables MIN_VALUE and MAX_VALUE).
-
-#    Raises
-#    ------
-#    AssertionError
-#        The max_muts value is smaller than the
-#        min_muts value.
-
-#    """
-#    assert max_muts >= min_muts
-#    if not test:
-#        # determine explicit number of mutations
-#        num_muts = np.random.randint(min_muts, max_muts+1)
-#    else:
-#        # make sure test is not doing something stupid
-#        assert len(test[0]) == len(test[1])
-#        num_muts = len(test[0])
-#    # if num_muts is larger than input_list length,
-#    # do mutation with replacement, otherwise do
-#    # mutation without replacement
-#    if len(input_list) > num_muts or test:
-#        # determine indices of mutation
-#        if not test:
-#            mut_indices = sample(range(len(input_list)), num_muts)
-#        else:
-#            mut_indices = test[0]
-#        for i, m in enumerate(mut_indices):
-#            if not test:
-#                # new value can be equal to prev value
-#                new = np.random.randint(MIN_VALUE, MAX_VALUE)
-#            else:
-#                new = test[1][i]
-#            # replace old value
-#            input_list[m] = new
-#        # return new mutated list
-#        return input_list
-#    # generate entirely new input_list; return
-#    else:
-#        return sample(range(MIN_VALUE, MAX_VALUE), len(input_list))
-
-#def crossover(list1, list2, num_cuts):
-#    min_len = min(len(list1), len(list2))
-#    assert num_cuts <= min_len - 1

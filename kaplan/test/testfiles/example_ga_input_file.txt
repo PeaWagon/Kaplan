@@ -1,4 +1,4 @@
-num_mevs = 1000
+num_mevs = 10
 num_slots = 100
 num_filled = 20
 num_geoms = 3

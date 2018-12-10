@@ -1,4 +1,5 @@
 
+import numpy as np
 from math import factorial
 
 from kaplan.energy import run_energy_calc, prep_psi4_geom
@@ -11,17 +12,24 @@ from kaplan.rmsd import calc_rmsd
 def sum_energies(xyz_coords, charge, multip, method, basis):
     energies = np.zeros(len(xyz_coords), float)
     for i, xyz in enumerate(xyz_coords):
-        energies[i] = run_energy_calc(prep_psi4_geom(xyz, charge, multip), method, basis)
+        try:
+            energies[i] = run_energy_calc(prep_psi4_geom(xyz, charge, multip), method, basis)
+        except Exception as e:
+            # if there is a convergence error (atom too close)
+            # give an energy of zero
+            print("Warning: non-convergence for molecule.")
+            energies[0] = 0
     return abs(sum(energies))
 
 def sum_rmsds(xyz_coords):
+    num_geoms = len(xyz_coords)
     rmsd_values = np.zeros(len(xyz_coords), float)
     # n choose k = n!/(k!(n-k)!)
-    num_pairs = factorial(num_geoms)/(2*factorial(num_geoms-2))
+    num_pairs = int(factorial(num_geoms)/(2*factorial(num_geoms-2)))
     pairs = all_pairs_gen(len(xyz_coords))
     for i in range(num_pairs):
         ind1, ind2 = next(pairs)
-        rmsd_values[i] = calc_rmsd(xyz_files[ind1], xyz_files[ind2])
+        rmsd_values[i] = calc_rmsd(xyz_coords[ind1], xyz_coords[ind2])
     return sum(rmsd_values)
 
 def all_pairs_gen(num_geoms):

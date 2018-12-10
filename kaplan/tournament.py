@@ -12,22 +12,16 @@ def run_tournament(t_size, num_muts, num_swaps, ring,
     # choose random slots for a tournament
     selected_pmems = select_pmems(t_size, ring)
 
+    print("chosen pmems:", selected_pmems)
+
     # select parents by fitness
     parents = select_parents(selected_pmems, ring)
-    print(parents)
-    print(parents[0])
-    print(ring.pmems)
-    print('h')
-    print(ring.pmems[parents[0]].dihedrals)
-    print('ej')
-#    parent1 = ring.pmems[next(parents)].dihedrals
-#    parent2 = ring.pmems[next(parents)].dihedrals
-    parent1 = ring.pmems[parents[0]].dihedrals
-    parent2 = ring.pmems[parents[1]].dihedrals
+
+    parent1 = ring[parents[0]].dihedrals
+    parent2 = ring[parents[1]].dihedrals
 
     # generate children
-    children = generate_children(parent1, parent2, num_muts,
-                                 num_swaps)
+    children = generate_children(parent1, parent2, num_muts, num_swaps)
 
     # put children in ring
     ring.update(parents[0], children[1], current_mev)
@@ -54,7 +48,7 @@ def select_pmems(number, ring):
         # choose random slot
         choice = np.random.randint(0, ring.num_slots)
         # if the slot is empty, keep picking another random one
-        while ring.pmems[choice] is None:
+        while ring[choice] is None:
             choice = np.random.randint(0, ring.num_slots)
         selection.append(choice)
     return selection
@@ -76,7 +70,7 @@ def select_parents(selected_pmems, ring):
         Indices of two best pmems to be used as parents.
 
     """
-    fit_vals = np.array([ring.pmems[i].fitness for i in selected_pmems])
+    fit_vals = np.array([ring[i].fitness for i in selected_pmems])
     print(fit_vals)
     # from here:
     # https://stackoverflow.com/questions/6910641/how-do-i-get-indices-of-n-maximum-values-in-a-numpy-array

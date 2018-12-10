@@ -1,27 +1,14 @@
 
 import os
+import psi4
 
 # TODO: make these functions callable from a function
 # that checks the program being used (i.e. psi4 vs horton
 # vs gaussian)
 
-
-import psi4
-# link to relevant documentation
-# http://www.psicode.org/psi4manual/1.2/psiapi.html
-
-# make the output to the terminal be quiet
-psi4.core.be_quiet()
-
-# alternatively, can save output to a file
-#psi4.core.set_output_file('random.txt', False)
-
-# set RAM usage
-# note: not sure this is called if done outside of
-# the function call
-RAM = "2 GB"
-psi4.set_memory(RAM)
-
+# how much RAM to use for psi4 calculations
+# should be less than what your computer has available
+RAM = "4 GB"
 
 def run_energy_calc(geom, method="hf",basis="sto-3g",
                     restricted=False):
@@ -63,14 +50,14 @@ def run_energy_calc(geom, method="hf",basis="sto-3g",
     Restricted might not work for non-hf methods.
 
     """
-    RAM = "2 GB"
     psi4.set_memory(RAM)
+    psi4.core.be_quiet()
     assert isinstance(method, str)
     assert isinstance(basis, str)
     if restricted:
         psi4.set_options({"reference": "uhf"})
     try:
-        energy = psi4.energy(method+'/'+basis)
+        energy = psi4.energy(method+'/'+basis, return_wfn=False)
     except psi4.driver.p4util.exceptions.ValidationError:
         raise psi4.driver.p4util.exceptions.ValidationError(f"Invalid method: {method}")
     except psi4.driver.qcdb.exceptions.BasisSetNotFound:
@@ -144,39 +131,4 @@ def prep_psi4_geom(coords, charge, multip):
     for atom in coords:
         psi4_str += f"{atom[0]} {atom[1]} {atom[2]} {atom[3]}\n"
     return psi4.geometry(psi4_str)
-    
-    
 
-
-# jen messing around
-
-#print('the thing')
-
-
-#water = psi4.geometry("""
-#O
-#H 1 0.96
-#H 1 0.96 2 104.5
-#""")
-
-#result = psi4.energy('scf/cc-pvdz')
-
-#print(result)
-#print(type(result))
-#print(result.__dir__())
-
-
-## another test
-
-#psi4.set_memory("2 GB")
-
-#methane = psi4.geometry("""
-#C  0.0000    0.0000    0.0000
-#H  0.5541    0.7996    0.4965
-#H  0.6833   -0.8134   -0.2536
-#H -0.7782   -0.3735    0.6692
-#H -0.4593    0.3874   -0.9121
-#""")
-
-#result2 = psi4.energy('scf/cc-pvdz')
-#print(result)

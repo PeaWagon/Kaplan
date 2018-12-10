@@ -1,4 +1,4 @@
-Num_mevs = 500
+Num_mevs = 5
 
 Num_slots = 50
 
@@ -6,7 +6,7 @@ Num_filled = 10
 
 Num_geoms = 2
 
-Num_atoms = 21
+Num_atoms = 24
 
 T_size = 5
 

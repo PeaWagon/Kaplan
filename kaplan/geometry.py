@@ -77,7 +77,8 @@ def get_zmatrix_template(parser):
     # set charge, multiplicity, and comments (title)
     obmol.SetTotalCharge(parser.charge)
     obmol.SetTotalSpinMultiplicity(parser.multip)
-    obmol.SetTitle(parser.comments)
+    if parser.comments is not None:
+        obmol.SetTitle(parser.comments)
     # convert the obmol to a pybel Molecule
     pybelmol = pybel.Molecule(obmol)
     # generate a zmatrix string using the obmol input
@@ -131,7 +132,7 @@ def zmatrix_to_xyz(zmatrix):
 
     """
     xyz = []
-    mol = pybel.readstring("gzmat", new_zmatrix)
+    mol = pybel.readstring("gzmat", zmatrix)
     for atom in mol.atoms:
         xyz.append([vetee.gaussian_options.periodic_table(atom.atomicnum),
                     atom.coords[0], atom.coords[1], atom.coords[2]])
