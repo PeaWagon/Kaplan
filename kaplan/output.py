@@ -7,13 +7,15 @@ from kaplan.geometry import update_zmatrix, zmatrix_to_xyz
 
 # OUTPUT_FORMAT = 'xyz'
 
-# change this later to something more user-friendly
-#OUTPUT_DIR = "~/kaplan_output"
-
 # directory for this test file
-test_dir = os.path.dirname(os.path.realpath(__file__))
-OUTPUT_DIR = os.path.join(test_dir, "kaplan_output")
+file_dir = os.path.dirname(os.path.realpath(__file__))
+OUTPUT_DIR = os.path.join(file_dir, "kaplan_output")
 
+# to change the output location, change this variable to
+# the desired directory and uncomment the line
+# note: the output may not work if multiple subdirectories
+# need to be generated
+#OUTPUT_DIR = "~/kaplan_output"
 
 def run_output(ring):
     """Run the output module.

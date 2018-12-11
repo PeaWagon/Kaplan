@@ -81,7 +81,33 @@ Turn off the environment:
 `(kenv) $ pip uninstall kaplan`
 
 
+## How to run Kaplan
 
+Please see the README.md in the kaplan subdirectory for more
+information on how to run this program.
+
+## Running tests
+
+Please see the README.md in the kaplan/test subdirectory for
+information on how to run the tests for this program.
+
+## Special Thanks
+
+The following people have contributed in some way to the making
+of this project.
+
+* Kumru Dikmenli
+* Xiaomin Huang
+* Laura Bickley
+* Brooks MacLachlan
+* Vajiheh Motamer
+* Oluwaseun Owojaiye
+* Karol Sekis
+* Malavika Srinivasan
+* Robert White
+* Hanane Zlitni
+* Dr. Spencer Smith
+* Dr. Paul Ayers
 
 
 
