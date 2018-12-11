@@ -3,11 +3,23 @@
 Kaplan requires the user to write two input files:  
 1. Molecular (mol) input file.  
 2. Genetic algorithm (ga) input file.  
+
 More help on how to write these files is given below.  
 
-Then, the user must call the kaplan program using the gac
-(genetic algorithm control) module with python
-and provide the two input files as arguments, as so:
+### Method 1
+
+First, go to the directory where the input files are saved.
+Then, run the following commands:
+
+`(kenv) $ python`  
+`>>> from kaplan.gac import run_kaplan`  
+`>>> run_kaplan("mol_input_file.txt", "ga_input_file.txt")`  
+
+### Method 2
+
+Copy and paste the gac.py file (located in the kaplan directory)
+into the directory where the input files are saved. Then, run
+the following command:
 
 `(kenv) $ python gac.py mol_input_file.txt ga_input_file.txt`
 
