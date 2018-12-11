@@ -1,0 +1,170 @@
+(kenv) ❯ nosetests ./
+...F.F..............F..........F.F
+======================================================================
+FAIL: test_gaussian_database.test_from_folder
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/jenefre/miniconda3/envs/kenv/lib/python3.6/site-packages/nose/case.py", line 197, in runTest
+    self.test(*self.arg)
+  File "/home/jenefre/Documents/githubcode/vetee/vetee/test/test_gaussian_database.py", line 31, in test_from_folder
+    assert_equal(pyr.name, "pyridoxine")
+  File "/home/jenefre/miniconda3/envs/kenv/lib/python3.6/site-packages/numpy/testing/_private/utils.py", line 379, in assert_equal
+    raise AssertionError(msg)
+AssertionError: 
+Items are not equal:
+ ACTUAL: None
+ DESIRED: 'pyridoxine'
+-------------------- >> begin captured logging << --------------------
+pubchempy: DEBUG: Request URL: https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/JSON
+pubchempy: DEBUG: Request data: b'cid=1054'
+pubchempy: DEBUG: Created Compound(1054)
+pubchempy: DEBUG: Request URL: https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/synonyms/JSON
+pubchempy: DEBUG: Request data: b'cid=1054'
+pubchempy: DEBUG: Request URL: https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/JSON
+pubchempy: DEBUG: Request data: b'cid=1054'
+pubchempy: DEBUG: Created Compound(1054)
+pubchempy: DEBUG: Request URL: https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/JSON?record_type=3d
+pubchempy: DEBUG: Request data: b'cid=1054'
+pubchempy: DEBUG: Created Compound(1054)
+pubchempy: DEBUG: Request URL: https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/JSON
+pubchempy: DEBUG: Request data: b'cid=2244'
+pubchempy: DEBUG: Created Compound(2244)
+pubchempy: DEBUG: Request URL: https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/synonyms/JSON
+pubchempy: DEBUG: Request data: b'cid=2244'
+pubchempy: DEBUG: Request URL: https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/JSON
+pubchempy: DEBUG: Request data: b'cid=2244'
+pubchempy: DEBUG: Created Compound(2244)
+pubchempy: DEBUG: Request URL: https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/JSON?record_type=3d
+pubchempy: DEBUG: Request data: b'cid=2244'
+pubchempy: DEBUG: Created Compound(2244)
+--------------------- >> end captured logging << ---------------------
+
+======================================================================
+FAIL: test_gaussian_database.test_remove_method_basis
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/jenefre/miniconda3/envs/kenv/lib/python3.6/site-packages/nose/case.py", line 197, in runTest
+    self.test(*self.arg)
+  File "/home/jenefre/Documents/githubcode/vetee/vetee/test/test_gaussian_database.py", line 77, in test_remove_method_basis
+    assert_equal(asp.name, "aspirin")
+  File "/home/jenefre/miniconda3/envs/kenv/lib/python3.6/site-packages/numpy/testing/_private/utils.py", line 379, in assert_equal
+    raise AssertionError(msg)
+AssertionError: 
+Items are not equal:
+ ACTUAL: None
+ DESIRED: 'aspirin'
+-------------------- >> begin captured stdout << ---------------------
+Removing 1054_cc-pVDZ.com from molecule
+Removing 1054_LanL2DZ.com from molecule
+Removing 1054_LanL2DZ.com from molecule
+Removing 1054_aug-cc-pVDZ.com from molecule
+Removing 1054_LanL2DZ.com from molecule
+Removing 1054_aug-cc-pVDZ.com from molecule
+Removing 1054_LanL2DZ.com from molecule
+Removing 1054_aug-cc-pVDZ.com from molecule
+Removing 1054_LanL2DZ.com from molecule
+Removing 1054_aug-cc-pVDZ.com from molecule
+Removing 1054_LanL2DZ.com from molecule
+Removing 1054_aug-cc-pVDZ_r1.com from molecule
+Removing 1054_aug-cc-pVQZ.com from molecule
+Removing 2244_cc-pVQZ.com from molecule
+Removing 2244_cc-pVDZ.com from molecule
+Removing 2244_LanL2DZ.com from molecule
+Removing 2244_aug-cc-pVQZ.com from molecule
+Removing 2244_LanL2DZ.com from molecule
+Removing 2244_aug-cc-pVQZ.com from molecule
+Removing 2244_LanL2DZ.com from molecule
+Removing 2244_aug-cc-pVQZ.com from molecule
+Removing 2244_LanL2DZ.com from molecule
+Removing 2244_aug-cc-pVQZ.com from molecule
+
+--------------------- >> end captured stdout << ----------------------
+-------------------- >> begin captured logging << --------------------
+pubchempy: DEBUG: Request URL: https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/JSON
+pubchempy: DEBUG: Request data: b'cid=1054'
+pubchempy: DEBUG: Created Compound(1054)
+pubchempy: DEBUG: Request URL: https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/synonyms/JSON
+pubchempy: DEBUG: Request data: b'cid=1054'
+pubchempy: DEBUG: Request URL: https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/JSON
+pubchempy: DEBUG: Request data: b'cid=1054'
+pubchempy: DEBUG: Created Compound(1054)
+pubchempy: DEBUG: Request URL: https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/JSON?record_type=3d
+pubchempy: DEBUG: Request data: b'cid=1054'
+pubchempy: DEBUG: Created Compound(1054)
+pubchempy: DEBUG: Request URL: https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/JSON
+pubchempy: DEBUG: Request data: b'cid=2244'
+pubchempy: DEBUG: Created Compound(2244)
+pubchempy: DEBUG: Request URL: https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/synonyms/JSON
+pubchempy: DEBUG: Request data: b'cid=2244'
+pubchempy: DEBUG: Request URL: https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/JSON
+pubchempy: DEBUG: Request data: b'cid=2244'
+pubchempy: DEBUG: Created Compound(2244)
+pubchempy: DEBUG: Request URL: https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/JSON?record_type=3d
+pubchempy: DEBUG: Request data: b'cid=2244'
+pubchempy: DEBUG: Created Compound(2244)
+--------------------- >> end captured logging << ---------------------
+
+======================================================================
+FAIL: test_molecule.test_update
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/jenefre/miniconda3/envs/kenv/lib/python3.6/site-packages/nose/case.py", line 197, in runTest
+    self.test(*self.arg)
+  File "/home/jenefre/Documents/githubcode/vetee/vetee/test/test_molecule.py", line 42, in test_update
+    assert_equal(test.name, 'chloramphenicol')
+  File "/home/jenefre/miniconda3/envs/kenv/lib/python3.6/site-packages/numpy/testing/_private/utils.py", line 379, in assert_equal
+    raise AssertionError(msg)
+AssertionError: 
+Items are not equal:
+ ACTUAL: None
+ DESIRED: 'chloramphenicol'
+-------------------- >> begin captured logging << --------------------
+pubchempy: DEBUG: Request URL: https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/JSON
+pubchempy: DEBUG: Request data: b'cid=5959'
+pubchempy: DEBUG: Created Compound(5959)
+pubchempy: DEBUG: Request URL: https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/synonyms/JSON
+pubchempy: DEBUG: Request data: b'cid=5959'
+pubchempy: DEBUG: Request URL: https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/JSON
+pubchempy: DEBUG: Request data: b'cid=5959'
+pubchempy: DEBUG: Created Compound(5959)
+pubchempy: DEBUG: Request URL: https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/JSON?record_type=3d
+pubchempy: DEBUG: Request data: b'cid=5959'
+pubchempy: DEBUG: Created Compound(5959)
+pubchempy: DEBUG: Request URL: https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/JSON
+pubchempy: DEBUG: Request data: b'cid=5959'
+pubchempy: DEBUG: Created Compound(5959)
+pubchempy: DEBUG: Request URL: https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/synonyms/JSON
+pubchempy: DEBUG: Request data: b'cid=5959'
+pubchempy: DEBUG: Request URL: https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/JSON
+pubchempy: DEBUG: Request data: b'cid=5959'
+pubchempy: DEBUG: Created Compound(5959)
+pubchempy: DEBUG: Request URL: https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/JSON?record_type=3d
+pubchempy: DEBUG: Request data: b'cid=5959'
+pubchempy: DEBUG: Created Compound(5959)
+--------------------- >> end captured logging << ---------------------
+
+======================================================================
+FAIL: Test Xyz object constructor.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/jenefre/miniconda3/envs/kenv/lib/python3.6/site-packages/nose/case.py", line 197, in runTest
+    self.test(*self.arg)
+  File "/home/jenefre/Documents/githubcode/vetee/vetee/test/test_xyz.py", line 11, in test_Xyz
+    assert len(vars(x)) == 9
+AssertionError
+
+======================================================================
+FAIL: Test write_xyz method of Xyz class.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/jenefre/miniconda3/envs/kenv/lib/python3.6/site-packages/nose/case.py", line 197, in runTest
+    self.test(*self.arg)
+  File "/home/jenefre/Documents/githubcode/vetee/vetee/test/test_xyz.py", line 67, in test_Xyz_write_xyz
+    assert line == f"H {0.0:>12} {0.0:>12} {0.0:>12}"
+AssertionError
+
+----------------------------------------------------------------------
+Ran 34 tests in 53.274s
+
+FAILED (failures=5)
+                           
