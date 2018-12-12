@@ -1,5 +1,6 @@
 
 NUM_GA_ARGS = 12
+NUM_MOL_ARGS = 7
 
 def read_ga_input(ga_input_file):
     ga_input_dict = dict()
@@ -18,6 +19,8 @@ def read_ga_input(ga_input_file):
                 # go through each line and pull data and key
     except FileNotFoundError:
         raise FileNotFoundError("No such ga_input_file.")
+    if num_args == NUM_MOL_ARGS:
+        raise ValueError("Wrong order of input files.")
     if num_args != NUM_GA_ARGS:
         raise ValueError(f"Incorrect number of GA arguments. Given: {num_args}. Needed: {NUM_GA_ARGS}")
     return ga_input_dict

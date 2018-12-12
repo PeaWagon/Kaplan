@@ -1,8 +1,8 @@
 # Running Kaplan
 
 Kaplan requires the user to write two input files:  
-1. Molecular (mol) input file.  
-2. Genetic algorithm (ga) input file.  
+1. Genetic algorithm (ga) input file.  
+2. Molecular (mol) input file.  
 
 More help on how to write these files is given below.  
 
@@ -13,7 +13,7 @@ Then, run the following commands:
 
 `(kenv) $ python`  
 `>>> from kaplan.gac import run_kaplan`  
-`>>> run_kaplan("mol_input_file.txt", "ga_input_file.txt")`  
+`>>> run_kaplan("ga_input_file.txt", "mol_input_file.txt")`  
 
 ### Method 2
 
@@ -21,21 +21,9 @@ Copy and paste the gac.py file (located in the kaplan directory)
 into the directory where the input files are saved. Then, run
 the following command:
 
-`(kenv) $ python gac.py mol_input_file.txt ga_input_file.txt`
+`(kenv) $ python gac.py ga_input_file.txt mol_input_file.txt`
 
-## 1: mol input file
-
-The molecular input file has the following parameters that must
-be given:  
-* **qcm**: quantum chemical method used for energy calculations
-* **basis**: basis set to use
-* **struct_input**: should be a file name, string, or cid
-* **struct_type**: one of xyz, com, glog, smiles, cid, or name
-* **prog**: only psi4 is supported at the moment
-* **charge**: charge of the input molecule
-* **multip**: multiplicity of the input molecule
-
-## 2: ga input file
+## 1: ga input file
 
 The genetic algorithm input file has the following parameters
 that must be given:  
@@ -58,12 +46,25 @@ the fitness function
 * **coef_rmsd**: the coefficient of the root-mean-square
 deviation summation in the fitness function
 
+## 2: mol input file
+
+The molecular input file has the following parameters that must
+be given:  
+* **qcm**: quantum chemical method used for energy calculations
+* **basis**: basis set to use
+* **struct_input**: should be a file name, string, or cid
+* **struct_type**: one of xyz, com, glog, smiles, cid, or name
+* **prog**: only psi4 is supported at the moment
+* **charge**: charge of the input molecule
+* **multip**: multiplicity of the input molecule
+
 ## Finding the output
 
-The output is written to the kaplan/kaplan_output directory
-by default. If you wish to change this location, open the
-output.py file in the kaplan directory, and change the
-variable OUTPUT_DIR to the desired location. Make sure
+The output is written to the kaplan_output directory
+by default. This directory is located in the directory
+where the kaplan program was run. If you wish to change this
+location, open the output.py file in the kaplan directory, and
+change the variable OUTPUT_DIR to the desired location. Make sure
 your version of OUTPUT_DIR appears above the run_output
 function (and is the only defintion of OUTPUT_DIR).
 

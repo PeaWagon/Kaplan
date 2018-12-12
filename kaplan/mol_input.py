@@ -10,6 +10,7 @@ input.
 """
 
 NUM_MOL_ARGS = 7
+NUM_GA_ARGS = 12
 
 def read_mol_input(mol_input_file):
     mol_input_dict = dict()
@@ -30,6 +31,8 @@ def read_mol_input(mol_input_file):
                 # go through each line and pull data and key
     except FileNotFoundError:
         raise FileNotFoundError("No such mol_input_file.")
+    if num_args == NUM_GA_ARGS:
+        raise ValueError("Wrong order of input files.")
     if num_args != NUM_MOL_ARGS:
         raise ValueError("Incorrect number of molecule arguments.")
     return mol_input_dict
