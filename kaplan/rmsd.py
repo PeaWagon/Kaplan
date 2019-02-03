@@ -2,6 +2,14 @@
 import numpy as np
 import rmsd
 
+"""
+This module is repsonsible for calculating the rmsd
+(root-mean square deviation) between two sets of
+coordinates. It uses the rmsd library, which can
+be found here:
+https://github.com/charnley/rmsd
+"""
+
 def calc_rmsd(coords1, coords2):
     """Calculate root-mean square deviation.
 
@@ -34,18 +42,17 @@ def calc_rmsd(coords1, coords2):
     """
     # trivial check
     assert len(coords1) == len(coords2)
-    # first turn lists into numpy arrays (otherwise 
+    # first turn lists into numpy arrays (otherwise
     # cannot perform some rmsd operations)
     # and excise atom names (not needed for rmsd)
-    coordsA = np.array([[coords1[i][1], coords1[i][2], coords1[i][3]] for i in range(len(coords1))])
-    coordsB = np.array([[coords2[i][1], coords2[i][2], coords2[i][3]] for i in range(len(coords2))])
+    mol1 = np.array([[coords1[i][1], coords1[i][2], coords1[i][3]] for i in range(len(coords1))])
+    mol2 = np.array([[coords2[i][1], coords2[i][2], coords2[i][3]] for i in range(len(coords2))])
     # first center each molecule
-    coordsA -= rmsd.centroid(coordsA)
-    coordsB -= rmsd.centroid(coordsB)
+    mol1 -= rmsd.centroid(mol1)
+    mol2 -= rmsd.centroid(mol2)
     # calculate the rotation matrix
-    rot_matrix = rmsd.kabsch(coordsA, coordsB)
+    rot_matrix = rmsd.kabsch(mol1, mol2)
     # apply the rotation matrix
-    coordsA = np.dot(coordsA, rot_matrix)
+    mol1 = np.dot(mol1, rot_matrix)
     # finally get the rmsd
-    return rmsd.rmsd(coordsA, coordsB)
-
+    return rmsd.rmsd(mol1, mol2)
