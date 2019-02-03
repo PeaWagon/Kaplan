@@ -19,3 +19,5 @@ kaplan/test/kaplan.egg-info/
 *timer.dat
 *psi.*.clean
 *.ipynb_checkpoints
+
+.vscode/*

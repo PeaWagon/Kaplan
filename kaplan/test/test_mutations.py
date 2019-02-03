@@ -1,14 +1,16 @@
+"""Test the mutations module from Kaplan."""
 
 from numpy.testing import assert_raises
-from random import seed
 
 from kaplan.mutations import generate_children
 
 # num muts num swaps
 
+
 def test_generate_children():
-    parent1 = [[-1,-2,-3,-4,-5], [-1,-2,-3,-4,-5], [-1,-2,-3,-4,-5]]
-    parent2 = [[-6,-7,-8,-9,-10], [-6,-7,-8,-9,-10], [-6,-7,-8,-9,-10]]
+    """Test the generate_children function from the mutations module."""
+    parent1 = [[-1, -2, -3, -4, -5], [-1, -2, -3, -4, -5], [-1, -2, -3, -4, -5]]
+    parent2 = [[-6, -7, -8, -9, -10], [-6, -7, -8, -9, -10], [-6, -7, -8, -9, -10]]
     # no changes are applied
     child1, child2 = generate_children(parent1, parent2, 0, 0)
     assert child1 == parent1
@@ -43,7 +45,7 @@ def test_generate_children():
     # and when num_swaps > num_geoms
     # or if parents are not the same length
     with assert_raises(AssertionError):
-        generate_children(parent1, [[1,2,3,4,5], [13,4,2,2,5]], 0, 0)
+        generate_children(parent1, [[1, 2, 3, 4, 5], [13, 4, 2, 2, 5]], 0, 0)
         generate_children(parent1, parent2, 10, 0)
         generate_children(parent1, parent2, 0, 100)
     # just run the function a few times
@@ -51,7 +53,3 @@ def test_generate_children():
     generate_children(parent1, parent2, 4, 3)
     generate_children(parent1, parent2, 5, 2)
     generate_children(parent1, parent2, 3, 2)
-
-if __name__ == "__main__":
-    test_generate_children()
-

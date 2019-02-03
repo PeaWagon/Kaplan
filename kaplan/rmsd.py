@@ -1,14 +1,11 @@
+"""This module is repsonsible for calculating the rmsd
+(root-mean square deviation) between two sets of
+coordinates. It uses the rmsd library, which can
+be found here: https://github.com/charnley/rmsd."""
 
 import numpy as np
 import rmsd
 
-"""
-This module is repsonsible for calculating the rmsd
-(root-mean square deviation) between two sets of
-coordinates. It uses the rmsd library, which can
-be found here:
-https://github.com/charnley/rmsd
-"""
 
 def calc_rmsd(coords1, coords2):
     """Calculate root-mean square deviation.

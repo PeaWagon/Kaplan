@@ -1,12 +1,3 @@
-
-from random import choice
-
-import numpy as np
-
-from kaplan.pmem import Pmem
-from kaplan.fitg import sum_energies, sum_rmsds, calc_fitness
-from kaplan.geometry import get_zmatrix_template, update_zmatrix, zmatrix_to_xyz
-
 """
 Consider the conversion of cartesian coordinates
 to a z-matrix.
@@ -38,6 +29,15 @@ Important information that this object will contain:
 
 """
 
+from random import choice
+
+import numpy as np
+
+from kaplan.pmem import Pmem
+from kaplan.fitg import sum_energies, sum_rmsds, calc_fitness
+from kaplan.geometry import get_zmatrix_template, update_zmatrix, zmatrix_to_xyz
+
+
 class RingEmptyError(Exception):
     """Error that occurs when the ring has no pmems in it.
 
@@ -47,14 +47,14 @@ class RingEmptyError(Exception):
     extinction operators are enabled.
 
     """
-    pass
+
 
 class RingOverflowError(Exception):
     """Error that occurs when more pmems are added
     to the ring than there is space available."""
-    pass
 
-class Ring(object):
+
+class Ring:
     """Data structure for genetic algorithm."""
 
     def __init__(self, num_geoms, num_atoms, num_slots,
@@ -113,7 +113,8 @@ class Ring(object):
 
         """
         if num_atoms != len(parser.coords):
-            raise ValueError("The parser geometry should have as many atoms as the num_atoms attribute.")
+            raise ValueError("The parser geometry should have as many atoms\
+                              as the num_atoms attribute.")
         if parser.charge is None or parser.multip is None:
             raise ValueError("The parser object must have charge and multip attributes set.")
         self.num_geoms = num_geoms
@@ -164,7 +165,6 @@ class Ring(object):
             self.num_filled += 1
         self.pmems[key] = value
 
-
     def set_fitness(self, pmem_index):
         """Set the fitness value for a pmem.
 
@@ -187,13 +187,15 @@ class Ring(object):
         None
 
         """
-        if self.pmems[pmem_index] == None:
+        if self.pmems[pmem_index] is None:
             raise ValueError(f"Empty slot: {pmem_index}.")
         # construct zmatrices
-        zmatrices = [update_zmatrix(self.zmatrix, self.pmems[pmem_index].dihedrals[i]) for i in range(self.num_geoms)]
+        zmatrices = [update_zmatrix(self.zmatrix, self.pmems[pmem_index].dihedrals[i])
+                     for i in range(self.num_geoms)]
         xyz_coords = [zmatrix_to_xyz(zmatrix) for zmatrix in zmatrices]
         # get fitness
-        energy = sum_energies(xyz_coords, self.parser.charge, self.parser.multip, self.parser.method, self.parser.basis)
+        energy = sum_energies(xyz_coords, self.parser.charge, self.parser.multip,
+                              self.parser.method, self.parser.basis)
         rmsd = sum_rmsds(xyz_coords)
         fitness = calc_fitness(self.fit_form, energy, self.coef_energy, rmsd, self.coef_rmsd)
         self.pmems[pmem_index].fitness = fitness
@@ -235,7 +237,8 @@ class Ring(object):
         zmatrices = [update_zmatrix(self.zmatrix, child[i]) for i in range(self.num_geoms)]
         xyz_coords = [zmatrix_to_xyz(zmatrix) for zmatrix in zmatrices]
         # get fitness
-        energy = sum_energies(xyz_coords, self.parser.charge, self.parser.multip, self.parser.method, self.parser.basis)
+        energy = sum_energies(xyz_coords, self.parser.charge, self.parser.multip,
+                              self.parser.method, self.parser.basis)
         rmsd = sum_rmsds(xyz_coords)
         fitness = calc_fitness(self.fit_form, energy, self.coef_energy, rmsd, self.coef_rmsd)
 
@@ -328,15 +331,3 @@ class Ring(object):
                                      current_mev)
                 self.set_fitness(i)
                 self.num_filled += 1
-
-###############################################################
-
-# want to perhaps do:
-# for pmem in ring:
-# which requires dunder iter
-
-#    def __iter__(self, i):
-#        pass
-
-###############################################################    
-    

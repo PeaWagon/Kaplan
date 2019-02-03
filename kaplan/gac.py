@@ -1,3 +1,9 @@
+"""
+
+In charge of evolving a population for the set
+number of mating events.
+
+"""
 
 import sys
 
@@ -7,12 +13,6 @@ from kaplan.ring import Ring, RingEmptyError
 from kaplan.tournament import run_tournament
 from kaplan.output import run_output
 
-"""
-
-In charge of evolving a population for the set
-number of mating events.
-
-"""
 
 def run_kaplan(ga_input_file, mol_input_file):
     """Run the Kaplan programme.
@@ -39,7 +39,7 @@ def run_kaplan(ga_input_file, mol_input_file):
     assert ga_input_dict['num_atoms'] == len(parser.coords)
 
     # make a ring
-    ring = Ring(ga_input_dict['num_geoms'], 
+    ring = Ring(ga_input_dict['num_geoms'],
                 ga_input_dict['num_atoms'],
                 ga_input_dict['num_slots'],
                 ga_input_dict['pmem_dist'],
@@ -68,5 +68,6 @@ def run_kaplan(ga_input_file, mol_input_file):
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
-        raise FileNotFoundError("Please include the ga_input_file and the mol_input_file as arguments to the program.")
+        raise FileNotFoundError("Please include the ga_input_file and the\
+                                 mol_input_file as arguments to the program.")
     run_kaplan(sys.argv[1], sys.argv[2])

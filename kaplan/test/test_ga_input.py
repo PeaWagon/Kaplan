@@ -24,35 +24,39 @@ from kaplan.ga_input import read_ga_input, verify_ga_input
 
 
 # directory for this test file
-test_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'testfiles')
+TEST_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'testfiles')
+
 
 def test_read_ga_input():
+    """Test read_ga_input function of ga_input module."""
     # good input
-    read_ga_input(os.path.join(test_dir, "example_ga_input_file.txt"))
+    read_ga_input(os.path.join(TEST_DIR, "example_ga_input_file.txt"))
     # good input with extra spaces
-    read_ga_input(os.path.join(test_dir, "example2_ga_input_file.txt"))
+    read_ga_input(os.path.join(TEST_DIR, "example2_ga_input_file.txt"))
     # no such file error
     assert_raises(FileNotFoundError, read_ga_input, 'no-such-file')
     # num mevs appears twice
-    assert_raises(ValueError, read_ga_input, os.path.join(test_dir, "bad1_ga_input_file.txt"))
+    assert_raises(ValueError, read_ga_input, os.path.join(TEST_DIR, "bad1_ga_input_file.txt"))
     # missing num atoms
-    assert_raises(ValueError, read_ga_input, os.path.join(test_dir, "bad2_ga_input_file.txt"))
+    assert_raises(ValueError, read_ga_input, os.path.join(TEST_DIR, "bad2_ga_input_file.txt"))
+
 
 def test_verify_ga_input():
+    """Test verify_ga_input function of ga_input module."""
     # good input with extra spaces
-    ga_input_dict = read_ga_input(os.path.join(test_dir, "example2_ga_input_file.txt"))
+    ga_input_dict = read_ga_input(os.path.join(TEST_DIR, "example2_ga_input_file.txt"))
     verify_ga_input(ga_input_dict)
 
     # check the good file
-    #{'num_mevs': '1000', 'num_slots': '100', 'num_filled': '20',
-    # 'num_geoms': '3', 'num_atoms': '10', 't_size': '7', 'num_muts': '3',
-    # 'num_swaps': '1', 'pmem_dist': '5', 'fit_form': '0', 'coef_energy': '0.5',
-    # 'coef_rmsd': '0.5'}
-    ga_input_dict = read_ga_input(os.path.join(test_dir, "example_ga_input_file.txt"))
+    # {'num_mevs': '1000', 'num_slots': '100', 'num_filled': '20',
+    #  'num_geoms': '3', 'num_atoms': '10', 't_size': '7', 'num_muts': '3',
+    #  'num_swaps': '1', 'pmem_dist': '5', 'fit_form': '0', 'coef_energy': '0.5',
+    #  'coef_rmsd': '0.5'}
+    ga_input_dict = read_ga_input(os.path.join(TEST_DIR, "example_ga_input_file.txt"))
     verify_ga_input(ga_input_dict)
 
     # num geoms is spelt wrong
-    ga_input_dict2 = read_ga_input(os.path.join(test_dir, "bad3_ga_input_file.txt"))
+    ga_input_dict2 = read_ga_input(os.path.join(TEST_DIR, "bad3_ga_input_file.txt"))
     assert_raises(ValueError, verify_ga_input, ga_input_dict2)
 
     ga_input_dict["num_slots"] = -1
@@ -101,7 +105,3 @@ def test_verify_ga_input():
 
     ga_input_dict["t_size"] = 25
     assert_raises(AssertionError, verify_ga_input, ga_input_dict)
-
-if __name__ == "__main__":
-    test_read_ga_input()
-    test_verify_ga_input()

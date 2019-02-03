@@ -1,3 +1,5 @@
+"""This module uses psi4 to run energy calculations
+for a given geometry."""
 
 import os
 import psi4
@@ -10,7 +12,8 @@ import psi4
 # should be less than what your computer has available
 RAM = "4 GB"
 
-def run_energy_calc(geom, method="hf",basis="sto-3g",
+
+def run_energy_calc(geom, method="hf", basis="sto-3g",
                     restricted=False):
     """Run an energy calculation using psi4.
 
@@ -64,6 +67,7 @@ def run_energy_calc(geom, method="hf",basis="sto-3g",
         raise psi4.driver.qcdb.exceptions.BasisSetNotFound(f"Invalid basis set: {basis}")
     return energy
 
+
 def check_psi4_inputs(qcm, basis):
     """Check that a method and a basis set are available in psi4.
 
@@ -91,10 +95,10 @@ def check_psi4_inputs(qcm, basis):
 
     """
     # directory for data files
-    avail_basis = os.path.join(os.path.dirname(os.path.realpath(__file__)),\
+    avail_basis = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                'data/psi4-basis-sets.txt')
-    avail_qcm = os.path.join(os.path.dirname(os.path.realpath(__file__)),\
-                               'data/psi4-methods.txt')
+    avail_qcm = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                             'data/psi4-methods.txt')
     geom = psi4.geometry("""
                          0 1
                          H 0.0 0.0 0.0
@@ -107,6 +111,7 @@ def check_psi4_inputs(qcm, basis):
         raise ValueError(f"Invalid method: {qcm}")
     except psi4.driver.qcdb.exceptions.BasisSetNotFound:
         raise ValueError(f"Invalid basis: {basis}")
+
 
 def prep_psi4_geom(coords, charge, multip):
     """Make a psi4 compliant geometry string.
@@ -131,4 +136,3 @@ def prep_psi4_geom(coords, charge, multip):
     for atom in coords:
         psi4_str += f"{atom[0]} {atom[1]} {atom[2]} {atom[3]}\n"
     return psi4.geometry(psi4_str)
-

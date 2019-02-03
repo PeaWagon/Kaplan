@@ -1,12 +1,4 @@
-
-import os
-
-from vetee.xyz import Xyz
-
-from kaplan.geometry import update_zmatrix, zmatrix_to_xyz
-
-"""
-The purpose of this module is to handle writing output
+"""The purpose of this module is to handle writing output
 after the conformer search has concluded.
 
 This module decides where to put the output files, what
@@ -29,8 +21,13 @@ highest value it finds (so if job 0, 1, 5 and 10
 are present, then the next job will be job_11).
 
 Some new features that I'd like to add are
-written as comments below.
-"""
+written as comments below."""
+
+import os
+
+from vetee.xyz import Xyz
+
+from kaplan.geometry import update_zmatrix, zmatrix_to_xyz
 
 # OUTPUT_FORMAT = 'xyz'
 
@@ -38,6 +35,7 @@ written as comments below.
 # add option to change output format
 # add option to write to a user-specified output directory
 # make some images representing the population using matplotlib
+
 
 def get_output_dir(loc="pwd"):
     """Determine the name of the output directory.
@@ -82,8 +80,8 @@ def get_output_dir(loc="pwd"):
     # keep track of how many jobs have been run
     dir_nums = []
     for val in dir_contents:
-        val = val.split("_")
-        if val.startswith("job") and len(val) == 2:
+        val = val.name.split("_")
+        if val[0] == "job" and len(val) == 2:
             try:
                 dir_nums.append(int(val[1]))
             except ValueError:
@@ -92,6 +90,7 @@ def get_output_dir(loc="pwd"):
     output_dir = os.path.join(output_dir, new_dir)
     os.mkdir(output_dir)
     return output_dir
+
 
 def run_output(ring):
     """Run the output module.
@@ -120,11 +119,11 @@ def run_output(ring):
     output_dir = get_output_dir()
 
     # write a stats file
-    with open(os.path.join(output_dir, "stats-file.txt"), "w") as f:
-        f.write(f"num conformers: {ring.num_geoms}\n")
-        f.write(f"average fitness: {average_fit}\n")
-        f.write(f"best fitness: {best_fit}\n")
-        f.write(f"final percent filled: {100*ring.num_filled/ring.num_slots}%\n")
+    with open(os.path.join(output_dir, "stats-file.txt"), "w") as fout:
+        fout.write(f"num conformers: {ring.num_geoms}\n")
+        fout.write(f"average fitness: {average_fit}\n")
+        fout.write(f"best fitness: {best_fit}\n")
+        fout.write(f"final percent filled: {100*ring.num_filled/ring.num_slots}%\n")
 
     # generate the output file for the best pmem
     for geom in range(ring.num_geoms):

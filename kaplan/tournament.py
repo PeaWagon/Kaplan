@@ -1,10 +1,38 @@
+"""The tournament module decides which pmems to
+pick from the ring in order to apply updates
+to the population."""
 
 import numpy as np
 from kaplan.ring import RingEmptyError
 from kaplan.mutations import generate_children
 
+
 def run_tournament(t_size, num_muts, num_swaps, ring,
                    current_mev):
+    """Run the tournament (i.e. a mating event).
+
+    Parameters
+    ----------
+    t_size : int
+        Number of pmems to choose for the
+        tournament.
+    num_muts : int
+        Maximum number of mutations to apply
+        to each newly generated pmem.
+    num_swaps : int
+        Maximum number of swaps to do between
+        newly generated pmems.
+    ring : object
+        Ring object.
+    current_mev : int
+        The current mating event number. Used
+        to give pmems birthdays.
+
+    Returns
+    -------
+    None
+
+    """
     # check ring has enough pmems for a tournament
     if t_size > ring.num_filled:
         raise RingEmptyError("Not enough pmems to run a tournament.")
@@ -27,6 +55,7 @@ def run_tournament(t_size, num_muts, num_swaps, ring,
     ring.update(parents[0], children[1], current_mev)
     ring.update(parents[1], children[0], current_mev)
 
+
 def select_pmems(number, ring):
     """Randomly selected pmems.
 
@@ -44,14 +73,14 @@ def select_pmems(number, ring):
 
     """
     selection = []
-    for pmem in range(number):
+    while len(selection) < number:
         # choose random slot
         choice = np.random.randint(0, ring.num_slots)
-        # if the slot is empty, keep picking another random one
-        while ring[choice] is None:
-            choice = np.random.randint(0, ring.num_slots)
-        selection.append(choice)
+        # add slot to selection if its non-empty
+        if ring[choice]:
+            selection.append(choice)
     return selection
+
 
 def select_parents(selected_pmems, ring):
     """Sort pmems by fitness values, choose best 2.
@@ -82,4 +111,3 @@ def select_parents(selected_pmems, ring):
     parents.append(next(parents_gen))
     print(parents)
     return parents
-

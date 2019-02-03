@@ -24,37 +24,42 @@ from numpy.testing import assert_raises
 
 from kaplan.mol_input import read_mol_input, verify_mol_input
 
+
 # directory for this test file
-test_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'testfiles')
+TEST_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'testfiles')
+
 
 def test_read_mol_input():
+    """Test the read_mol_input function from mol_input module."""
     # good input
-    read_mol_input(os.path.join(test_dir, "example_mol_input_file.txt"))
+    read_mol_input(os.path.join(TEST_DIR, "example_mol_input_file.txt"))
     # good input with extra spaces
-    read_mol_input(os.path.join(test_dir, "example2_mol_input_file.txt"))
+    read_mol_input(os.path.join(TEST_DIR, "example2_mol_input_file.txt"))
     # no such file error
     assert_raises(FileNotFoundError, read_mol_input, 'no-such-file')
     # qcm appears twice
-    assert_raises(ValueError, read_mol_input, os.path.join(test_dir, "bad1_mol_input_file.txt"))
+    assert_raises(ValueError, read_mol_input, os.path.join(TEST_DIR, "bad1_mol_input_file.txt"))
     # missing struct type
-    assert_raises(ValueError, read_mol_input, os.path.join(test_dir, "bad2_mol_input_file.txt"))
+    assert_raises(ValueError, read_mol_input, os.path.join(TEST_DIR, "bad2_mol_input_file.txt"))
+
 
 def test_verify_mol_input():
+    """Test the verify_mol_input function from mol_input module."""
     # good input with extra spaces
-    mol_input_dict = read_mol_input(os.path.join(test_dir, "example2_mol_input_file.txt"))
+    mol_input_dict = read_mol_input(os.path.join(TEST_DIR, "example2_mol_input_file.txt"))
     verify_mol_input(mol_input_dict)
 
     # check the good file
     # {'qcm': 'hf', 'basis': 'sto-3g', 'struct_input': 'C=CC=C',
     #  'struct_type': 'smiles', 'prog': 'psi4', 'charge': '0', 'multip': '1'}
-    mol_input_dict = read_mol_input(os.path.join(test_dir, "example_mol_input_file.txt"))
+    mol_input_dict = read_mol_input(os.path.join(TEST_DIR, "example_mol_input_file.txt"))
     verify_mol_input(mol_input_dict)
     # reset all params that are modified by verification
     mol_input_dict["charge"] = '0'
     mol_input_dict["multip"] = '1'
 
     # struct input is spelt wrong
-    mol_input_dict2 = read_mol_input(os.path.join(test_dir, "bad3_mol_input_file.txt"))
+    mol_input_dict2 = read_mol_input(os.path.join(TEST_DIR, "bad3_mol_input_file.txt"))
     assert_raises(ValueError, verify_mol_input, mol_input_dict2)
 
     mol_input_dict["qcm"] = "not-a-method"
@@ -100,7 +105,3 @@ def test_verify_mol_input():
 
     mol_input_dict["multip"] = "-2"
     assert_raises(AssertionError, verify_mol_input, mol_input_dict)
-
-if __name__ == "__main__":
-    test_read_mol_input()
-    test_verify_mol_input()

@@ -32,5 +32,5 @@ script:
   # Your test script goes here
   - nosetests --with-coverage --cover-package=kaplan -v kaplan
   - pylint kaplan
-  - pycodestyle kaplan
+  - pycodestyle --max-line-length=100 kaplan
   - pydocstyle --convention=numpy

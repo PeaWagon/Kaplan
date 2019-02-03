@@ -1,3 +1,6 @@
+"""This module contains the Pmem object.
+Each instance of the pmem object keeps a record
+of one set of conformers for a molecule."""
 
 import numpy as np
 
@@ -5,7 +8,8 @@ import numpy as np
 MIN_VALUE = 0
 MAX_VALUE = 360
 
-class Pmem(object):
+
+class Pmem:
     """Population member of the ring."""
 
     def __init__(self, ring_loc, num_geoms, num_atoms,
@@ -47,9 +51,8 @@ class Pmem(object):
             # generate random dihedral angles (degrees)
             # each row is a set of dihedral angles for one conformer
             self.dihedrals = np.random.randint(MIN_VALUE, MAX_VALUE,
-                             size=(num_geoms, num_atoms-3))
+                                               size=(num_geoms, num_atoms-3))
         else:
             self.dihedrals = dihedrals
         self.fitness = None
         self.birthday = current_mev
-

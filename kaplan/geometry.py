@@ -1,11 +1,16 @@
+"""This module is responsible for dealing with converting
+geometries from z-matrix format to xyz format. It relies
+on the external library, Vetee, to do most of the conversions,
+along with the python wrapper for openbabel, pybel."""
 
 import vetee
 import openbabel
 import pybel
 
+
 class GeometryError(Exception):
     """Error raises when one of the geometry functions fails."""
-    pass
+
 
 def generate_parser(mol_input_dict):
     """Returns parser object (from vetee).
@@ -30,12 +35,14 @@ def generate_parser(mol_input_dict):
         elif mol_input_dict['struct_type'] == 'glog':
             parser = vetee.glog.Glog(mol_input_dict['struct_input'])
         elif mol_input_dict['struct_type'] in ('smiles', 'cid', 'name'):
-            parser = vetee.structure.Structure(mol_input_dict['struct_type'], mol_input_dict['struct_input'])
+            parser = vetee.structure.Structure(mol_input_dict['struct_type'],
+                                               mol_input_dict['struct_input'])
         else:
-            raise GeometryError(f"The struct_type input {mol_input_dict['struct_type']} is not available.")
-    except Exception as e:
-        print(e)
-        raise GeometryError(f"Unable to make a parser object. {mol_input_dict['struct_type']}: {mol_input_dict['struct_input']}")
+            raise GeometryError(f"struct_type {mol_input_dict['struct_type']} is not available.")
+    except Exception as error:
+        print(error)
+        raise GeometryError(f"Unable to make a parser object.\
+            {mol_input_dict['struct_type']}: {mol_input_dict['struct_input']}")
     # update basis set and method
     # note that the mol_input_file has precedence over
     # the contents of struct_input
@@ -43,11 +50,16 @@ def generate_parser(mol_input_dict):
     # update charge and multiplicity, again mol_input_file
     # takes precedence over whatever was decided when the
     # file was read by vetee
-    if not isinstance(mol_input_dict['charge'], int) or not isinstance(mol_input_dict['multip'], int):
-        raise GeometryError("Charge and multiplicity should be integers. Unable to make a parser object.")
+    try:
+        assert isinstance(mol_input_dict['charge'], int)
+        assert isinstance(mol_input_dict['multip'], int)
+    except AssertionError:
+        raise GeometryError("Charge and multiplicity should be integers.\
+                             Unable to make a parser object.")
     parser.charge = mol_input_dict['charge']
     parser.multip = mol_input_dict['multip']
     return parser
+
 
 def get_zmatrix_template(parser):
     """Make a zmatrix from the original geometry.
@@ -85,6 +97,7 @@ def get_zmatrix_template(parser):
     zmatrix = pybelmol.write("gzmat")
     return zmatrix
 
+
 def update_zmatrix(zmatrix, dihedrals):
     """Make a new zmatrix with given dihedral angles.
 
@@ -95,7 +108,7 @@ def update_zmatrix(zmatrix, dihedrals):
         of interest.
     dihedrals : list(int)
         The dihedrals to be combined with
-        the original geometry. 
+        the original geometry.
 
     Returns
     -------
@@ -113,6 +126,7 @@ def update_zmatrix(zmatrix, dihedrals):
             dihedral_num += 1
     new_zmatrix = '\n'.join(zmatrix_list)
     return new_zmatrix
+
 
 def zmatrix_to_xyz(zmatrix):
     """Make xyz coordinates from a zmatrix string.
@@ -137,4 +151,3 @@ def zmatrix_to_xyz(zmatrix):
         xyz.append([vetee.gaussian_options.periodic_table(atom.atomicnum),
                     atom.coords[0], atom.coords[1], atom.coords[2]])
     return xyz
-

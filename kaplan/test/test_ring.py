@@ -1,3 +1,4 @@
+"""Test the ring module from Kaplan."""
 
 import os
 
@@ -7,19 +8,22 @@ from numpy.testing import assert_raises
 from kaplan.ring import Ring, RingEmptyError, RingOverflowError
 from kaplan.pmem import Pmem
 
+
 # directory for this test file
-test_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'testfiles')
- 
-def test_Ring():
+TEST_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'testfiles')
+
+
+def test_ring():
+    """Test the Ring object from the ring module."""
     num_slots = 10
-    num_filled = 2
+    # num_filled = 2
     num_geoms = 3
     num_atoms = 24
-    t_size = 7
-    num_muts = 3
-    num_swaps = 1
+    # t_size = 7
+    # num_muts = 3
+    # num_swaps = 1
     pmem_dist = 2
-    parser = Xyz(os.path.join(test_dir, "caffeine.xyz"))
+    parser = Xyz(os.path.join(TEST_DIR, "caffeine.xyz"))
     parser.charge = 0
     parser.multip = 1
     ring = Ring(num_geoms, num_atoms, num_slots, pmem_dist, 0, 0.5, 0.5, parser)
@@ -38,14 +42,16 @@ def test_Ring():
     assert all([ring.pmems[i] is None for i in range(10)])
     # check that the zmatrix is the same as the
     # zmatrix that comes out of the openbabel gui
-    czmat = caffeine_zmatrix.split('\n')
+    czmat = CAFFEINE_ZMATRIX.split('\n')
     ring_czmat = ring.zmatrix.split('\n')
     assert len(czmat) == len(ring_czmat)
-    for i in range(len(czmat)):
-        assert czmat[i] == ring_czmat[i]
+    for i, val in enumerate(czmat):
+        assert val == ring_czmat[i]
 
-def test_Ring_fill():
-    parser = Xyz(os.path.join(test_dir, "1,3-butadiene.xyz"))
+
+def test_ring_fill():
+    """Test the Ring.fill method."""
+    parser = Xyz(os.path.join(TEST_DIR, "1,3-butadiene.xyz"))
     parser.charge = 0
     parser.multip = 1
     ring = Ring(3, 10, 15, 2, 0, 0.5, 0.5, parser)
@@ -68,8 +74,10 @@ def test_Ring_fill():
     assert ring[12] is None
     assert ring[8].birthday == 3
 
-def test_Ring_getitem():
-    parser = Xyz(os.path.join(test_dir, "1,3-butadiene.xyz"))
+
+def test_ring_getitem():
+    """Test the Ring.__getitem__ method."""
+    parser = Xyz(os.path.join(TEST_DIR, "1,3-butadiene.xyz"))
     parser.charge = 0
     parser.multip = 1
     ring = Ring(3, 10, 15, 2, 0, 0.5, 0.5, parser)
@@ -81,8 +89,10 @@ def test_Ring_getitem():
         ring[1000]
         ring['one']
 
-def test_Ring_setitem():
-    parser = Xyz(os.path.join(test_dir, "1,3-butadiene.xyz"))
+
+def test_ring_setitem():
+    """Test the Ring.__setitem__ method."""
+    parser = Xyz(os.path.join(TEST_DIR, "1,3-butadiene.xyz"))
     parser.charge = 0
     parser.multip = 1
     ring = Ring(3, 10, 15, 2, 0, 0.5, 0.5, parser)
@@ -94,23 +104,26 @@ def test_Ring_setitem():
         ring[4] = Pmem(3, 3, 10, 1)
         ring[3] = Pmem(4, 2, 10, 1)
         ring[2] = Pmem(2, 3, 9, 1)
-    ring.fill(1,0)
+    ring.fill(1, 0)
     assert ring.num_filled == 1
     ring[0] = None
     assert ring.num_filled == 0
 
-def test_Ring_update():
+
+def test_ring_update():
+    """Test the Ring.update method."""
     # parent_index, child, current_mev
-    parser = Xyz(os.path.join(test_dir, "1,3-butadiene.xyz"))
+    parser = Xyz(os.path.join(TEST_DIR, "1,3-butadiene.xyz"))
     parser.charge = 0
     parser.multip = 1
     ring = Ring(3, 10, 15, 2, 0, 0.5, 0.5, parser)
     # ring is empty, try adding random pmems
     # testing backflow
-    ring.update(0, [[1,2,3,4,5,6,7],[1,2,3,4,2,1,1],[7,6,5,4,3,2,1]], 0)
+    ring.update(0, [[1, 2, 3, 4, 5, 6, 7], [1, 2, 3, 4, 2, 1, 1],
+                    [7, 6, 5, 4, 3, 2, 1]], 0)
     # possible places the update took place
-    slots = [0,1,2,13,14]
-    not_slots = [3,4,5,6,7,8,9,10,11,12]
+    slots = [0, 1, 2, 13, 14]
+    not_slots = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     assert sum(ring[i] is not None for i in slots) == 1
     assert all(ring[i] is None for i in not_slots)
     ring[0] = None
@@ -120,24 +133,27 @@ def test_Ring_update():
     ring[14] = None
     # test case where pmem_dist is zero
     ring.pmem_dist = 0
-    ring.update(0, [[1,2,3,4,5,6,7],[1,2,3,4,2,1,1],[7,6,5,4,3,2,1]], 0)
+    ring.update(0, [[1, 2, 3, 4, 5, 6, 7], [1, 2, 3, 4, 2, 1, 1],
+                    [7, 6, 5, 4, 3, 2, 1]], 0)
     assert ring[0] is not None
     assert sum(ring[i] is not None for i in range(ring.num_slots)) == 1
     # test overflow
     ring[0] = None
     ring.pmem_dist = 4
-    ring.update(13, [[1,2,3,4,5,6,7],[1,2,3,4,2,1,1],[7,6,5,4,3,2,1]], 0)
+    ring.update(13, [[1, 2, 3, 4, 5, 6, 7], [1, 2, 3, 4, 2, 1, 1],
+                     [7, 6, 5, 4, 3, 2, 1]], 0)
     slots = [13, 14, 0, 1, 2, 9, 10, 11, 12]
     assert (sum(ring[i] is not None for i in slots)) == 1
-    not_slots = [3,4,5,6,7,8]
+    not_slots = [3, 4, 5, 6, 7, 8]
     assert all(ring[i] is None for i in not_slots)
     # test no overflow or backflow (now, pmem dist is 4)
     for slot in slots:
         ring[slot] = None
-    ring.update(7, [[1,2,3,4,5,6,7],[1,2,3,4,2,1,1],[7,6,5,4,3,2,1]], 0)
+    ring.update(7, [[1, 2, 3, 4, 5, 6, 7], [1, 2, 3, 4, 2, 1, 1],
+                    [7, 6, 5, 4, 3, 2, 1]], 0)
     slots = [7, 8, 9, 10, 11, 3, 4, 5, 6]
     assert (sum(ring[i] is not None for i in slots)) == 1
-    not_slots = [0,1,2,12,13,14]
+    not_slots = [0, 1, 2, 12, 13, 14]
     assert all(ring[i] is None for i in not_slots)
     for slot in slots:
         ring[slot] = None
@@ -145,7 +161,7 @@ def test_Ring_update():
     ring.pmem_dist = 0
     # fitness = 230.09933808553276
     ring[0] = Pmem(0, 3, 10, 0, [[239, 278, 5, 248, 40, 67, 299],
-                                 [36, 123, 295, 111, 322, 267, 170], 
+                                 [36, 123, 295, 111, 322, 267, 170],
                                  [61, 130, 26, 139, 290, 238, 331]])
     ring.set_fitness(0)
     # fitness = 77.4576053229711
@@ -153,12 +169,13 @@ def test_Ring_update():
                     [182, 119, 106, 157, 194, 244, 168],
                     [95, 81, 202, 261, 197, 166, 161]], 1)
     assert ring[0].dihedrals == [[239, 278, 5, 248, 40, 67, 299],
-                                 [36, 123, 295, 111, 322, 267, 170], 
+                                 [36, 123, 295, 111, 322, 267, 170],
                                  [61, 130, 26, 139, 290, 238, 331]]
     assert ring.num_filled == 1
     assert ring[0].birthday == 0
 
-caffeine_zmatrix = """#Put Keywords Here, check Charge and Multiplicity.
+
+CAFFEINE_ZMATRIX = """#Put Keywords Here, check Charge and Multiplicity.
 
  caffeine from pubchem
 
@@ -256,8 +273,3 @@ a24= 108.59
 d24= 301.39
 
 """
-
-if __name__ == "__main__":
-    test_Ring()
-    test_Ring_fill()
-    test_Ring_getitem()
