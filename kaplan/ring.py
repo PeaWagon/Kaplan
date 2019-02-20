@@ -193,7 +193,10 @@ class Ring:
         zmatrices = [update_zmatrix(self.zmatrix, self.pmems[pmem_index].dihedrals[i])
                      for i in range(self.num_geoms)]
         xyz_coords = [zmatrix_to_xyz(zmatrix) for zmatrix in zmatrices]
-        # get fitness
+        # get fitness; set options for calculating energy
+        options = {"qcm": self.parser.method, "basis": self.parser.basis,
+                   "charge": self.parser.charge, "multip": self.parser.multip,
+                   "prog": "psi4"}
         energy = sum_energies(xyz_coords, self.parser.charge, self.parser.multip,
                               self.parser.method, self.parser.basis)
         rmsd = sum_rmsds(xyz_coords)

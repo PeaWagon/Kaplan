@@ -23,6 +23,7 @@ import os
 from numpy.testing import assert_raises
 
 from kaplan.mol_input import read_mol_input, verify_mol_input
+from kaplan.energy import BasisSetError, MethodError
 
 
 # directory for this test file
@@ -63,14 +64,14 @@ def test_verify_mol_input():
     assert_raises(ValueError, verify_mol_input, mol_input_dict2)
 
     mol_input_dict["qcm"] = "not-a-method"
-    assert_raises(ValueError, verify_mol_input, mol_input_dict)
+    assert_raises(QCMError, verify_mol_input, mol_input_dict)
     mol_input_dict["qcm"] = "hf"
     # reset all params that are modified by verification
     mol_input_dict["charge"] = '0'
     mol_input_dict["multip"] = '1'
 
     mol_input_dict["basis"] = "not-a-basis"
-    assert_raises(ValueError, verify_mol_input, mol_input_dict)
+    assert_raises(BasisSetError, verify_mol_input, mol_input_dict)
     mol_input_dict["basis"] = "sto-3g"
     # reset all params that are modified by verification
     mol_input_dict["charge"] = '0'

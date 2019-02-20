@@ -4,17 +4,86 @@ for a given geometry."""
 import os
 import psi4
 
-# TODO: make these functions callable from a function
-# that checks the program being used (i.e. psi4 vs horton
-# vs gaussian)
+from kaplan.inputs import Inputs
 
+# these values are used in energy calculations when no
+# options are provided
+# if a new program is added, add defaults for it
 # how much RAM to use for psi4 calculations
 # should be less than what your computer has available
-RAM = "4 GB"
+DEFAULT_INPUTS = {"psi4": {"RAM": "4 GB"},
+                  "other": {}
+}
 
 
-def run_energy_calc(geom, method="hf", basis="sto-3g",
-                    restricted=False):
+class BasisSetError(Exception):
+    """Raised if basis set cannot be found for a program."""
+
+
+class MethodError(Exception):
+    """Raised if quantum chemical method is unavailable."""
+
+
+def run_energy_calc(coords=None, options=None):
+    """Setup and execute an energy calculation.
+
+    Parameters
+    ----------
+    coords : list
+        Has the format [[a1, x1, y1, z1],
+        [a2, x2, y2, z2], ..., [an, xn, yn, zn]]
+        Where a's are atom labels (i.e. H for
+        hydrogen) and x, y, and z coordinates
+        are given for n atoms. a's should be
+        strings and xyz should be floats.
+    options : dict
+        Requires the following:
+        options["charge"] - molecule charge
+        options["multip"] - molecule multiplicity
+        These options can be set:
+        options["prog"] - program (default is psi4)
+        options["basis"] - basis set (default is sto-3g)
+        options["method"] - quantum chem method (default is hf)
+        options["RAM"] - memory to use (default is 4 GB)
+
+    Notes
+    -----
+    Other options can be added and incorporated.
+
+    Returns
+    -------
+    Energy result as a floating point number.
+
+    """
+    if options is None or coords is None:
+        inputs = Inputs()
+        if not options:
+            options = {"prog": inputs["prog"],
+                       "method": inputs["method"],
+                       "basis": inputs["basis"],
+                       "charge": inputs["charge"],
+                       "multip": inputs["multip"]
+            }
+            # if you added extra options, they are included here
+            for arg, val in inputs["extra"].items():
+                options[arg] = val
+        if not coords:
+            coords = inputs["parser"].coords
+
+    defaults = DEFAULT_INPUTS[options["prog"]]
+    for key in defaults:
+        if key not in options:
+            options[key] = defaults[key]
+    if options["prog"] == "psi4":
+        geom_str = prep_psi4_geom(coords, options["charge"], options["multip"])
+        energy = psi4_energy_calc(geom_str, options["method"], options["basis"],
+                                  options["RAM"])
+        # energy is in hartrees here
+        return energy
+    raise NotImplementedError("Program not found.")
+
+
+def psi4_energy_calc(geom, method, basis, ram, restricted=False):
     """Run an energy calculation using psi4.
 
     Parameters
@@ -24,13 +93,13 @@ def run_energy_calc(geom, method="hf", basis="sto-3g",
         geometry for which to evaluate the energy.
         Note: this string should be generated using
         the prep_psi4_geom() function.
-
     method : str
         The quantum mechanical method to use.
-
     basis : str
         The basis set to use for the calculation.
-
+    ram : str
+        Specifies how much memory to use in calculations.
+        Should be something like "4 GB".
     restricted : bool
         Default is False (runs an unrestricted
         calculation). If set to True, runs a
@@ -39,8 +108,11 @@ def run_energy_calc(geom, method="hf", basis="sto-3g",
     Raises
     ------
     AssertionError
-        The method, basis, or geom variable
-        is not a string.
+        The method or basis is not a string.
+    BasisSetError
+        The basis set did not work using psi4.
+    MethodError
+        The method did not work using psi4.
 
     Returns
     -------
@@ -51,66 +123,21 @@ def run_energy_calc(geom, method="hf", basis="sto-3g",
     Notes
     -----
     Restricted might not work for non-hf methods.
+    VERY untested.
 
     """
-    psi4.set_memory(RAM)
     psi4.core.be_quiet()
+    psi4.set_memory(ram)
     assert isinstance(method, str)
     assert isinstance(basis, str)
     if restricted:
         psi4.set_options({"reference": "uhf"})
     try:
-        energy = psi4.energy(method+'/'+basis, return_wfn=False)
+        return psi4.energy(method+'/'+basis, return_wfn=False)
     except psi4.driver.p4util.exceptions.ValidationError:
-        raise psi4.driver.p4util.exceptions.ValidationError(f"Invalid method: {method}")
+        raise MethodError(f"Invalid method: {method}")
     except psi4.driver.qcdb.exceptions.BasisSetNotFound:
-        raise psi4.driver.qcdb.exceptions.BasisSetNotFound(f"Invalid basis set: {basis}")
-    return energy
-
-
-def check_psi4_inputs(qcm, basis):
-    """Check that a method and a basis set are available in psi4.
-
-    Parameters
-    ----------
-    qcm : str
-        The name of the method to use (lowercase).
-    basis : str
-        The name of the basis set (lowercase).
-
-    Returns
-    -------
-    bool
-        True if calculation can be run with basis
-        set and method given. Otherwise raise
-        the ValueError.
-
-    Notes
-    -----
-    For now, this function will do a try accept to
-    determine if the calculation is legitimate.
-    Later on, this might be changed to reading in
-    datafiles containing lists of acceptable inputs
-    and comparing those lists to the program input.
-
-    """
-    # directory for data files
-    avail_basis = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                               'data/psi4-basis-sets.txt')
-    avail_qcm = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                             'data/psi4-methods.txt')
-    geom = psi4.geometry("""
-                         0 1
-                         H 0.0 0.0 0.0
-                         H 0.0 0.0 1.0
-                         """)
-    try:
-        run_energy_calc(geom, qcm, basis)
-        return True
-    except psi4.driver.p4util.exceptions.ValidationError:
-        raise ValueError(f"Invalid method: {qcm}")
-    except psi4.driver.qcdb.exceptions.BasisSetNotFound:
-        raise ValueError(f"Invalid basis: {basis}")
+        raise BasisSetError(f"Invalid basis set: {basis}")
 
 
 def prep_psi4_geom(coords, charge, multip):

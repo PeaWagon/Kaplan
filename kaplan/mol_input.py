@@ -6,7 +6,7 @@ input.
 """
 
 from kaplan.geometry import generate_parser
-from kaplan.energy import prep_psi4_geom, run_energy_calc, check_psi4_inputs
+from kaplan.energy import BasisSetError, MethodError, run_energy_calc, DEFAULT_INPUTS
 
 NUM_MOL_ARGS = 7
 NUM_GA_ARGS = 12
@@ -89,6 +89,7 @@ def verify_mol_input(mol_input_dict):
             assert key in mol_input_dict
         except AssertionError:
             raise ValueError(f"Misspelled/incorrectly formatted mol input parameter: {key}.")
+
     # convert all but smiles string to lowercase
     for key in mol_input_dict:
         if key != "struct_input":
@@ -98,15 +99,11 @@ def verify_mol_input(mol_input_dict):
             mol_input_dict[key] = str(mol_input_dict[key]).lower()
     if mol_input_dict["struct_type"] != "smiles":
         mol_input_dict["struct_type"] = mol_input_dict["struct_type"].lower()
-    # ensure program used is psi4
-    assert mol_input_dict["prog"] == "psi4"
-    # check method and basis are in psi4
-    try:
-        check_psi4_inputs(mol_input_dict["qcm"], mol_input_dict["basis"])
-    except ValueError:
-        basis = mol_input_dict["basis"]
-        method = mol_input_dict["qcm"]
-        raise ValueError(f"Invalid basis set and/or method for psi4: {basis, method}")
+
+    # only program currently available is psi4
+    # if a program is added, add default options in the energy module
+    assert mol_input_dict["prog"] in DEFAULT_INPUTS
+
     # make sure the inputs are of the correct format
     assert mol_input_dict['struct_type'] in ('smiles', 'com', 'xyz', 'glog', "name", "cid")
     # check the structure file exists (if applicable)
@@ -116,6 +113,7 @@ def verify_mol_input(mol_input_dict):
                 pass
         except FileNotFoundError:
             raise FileNotFoundError("No such struct_input file.")
+
     # check the charge and multiplicity are integers
     try:
         mol_input_dict["multip"] = int(mol_input_dict["multip"])
@@ -123,13 +121,28 @@ def verify_mol_input(mol_input_dict):
     except ValueError:
         raise ValueError(f"Charge and multiplicity should be integer values.")
     assert mol_input_dict["multip"] > 0
+
     # try to make the struct object using vetee
     try:
         parser = generate_parser(mol_input_dict)
     except Exception:
         raise ValueError("Error when generating Parser object. Check the struct_input value.")
-    # check here if error message is raised
-    geom = prep_psi4_geom(parser.coords, parser.charge, parser.multip)
-    run_energy_calc(geom, mol_input_dict["qcm"], mol_input_dict["basis"])
+
+    # check initial geometry for convergence
+    # check method and basis are in chosen program
+    # if you add extra options, include them in the test here
+    opt = {"prog": mol_input_dict["prog"],
+           "qcm": mol_input_dict["qcm"],
+           "basis": mol_input_dict["basis"],
+           "charge": parser.charge,
+           "multip": parser.multip
+    }
+    try:
+        run_energy_calc(parser.coords, opt)
+    except BasisSetError:
+        raise BasisSetError(f"Invalid basis set: {mol_input_dict['basis']}")
+    except QCMError:
+        raise QCMError(f"Invalid quantum chemical method: {mol_input_dict['qcm']}")
+    
     # if no error message, initial geometry converges, we are good
     return parser

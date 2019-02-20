@@ -11,7 +11,7 @@ from math import factorial
 
 import numpy as np
 
-from kaplan.energy import run_energy_calc, prep_psi4_geom
+from kaplan.energy import run_energy_calc
 from kaplan.rmsd import calc_rmsd
 
 # TODO incorporate parser attribute "prog"
@@ -48,8 +48,10 @@ def sum_energies(xyz_coords, charge, multip, method, basis):
 
     """
     energies = np.zeros(len(xyz_coords), float)
+    options = {"basis": basis, "qcm": method, "multip": multip, "charge": charge}
     for i, xyz in enumerate(xyz_coords):
         try:
+            energies[i] = run_energy_calc(xyz, )
             energies[i] = run_energy_calc(prep_psi4_geom(xyz, charge, multip), method, basis)
         except Exception:
             # if there is a convergence error (atom too close)

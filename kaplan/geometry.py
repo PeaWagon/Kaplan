@@ -72,7 +72,7 @@ def get_zmatrix_template(parser):
     Returns
     -------
     zmatrix : str
-        The zmatrix (gzmat format) for the parser
+        The zmatrix (gzmat self.parserformat) for the parser
         molecule. Will be used to combine with
         dihedral angles.
 
