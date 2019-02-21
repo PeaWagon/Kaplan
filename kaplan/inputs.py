@@ -84,16 +84,6 @@ class Inputs(DefaultInputs):
         super().__init__()
 
 
-    def __setitem__(self, arg, val):
-        assert arg in self._options
-        # assign new value for input
-        self._options[arg] = val
-
- 
-    def __getitem__(self, arg):
-        return self._options[arg]
-
-
     def _reset_to_defaults(self):
         """Resets the borg to its original state.
         
@@ -104,28 +94,27 @@ class Inputs(DefaultInputs):
         execution.
         
         """
-        self["prog"] = "psi4"
-        self["basis"] = "sto-3g"
-        self["method"] = "hf"
-        self["struct_input"] = None
-        self["struct_type"] = None
-        self["num_atoms"] = None
-        self["charge"] = None
-        self["multip"] = None
-        self["num_mevs"] = 10_000
-        self["num_slots"] = 100
-        self["num_filled"] = 10
-        self["pmem_dist"] = 3
-        self["t_size"] = 7
-        self["num_geoms"] = 5
-        self["num_swaps"] = None
-        self["num_muts"] = None
-        self["fit_form"] = 0
-        self["coef_energy"] = 0.5
-        self["coef_rmsd"] = 0.5
-        self["parser"] = None
-        self["extra"] = {}
-
+        self.prog = "psi4"
+        self.basis = "sto-3g"
+        self.method = "hf"
+        self.struct_input = None
+        self.struct_type = None
+        self.num_atoms = None
+        self.charge = None
+        self.multip = None
+        self.num_mevs = 10_000
+        self.num_slots = 100
+        self.num_filled = 10
+        self.pmem_dist = 3
+        self.t_size = 7
+        self.num_geoms = 5
+        self.num_swaps = None
+        self.num_muts = None
+        self.fit_form = 0
+        self.coef_energy = 0.5
+        self.coef_rmsd = 0.5
+        self.parser = None
+        self.extra = {}
 
     def _check_input(self):
         """Check that the current inputs are valid.
@@ -169,11 +158,11 @@ class Inputs(DefaultInputs):
                 # val has to be reassigned otherwise
                 # a ValueError occurs when int(None) is performed
                 if arg == "num_swaps":
-                    self["num_swaps"] = self["num_geoms"]
-                    val = self["num_swaps"]
+                    self.num_swaps = self.num_geoms
+                    val = self.num_swaps
                 elif arg == "num_muts":
-                    self["num_muts"] = int(self["num_atoms"]/3)
-                    val = self["num_muts"]
+                    self.num_muts = int(self.num_atoms/3)
+                    val = self.num_muts
                 else:
                     raise InputError(f"Missing required input argument: {arg}")
             # int(float) doesn't throw an error, but int("float") does
@@ -182,37 +171,43 @@ class Inputs(DefaultInputs):
                 if isinstance(val, float) and val % 1 != 0.0:
                     raise InputError(f"Expected integer argument: {arg} = {val}")
                 try:
-                    self[arg] = int(val)
+                    setattr(self, arg, int(val))
                 except ValueError:
                     raise InputError(f"Could not convert to int: {arg} = {val}")
             elif arg in expect_float:
                 try:
-                    self[arg] = float(val)
+                    setattr(self, arg, float(val))
                 except ValueError:
                     raise InputError(f"Could not convert to float: {arg} = {val}")
+
+        # update parser charge and multip if not already set
+        if self.parser.charge is None:
+            self.parser.charge = self.charge
+        if self.parser.multip is None:
+            self.parser.multip = self.multip
 
         # only program currently available is psi4
         # if a program is added, add it to _avail_progs list in
         # DefaultInputs class
-        assert self["prog"] in self._avail_progs
+        assert self.prog in self._avail_progs
         # fit form can only be 0
         # if new fit forms are added, add them to _avail_fit_form
         # list in DefaultInputs class
-        assert self["fit_form"] in self._avail_fit_form
-        assert self["num_atoms"] > 3
+        assert self.fit_form in self._avail_fit_form
+        assert self.num_atoms > 3
         # multiplicity cannot be negative 2S+1 (where S is spin)
-        assert self["multip"] > 0
-        assert self["num_filled"] > 0
-        assert 0 < self["num_slots"] >= self["num_filled"]
-        assert self["num_mevs"] > 0
-        assert self["num_geoms"] > 0
-        assert 0 <= self["num_swaps"] <= self["num_geoms"]
-        assert 0 <= self["num_muts"] <= self["num_atoms"] - 3
-        assert 0 <= self["pmem_dist"] < self["num_slots"]/2
-        assert self["coef_energy"] >= 0
-        assert self["coef_rmsd"] >= 0
+        assert self.multip > 0
+        assert self.num_filled > 0
+        assert 0 < self.num_slots >= self.num_filled
+        assert self.num_mevs > 0
+        assert self.num_geoms > 0
+        assert 0 <= self.num_swaps <= self.num_geoms
+        assert 0 <= self.num_muts <= self.num_atoms - 3
+        assert 0 <= self.pmem_dist < self.num_slots/2
+        assert self.coef_energy >= 0
+        assert self.coef_rmsd >= 0
         # t_size must be at least 2 (for 2 parents)
-        assert 2 <= self["t_size"] <= self["num_filled"]
+        assert 2 <= self.t_size <= self.num_filled
 
 
     def _update_parser(self):
@@ -233,49 +228,49 @@ class Inputs(DefaultInputs):
 
         """
         try:
-            if self["struct_type"] is None:
+            if self.struct_type is None:
                 raise InputError()
-            assert self["struct_type"] in self._avail_structs
+            assert self.struct_type in self._avail_structs
             # check the structure file exists (if applicable)
-            if self["struct_type"] in ("xyz", "glog", "com"):
-                with open(self["struct_input"], "r"):
+            if self.struct_type in ("xyz", "glog", "com"):
+                with open(self.struct_input, "r"):
                     pass
             # make parser object using vetee
-            if self["struct_type"] == "xyz":
-                self["parser"] = vetee.xyz.Xyz(self["struct_input"])
-            elif self["struct_type"] == "com":
-                self["parser"] = vetee.com.Com(self["struct_input"])
-            elif self["struct_type"] == "glog":
-                self["parser"] = vetee.glog.Glog(self["struct_input"])
-            elif self["struct_type"] in ("smiles", "cid", "name"):
-                self["parser"] = vetee.structure.Structure(self["struct_type"],
-                                                           self["struct_input"])
+            if self.struct_type == "xyz":
+                self.parser = vetee.xyz.Xyz(self.struct_input)
+            elif self.struct_type == "com":
+                self.parser = vetee.com.Com(self.struct_input)
+            elif self.struct_type == "glog":
+                self.parser = vetee.glog.Glog(self.struct_input)
+            elif self.struct_type in ("smiles", "cid", "name"):
+                self.parser = vetee.structure.Structure(self.struct_type,
+                                                           self.struct_input)
         except InputError:
             raise InputError(f"Missing required input argument: struct_type")
         except AssertionError:
-            raise InputError(f"Invalid structure type: {self['struct_type']}")
+            raise InputError(f"Invalid structure type: {self.struct_type}")
         except FileNotFoundError:
-            raise FileNotFoundError(f"No such struct_input file: {self['struct_input']}")
+            raise FileNotFoundError(f"No such struct_input file: {self.struct_input}")
         except ValueError:
             raise InputError(f"\n---Error generating parser object---\
-                               \nStructure type: {self['struct_type']}\
-                               \nStructure input: {self['struct_input']}")
+                               \nStructure type: {self.struct_type}\
+                               \nStructure input: {self.struct_input}")
 
         # update basis set and method
-        self["parser"].parse_gkeywords(f"#{self['method']} {self['basis']}")
+        self.parser.parse_gkeywords(f"#{self.method} {self.basis}")
         # if the user did not input charge/multip/num_atoms,
         # then try to use the defaults from vetee
         # if any of these values is set to None,
         # an input error will be raised by the update_inputs function
-        if self["charge"] is None:
-            self["charge"] = self["parser"].charge
-        if self["multip"] is None:
-            self["multip"] = self["parser"].multip
-        if self["num_atoms"] is None:
-            self["num_atoms"] = len(self["parser"].coords)
+        if self.charge is None:
+            self.charge = self.parser.charge
+        if self.multip is None:
+            self.multip = self.parser.multip
+        if self.num_atoms is None:
+            self.num_atoms = len(self.parser.coords)
         # make sure they agree for number of atoms
         else:
-            assert self["num_atoms"] == len(self["parser"].coords)
+            assert self.num_atoms == len(self.parser.coords)
 
 
     def update_inputs(self, input_dict):
@@ -319,7 +314,7 @@ class Inputs(DefaultInputs):
                 except AttributeError:
                     pass
             # overwrite default value
-            self[arg] = val
+            setattr(self, arg, val)
 
         # now update parser object
         self._update_parser()

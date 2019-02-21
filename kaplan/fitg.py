@@ -13,6 +13,7 @@ import numpy as np
 
 from kaplan.energy import run_energy_calc
 from kaplan.rmsd import calc_rmsd
+from kaplan.inputs import Inputs
 
 # TODO incorporate parser attribute "prog"
 # (program) such that a user could specify
@@ -20,7 +21,7 @@ from kaplan.rmsd import calc_rmsd
 # calculate energies
 
 
-def sum_energies(xyz_coords, charge, multip, method, basis):
+def sum_energies(xyz_coords):
     """Sum the energy calculations for a pmem.
 
     Parameters
@@ -35,24 +36,12 @@ def sum_energies(xyz_coords, charge, multip, method, basis):
         there are x,y,z coordinates for each atom
         (for a total of n atoms). The coordinates
         are given as integers.
-    charge : int
-        The charge of the molecule.
-    multip : int
-        The multiplicity of the molecule.
-    method : str
-        The quantum chemical method to use to
-        calculate the energy.
-    basis : str
-        The basis set to use to calculate the
-        energy.
 
     """
     energies = np.zeros(len(xyz_coords), float)
-    options = {"basis": basis, "qcm": method, "multip": multip, "charge": charge}
     for i, xyz in enumerate(xyz_coords):
         try:
-            energies[i] = run_energy_calc(xyz, )
-            energies[i] = run_energy_calc(prep_psi4_geom(xyz, charge, multip), method, basis)
+            energies[i] = run_energy_calc(xyz)
         except Exception:
             # if there is a convergence error (atom too close)
             # give an energy of zero
@@ -102,7 +91,7 @@ def all_pairs_gen(num_geoms):
             yield (i, j)
 
 
-def calc_fitness(fit_form, sum_energy, coef_energy, sum_rmsd, coef_rmsd):
+def calc_fitness(sum_energy, sum_rmsd):
     """Calculate the fitness of a pmem.
 
     Parameters
@@ -132,6 +121,7 @@ def calc_fitness(fit_form, sum_energy, coef_energy, sum_rmsd, coef_rmsd):
     fitness : float
 
     """
-    if fit_form == 0:
-        return sum_energy*coef_energy + sum_rmsd*coef_rmsd
+    inputs = Inputs()
+    if inputs.fit_form == 0:
+        return sum_energy*inputs.coef_energy + sum_rmsd*inputs.coef_rmsd
     raise ValueError("Unsupported fitness formula.")

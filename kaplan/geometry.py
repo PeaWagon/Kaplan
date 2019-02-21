@@ -7,58 +7,11 @@ import vetee
 import openbabel
 import pybel
 
+from kaplan.inputs import Inputs
+
 
 class GeometryError(Exception):
     """Error raises when one of the geometry functions fails."""
-
-
-def generate_parser(mol_input_dict):
-    """Returns parser object (from vetee).
-
-    Parameters
-    ----------
-    mol_input_dict : dict
-        Need following keys:
-        1. struct_type
-        2. struct_input
-        3. qcm
-        4. basis
-        5. charge
-        6. multip
-
-    """
-    try:
-        if mol_input_dict['struct_type'] == 'xyz':
-            parser = vetee.xyz.Xyz(mol_input_dict['struct_input'])
-        elif mol_input_dict['struct_type'] == 'com':
-            parser = vetee.com.Com(mol_input_dict['struct_input'])
-        elif mol_input_dict['struct_type'] == 'glog':
-            parser = vetee.glog.Glog(mol_input_dict['struct_input'])
-        elif mol_input_dict['struct_type'] in ('smiles', 'cid', 'name'):
-            parser = vetee.structure.Structure(mol_input_dict['struct_type'],
-                                               mol_input_dict['struct_input'])
-        else:
-            raise GeometryError(f"struct_type {mol_input_dict['struct_type']} is not available.")
-    except Exception as error:
-        print(error)
-        raise GeometryError(f"Unable to make a parser object.\
-            {mol_input_dict['struct_type']}: {mol_input_dict['struct_input']}")
-    # update basis set and method
-    # note that the mol_input_file has precedence over
-    # the contents of struct_input
-    parser.parse_gkeywords(f"#{mol_input_dict['qcm']} {mol_input_dict['basis']}")
-    # update charge and multiplicity, again mol_input_file
-    # takes precedence over whatever was decided when the
-    # file was read by vetee
-    try:
-        assert isinstance(mol_input_dict['charge'], int)
-        assert isinstance(mol_input_dict['multip'], int)
-    except AssertionError:
-        raise GeometryError("Charge and multiplicity should be integers.\
-                             Unable to make a parser object.")
-    parser.charge = mol_input_dict['charge']
-    parser.multip = mol_input_dict['multip']
-    return parser
 
 
 def get_zmatrix_template(parser):

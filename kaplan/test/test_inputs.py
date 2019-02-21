@@ -24,17 +24,13 @@ TEST_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'testfiles'
 
 def test_inputs():
     test = Inputs()
-    # cannot add a new key
-    with assert_raises(AssertionError):
-        test['an'] = 'blue'
     # create another instance of inputs
     test2 = Inputs()
     # change the method to something else
-    test2["method"] = "dummy-method"
+    test2.method = "dummy-method"
     # ensure other test instance receives the change
-    assert test["method"] == "dummy-method"
+    assert test.method == "dummy-method"
     assert vars(test)
-    assert test._options["method"] == "dummy-method"
     # reset to default
     test._reset_to_defaults()
 
@@ -43,7 +39,7 @@ def test_inputs_update_inputs():
     test = Inputs()
     # check that defaults have been re-established
     # from previous test
-    assert test["method"] == "hf"
+    assert test.method == "hf"
     # create minimum subset of inputs
     test_dict = {
         "struct_input": os.path.join(TEST_DIR, "1,3-butadiene.xyz"),
@@ -55,15 +51,15 @@ def test_inputs_update_inputs():
     # make sure no errors happen with inputs
     test.update_inputs(test_dict)
     # check method was updated
-    assert test["method"] == "mp2"
+    assert test.method == "mp2"
     # create new instance of Inputs
     test2 = Inputs()
     # check that the method was updated for the new instance
-    assert test2["struct_type"] == "xyz"
+    assert test2.struct_type == "xyz"
     # rest to defaults
     test._reset_to_defaults()
     # check reset was performed
-    assert test2["method"] == "hf"
+    assert test2.method == "hf"
     # now try to input incorrect sets of inputs
     test_dict["struct_type"] = "not-avail"
     assert_raises(InputError, test.update_inputs, test_dict)
@@ -90,22 +86,22 @@ def test_inputs_update_inputs():
     test_dict["struct_type"] = "smiles"
     test_dict["struct_input"] = "C(C(C(=O)O)N)S"
     test.update_inputs(test_dict)
-    assert test["num_atoms"] == 14
-    assert "cysteine" in test["parser"]._synonyms
+    assert test.num_atoms == 14
+    assert "cysteine" in test.parser._synonyms
 
     # proline
     test_dict["struct_type"] = "name"
     test_dict["struct_input"] = "proline"
     test.update_inputs(test_dict)
-    assert test["num_atoms"] == 17
-    assert "proline" in test["parser"]._synonyms
+    assert test.num_atoms == 17
+    assert "proline" in test.parser._synonyms
     
     # threonine
     test_dict["struct_type"] = "cid"
     test_dict["struct_input"] = "6288"
     test.update_inputs(test_dict)
-    assert test["num_atoms"] == 17
-    assert "threonine" in test["parser"]._synonyms
+    assert test.num_atoms == 17
+    assert "threonine" in test.parser._synonyms
 
     # test improper charge
     test_dict["charge"] = 0.3
@@ -184,3 +180,7 @@ def test_inputs_update_inputs():
 
     test_dict["t_size"] = 25
     assert_raises(AssertionError, test.update_inputs, test_dict)
+
+
+test_inputs()
+test_inputs_update_inputs()

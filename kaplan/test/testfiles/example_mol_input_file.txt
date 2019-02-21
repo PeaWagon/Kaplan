@@ -1,7 +1,0 @@
-qcm = hf
-basis = sto-3g
-struct_input = C=CC=C
-struct_type = smiles
-prog = psi4
-charge = 0
-multip = 1

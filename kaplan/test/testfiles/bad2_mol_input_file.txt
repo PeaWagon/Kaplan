@@ -1,6 +1,0 @@
-qcm = hartree-fock
-basis = aug-cc-pvtz
-struct_input = C=CC=C
-prog = psi4
-charge = 0
-multip = 1

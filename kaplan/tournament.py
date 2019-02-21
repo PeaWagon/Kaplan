@@ -3,25 +3,17 @@ pick from the ring in order to apply updates
 to the population."""
 
 import numpy as np
+
+from kaplan.inputs import Inputs
 from kaplan.ring import RingEmptyError
 from kaplan.mutations import generate_children
 
 
-def run_tournament(t_size, num_muts, num_swaps, ring,
-                   current_mev):
+def run_tournament(ring, current_mev):
     """Run the tournament (i.e. a mating event).
 
     Parameters
     ----------
-    t_size : int
-        Number of pmems to choose for the
-        tournament.
-    num_muts : int
-        Maximum number of mutations to apply
-        to each newly generated pmem.
-    num_swaps : int
-        Maximum number of swaps to do between
-        newly generated pmems.
     ring : object
         Ring object.
     current_mev : int
@@ -33,14 +25,13 @@ def run_tournament(t_size, num_muts, num_swaps, ring,
     None
 
     """
+    inputs = Inputs()
     # check ring has enough pmems for a tournament
-    if t_size > ring.num_filled:
+    if inputs.t_size > inputs.num_filled:
         raise RingEmptyError("Not enough pmems to run a tournament.")
 
     # choose random slots for a tournament
-    selected_pmems = select_pmems(t_size, ring)
-
-    print("chosen pmems:", selected_pmems)
+    selected_pmems = select_pmems(inputs.t_size, ring, inputs.num_slots)
 
     # select parents by fitness
     parents = select_parents(selected_pmems, ring)
@@ -49,14 +40,14 @@ def run_tournament(t_size, num_muts, num_swaps, ring,
     parent2 = ring[parents[1]].dihedrals
 
     # generate children
-    children = generate_children(parent1, parent2, num_muts, num_swaps)
+    children = generate_children(parent1, parent2, inputs.num_muts, inputs.num_swaps)
 
     # put children in ring
     ring.update(parents[0], children[1], current_mev)
     ring.update(parents[1], children[0], current_mev)
 
 
-def select_pmems(number, ring):
+def select_pmems(number, ring, num_slots):
     """Randomly selected pmems.
 
     Parameters
@@ -64,6 +55,8 @@ def select_pmems(number, ring):
     number : int
         How many pmems to pick.
     ring : object
+    num_slots : int
+        number of slots in the ring.
 
     Note
     ----
@@ -75,7 +68,7 @@ def select_pmems(number, ring):
     selection = []
     while len(selection) < number:
         # choose random slot
-        choice = np.random.randint(0, ring.num_slots)
+        choice = np.random.randint(0, num_slots)
         # add slot to selection if its non-empty
         if ring[choice]:
             selection.append(choice)
@@ -100,7 +93,6 @@ def select_parents(selected_pmems, ring):
 
     """
     fit_vals = np.array([ring[i].fitness for i in selected_pmems])
-    print(fit_vals)
     # from here:
     # https://stackoverflow.com/questions/6910641/how-do-i-get-indices-of-n-maximum-values-in-a-numpy-array
     # use numpy to get the two best fitness value indices
@@ -109,5 +101,4 @@ def select_parents(selected_pmems, ring):
     parents_gen = (selected_pmems[parent] for parent in np.argpartition(fit_vals, -2)[-2:])
     parents = [next(parents_gen)]
     parents.append(next(parents_gen))
-    print(parents)
     return parents

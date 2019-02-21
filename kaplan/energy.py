@@ -24,7 +24,7 @@ class MethodError(Exception):
     """Raised if quantum chemical method is unavailable."""
 
 
-def run_energy_calc(coords=None, options=None):
+def run_energy_calc(coords):
     """Setup and execute an energy calculation.
 
     Parameters
@@ -36,7 +36,11 @@ def run_energy_calc(coords=None, options=None):
         hydrogen) and x, y, and z coordinates
         are given for n atoms. a's should be
         strings and xyz should be floats.
-    options : dict
+
+    Notes
+    -----
+    Other options can be added and incorporated.
+        options : dict
         Requires the following:
         options["charge"] - molecule charge
         options["multip"] - molecule multiplicity
@@ -46,38 +50,25 @@ def run_energy_calc(coords=None, options=None):
         options["method"] - quantum chem method (default is hf)
         options["RAM"] - memory to use (default is 4 GB)
 
-    Notes
-    -----
-    Other options can be added and incorporated.
-
     Returns
     -------
     Energy result as a floating point number.
 
     """
-    if options is None or coords is None:
-        inputs = Inputs()
-        if not options:
-            options = {"prog": inputs["prog"],
-                       "method": inputs["method"],
-                       "basis": inputs["basis"],
-                       "charge": inputs["charge"],
-                       "multip": inputs["multip"]
-            }
-            # if you added extra options, they are included here
-            for arg, val in inputs["extra"].items():
-                options[arg] = val
-        if not coords:
-            coords = inputs["parser"].coords
+    inputs = Inputs()
+    # if you added extra options, they are included here
+    extras = {}
+    for arg, val in inputs.extra.items():
+        extras[arg] = val
 
-    defaults = DEFAULT_INPUTS[options["prog"]]
+    defaults = DEFAULT_INPUTS[inputs.prog]
     for key in defaults:
-        if key not in options:
-            options[key] = defaults[key]
-    if options["prog"] == "psi4":
-        geom_str = prep_psi4_geom(coords, options["charge"], options["multip"])
-        energy = psi4_energy_calc(geom_str, options["method"], options["basis"],
-                                  options["RAM"])
+        if key not in extras:
+            extras[key] = defaults[key]
+    if inputs.prog == "psi4":
+        geom_str = prep_psi4_geom(coords, inputs.charge, inputs.multip)
+        energy = psi4_energy_calc(geom_str, inputs.method, inputs.basis,
+                                  extras["RAM"])
         # energy is in hartrees here
         return energy
     raise NotImplementedError("Program not found.")

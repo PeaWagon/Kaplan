@@ -33,6 +33,7 @@ from random import choice
 
 import numpy as np
 
+from kaplan.inputs import Inputs
 from kaplan.pmem import Pmem
 from kaplan.fitg import sum_energies, sum_rmsds, calc_fitness
 from kaplan.geometry import get_zmatrix_template, update_zmatrix, zmatrix_to_xyz
@@ -57,9 +58,7 @@ class RingOverflowError(Exception):
 class Ring:
     """Data structure for genetic algorithm."""
 
-    def __init__(self, num_geoms, num_atoms, num_slots,
-                 pmem_dist, fit_form, coef_energy, coef_rmsd,
-                 parser):
+    def __init__(self):
         """Constructor for ring data structure.
 
         Parameters
@@ -112,32 +111,17 @@ class Ring:
         None
 
         """
-        if num_atoms != len(parser.coords):
-            raise ValueError("The parser geometry should have as many atoms\
-                              as the num_atoms attribute.")
-        if parser.charge is None or parser.multip is None:
-            raise ValueError("The parser object must have charge and multip attributes set.")
-        self.num_geoms = num_geoms
-        self.num_atoms = num_atoms
-        self.num_slots = num_slots
-        self.pmem_dist = pmem_dist
-        self.fit_form = fit_form
-        if fit_form != 0:
-            raise NotImplementedError("Only fit_form0 is available at this time.")
-        self.coef_energy = coef_energy
-        self.coef_rmsd = coef_rmsd
-        self.parser = parser
-        # make an empty ring
-        self.num_filled = 0
-        self.pmems = np.full(self.num_slots, None)
+        inputs = Inputs()
+        self.pmems = np.full(inputs.num_slots, None)
         # TODO: make sure zmatrix has charge and multip correctly set
-        self.zmatrix = get_zmatrix_template(self.parser)
+        self.zmatrix = get_zmatrix_template(inputs.parser)
 
     def __getitem__(self, key):
         """What happens when ring[integer] is called."""
         if not isinstance(key, int):
             raise KeyError("The ring cannot be indexed by non-integer values.")
-        if key >= self.num_slots:
+        inputs = Inputs()
+        if key >= inputs.num_slots:
             raise KeyError("Given slot is larger than number of slots in ring.")
         return self.pmems[key]
 
@@ -145,24 +129,25 @@ class Ring:
         """How to set ring[integer] = pmem."""
         if not isinstance(key, int):
             raise KeyError("The ring cannot be indexed by non-integer values.")
-        if key >= self.num_slots:
+        inputs = Inputs()
+        if key >= inputs.num_slots:
             raise KeyError("Given slot is larger than number of slots in ring.")
         if not isinstance(value, Pmem) and value is not None:
             raise KeyError("Ring should be filled with Pmem objects or None.")
         # in this case we are deleting a pmem
         if value is None:
             if self.pmems[key] is not None:
-                self.num_filled -= 1
+                inputs.num_filled -= 1
                 self.pmems[key] = value
             return None
         # check that the pmem is being added to the same slot as ring_loc
         assert value.ring_loc == key
         # check that the pmem has the same num geoms and num atoms
-        assert len(value.dihedrals) == self.num_geoms
-        assert len(value.dihedrals[0]) == self.num_atoms - 3
+        assert len(value.dihedrals) == inputs.num_geoms
+        assert len(value.dihedrals[0]) == inputs.num_atoms - 3
         # if not overwriting pmem slot, need to increment num_filled
         if self.pmems[key] is None:
-            self.num_filled += 1
+            inputs.num_filled += 1
         self.pmems[key] = value
 
     def set_fitness(self, pmem_index):
@@ -189,18 +174,15 @@ class Ring:
         """
         if self.pmems[pmem_index] is None:
             raise ValueError(f"Empty slot: {pmem_index}.")
+        inputs = Inputs()
         # construct zmatrices
         zmatrices = [update_zmatrix(self.zmatrix, self.pmems[pmem_index].dihedrals[i])
-                     for i in range(self.num_geoms)]
+                     for i in range(inputs.num_geoms)]
         xyz_coords = [zmatrix_to_xyz(zmatrix) for zmatrix in zmatrices]
         # get fitness; set options for calculating energy
-        options = {"qcm": self.parser.method, "basis": self.parser.basis,
-                   "charge": self.parser.charge, "multip": self.parser.multip,
-                   "prog": "psi4"}
-        energy = sum_energies(xyz_coords, self.parser.charge, self.parser.multip,
-                              self.parser.method, self.parser.basis)
+        energy = sum_energies(xyz_coords)
         rmsd = sum_rmsds(xyz_coords)
-        fitness = calc_fitness(self.fit_form, energy, self.coef_energy, rmsd, self.coef_rmsd)
+        fitness = calc_fitness(energy, rmsd)
         self.pmems[pmem_index].fitness = fitness
 
     def update(self, parent_index, child, current_mev):
@@ -230,20 +212,17 @@ class Ring:
         None
 
         """
-        print('parent at:', parent_index)
-        print('pmem dist:', self.pmem_dist)
-        print('num slots:', self.num_slots)
+        inputs = Inputs()
         # determine fitness value for the child
         # construct zmatrices
         # TODO: since this is a repeat of the code from
         # set_fitness, it should be written as its own method
-        zmatrices = [update_zmatrix(self.zmatrix, child[i]) for i in range(self.num_geoms)]
+        zmatrices = [update_zmatrix(self.zmatrix, child[i]) for i in range(inputs.num_geoms)]
         xyz_coords = [zmatrix_to_xyz(zmatrix) for zmatrix in zmatrices]
         # get fitness
-        energy = sum_energies(xyz_coords, self.parser.charge, self.parser.multip,
-                              self.parser.method, self.parser.basis)
+        energy = sum_energies(xyz_coords)
         rmsd = sum_rmsds(xyz_coords)
-        fitness = calc_fitness(self.fit_form, energy, self.coef_energy, rmsd, self.coef_rmsd)
+        fitness = calc_fitness(energy, rmsd)
 
         # TODO: see if this code should be replaced with negative
         # indices (since python lists are doubly-linked)
@@ -251,34 +230,30 @@ class Ring:
         # pick random index within +/-self.pmem_dist of parent
         possible_slots = []
         # first check if the range loops round the ring
-        if parent_index + self.pmem_dist > self.num_slots:
-            possible_slots.extend(range(parent_index, self.num_slots))
-            overflow = parent_index + self.pmem_dist - self.num_slots
+        if parent_index + inputs.pmem_dist > inputs.num_slots:
+            possible_slots.extend(range(parent_index, inputs.num_slots))
+            overflow = parent_index + inputs.pmem_dist - inputs.num_slots
             possible_slots.extend(range(overflow+1))
         else:
-            possible_slots.extend(range(parent_index, parent_index+self.pmem_dist+1))
+            possible_slots.extend(range(parent_index, parent_index+inputs.pmem_dist+1))
         # then check if loops around ring backwards
         # essentially checking if parent_index - pmem_dist is negative
-        if parent_index < self.pmem_dist:
+        if parent_index < inputs.pmem_dist:
             possible_slots.extend(range(0, parent_index))
-            backflow = self.num_slots - (self.pmem_dist - parent_index)
-            possible_slots.extend(range(backflow, self.num_slots))
+            backflow = inputs.num_slots - (inputs.pmem_dist - parent_index)
+            possible_slots.extend(range(backflow, inputs.num_slots))
         else:
-            possible_slots.extend(range(parent_index-self.pmem_dist, parent_index))
+            possible_slots.extend(range(parent_index-inputs.pmem_dist, parent_index))
 
-        # print(possible_slots)
-        print(possible_slots)
-        print(self.pmem_dist)
-        print(parent_index, child, current_mev)
-        assert len(possible_slots) == 2*self.pmem_dist+1
+        assert len(possible_slots) == 2*inputs.pmem_dist+1
 
         # select new child location
         chosen_slot = choice(possible_slots)
         # check fitness vs current occupant (or empty slot)
         if self[chosen_slot] is None or self[chosen_slot].fitness <= fitness:
             # add it there
-            self[chosen_slot] = Pmem(chosen_slot, self.num_geoms,
-                                     self.num_atoms, current_mev, child)
+            self[chosen_slot] = Pmem(chosen_slot, inputs.num_geoms,
+                                     inputs.num_atoms, current_mev, child)
             self[chosen_slot].fitness = fitness
 
     def fill(self, num_pmems, current_mev):
@@ -307,30 +282,31 @@ class Ring:
             in ring.
 
         """
+        inputs = Inputs()
         # check that adding pmems doesn't overflow ring
-        num_avail = self.num_slots - self.num_filled
+        num_avail = inputs.num_slots - inputs.num_filled
         try:
             assert num_avail >= num_pmems
         except AssertionError:
             raise RingOverflowError("Cannot add more pmems than space available in the ring.")
         # if there are no pmems in the ring, add a contiguous segment
-        if self.num_filled == 0:
+        if inputs.num_filled == 0:
             for i in range(0, num_pmems):
-                self.pmems[i] = Pmem(i, self.num_geoms,
-                                     self.num_atoms, current_mev)
+                self.pmems[i] = Pmem(i, inputs.num_geoms,
+                                     inputs.num_atoms, current_mev)
                 self.set_fitness(i)
-            self.num_filled += num_pmems
+            inputs.num_filled += num_pmems
             return None
         # if there are some pmems in the ring
         # they might not represent a contiguous segment
         # so go over each slot first and check that
         # it is empty
-        total = self.num_filled + num_pmems
-        for i in range(self.num_slots):
-            if self.num_filled == total:
+        total = inputs.num_filled + num_pmems
+        for i in range(inputs.num_slots):
+            if inputs.num_filled == total:
                 return None
             if self.pmems[i] is None:
-                self.pmems[i] = Pmem(i, self.num_geoms, self.num_atoms,
+                self.pmems[i] = Pmem(i, inputs.num_geoms, inputs.num_atoms,
                                      current_mev)
                 self.set_fitness(i)
-                self.num_filled += 1
+                inputs.num_filled += 1

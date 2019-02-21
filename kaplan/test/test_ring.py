@@ -7,6 +7,7 @@ from numpy.testing import assert_raises
 
 from kaplan.ring import Ring, RingEmptyError, RingOverflowError
 from kaplan.pmem import Pmem
+from kaplan.inputs import Inputs
 
 
 # directory for this test file
@@ -15,29 +16,30 @@ TEST_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'testfiles'
 
 def test_ring():
     """Test the Ring object from the ring module."""
-    num_slots = 10
-    # num_filled = 2
-    num_geoms = 3
-    num_atoms = 24
-    # t_size = 7
-    # num_muts = 3
-    # num_swaps = 1
-    pmem_dist = 2
-    parser = Xyz(os.path.join(TEST_DIR, "caffeine.xyz"))
-    parser.charge = 0
-    parser.multip = 1
-    ring = Ring(num_geoms, num_atoms, num_slots, pmem_dist, 0, 0.5, 0.5, parser)
+    inputs = Inputs()
+    input_dict = {
+        "num_slots": 10,
+        "num_geoms": 3,
+        "num_atoms": 24,
+        "pmem_dist": 2,
+        "struct_input": os.path.join(TEST_DIR, "caffeine.xyz"),
+        "struct_type": "xyz",
+        "charge": 0,
+        "multip": 1
+    }
+    inputs.update_inputs(input_dict)
+    ring = Ring()
     # check that ring has its attributes
-    assert ring.parser.charge == 0
-    assert ring.parser.multip == 1
-    assert ring.num_slots == 10
-    assert ring.num_filled == 0
-    assert ring.num_geoms == 3
-    assert ring.num_atoms == 24
-    assert ring.pmem_dist == 2
-    assert ring.fit_form == 0
-    assert ring.coef_energy == 0.5
-    assert ring.coef_rmsd == 0.5
+    assert inputs.parser.charge == 0
+    assert inputs.parser.multip == 1
+    assert inputs.num_slots == 10
+    assert inputs.num_filled == 0
+    assert inputs.num_geoms == 3
+    assert inputs.num_atoms == 24
+    assert inputs.pmem_dist == 2
+    assert inputs.fit_form == 0
+    assert inputs.coef_energy == 0.5
+    assert inputs.coef_rmsd == 0.5
     assert ring.pmems.shape == (10,)
     assert all([ring.pmems[i] is None for i in range(10)])
     # check that the zmatrix is the same as the
