@@ -16,7 +16,17 @@ will be shifted to the energy module.
 """
 
 
+import numpy as np
 import vetee
+
+from saddle.internal import Internal
+
+
+# 1 "angstrom" = 1.8897261339213 "atomic unit (length)"
+#AU = 1.8897261339213
+# https://github.com/psi4/psi4/blob/fbb2ff444490bf6b43cb6e027637d8fd857adcee/psi4/include/psi4/physconst.h
+# inverse of bohr to angstrom from psi4
+AU = 1/0.52917721067
 
 
 class InputError(Exception):
@@ -48,7 +58,7 @@ class DefaultInputs:
         # ga inputs
         "num_mevs": 10_000,
         "num_slots": 100,
-        "num_filled": 10,
+        "init_popsize": 10,
         "pmem_dist": 3,
         "t_size": 7,
         # TODO: num_geoms should be defaulted based on a function
@@ -63,6 +73,18 @@ class DefaultInputs:
         "fit_form": 0,
         "coef_energy": 0.5,
         "coef_rmsd": 0.5,
+        # geometry specification for GOpt
+        # none of these should be set by the user
+        "atomic_nums": None,
+        "coords": None,
+        # How many dihedrals can be used to represent
+        # the molecule (assuming one dihedral per
+        # rotatable bond).
+        "num_dihed": None,
+        # List of indices representing where the dihedrals
+        # are in the list of internal coordinates for the
+        # molecule.
+        "dihed_indices": None,
         # parser object from vetee
         "parser": None,
         # extra is a dictionary that
@@ -104,7 +126,7 @@ class Inputs(DefaultInputs):
         self.multip = None
         self.num_mevs = 10_000
         self.num_slots = 100
-        self.num_filled = 10
+        self.init_popsize = 10
         self.pmem_dist = 3
         self.t_size = 7
         self.num_geoms = 5
@@ -114,6 +136,10 @@ class Inputs(DefaultInputs):
         self.coef_energy = 0.5
         self.coef_rmsd = 0.5
         self.parser = None
+        self.atomic_nums = None
+        self.coords = None
+        self.num_dihed = None
+        self.dihed_indices = None
         self.extra = {}
 
     def _check_input(self):
@@ -141,12 +167,13 @@ class Inputs(DefaultInputs):
             "multip",
             "num_mevs",
             "num_slots",
-            "num_filled",
+            "init_popsize",
             "pmem_dist",
             "t_size",
             "num_geoms",
             "num_swaps",
-            "num_muts"
+            "num_muts",
+            "num_dihed"
         }
         expect_float = {"coef_energy", "coef_rmsd"}
         # make sure all values have been set
@@ -161,7 +188,7 @@ class Inputs(DefaultInputs):
                     self.num_swaps = self.num_geoms
                     val = self.num_swaps
                 elif arg == "num_muts":
-                    self.num_muts = int(self.num_atoms/3)
+                    self.num_muts = int(self.num_dihed/2)
                     val = self.num_muts
                 else:
                     raise InputError(f"Missing required input argument: {arg}")
@@ -197,17 +224,17 @@ class Inputs(DefaultInputs):
         assert self.num_atoms > 3
         # multiplicity cannot be negative 2S+1 (where S is spin)
         assert self.multip > 0
-        assert self.num_filled > 0
-        assert 0 < self.num_slots >= self.num_filled
+        assert self.init_popsize > 0
+        assert 0 < self.num_slots >= self.init_popsize
         assert self.num_mevs > 0
         assert self.num_geoms > 0
         assert 0 <= self.num_swaps <= self.num_geoms
-        assert 0 <= self.num_muts <= self.num_atoms - 3
+        assert 0 <= self.num_muts <= self.num_dihed
         assert 0 <= self.pmem_dist < self.num_slots/2
         assert self.coef_energy >= 0
         assert self.coef_rmsd >= 0
         # t_size must be at least 2 (for 2 parents)
-        assert 2 <= self.t_size <= self.num_filled
+        assert 2 <= self.t_size <= self.init_popsize
 
 
     def _update_parser(self):
@@ -273,6 +300,47 @@ class Inputs(DefaultInputs):
             assert self.num_atoms == len(self.parser.coords)
 
 
+    def _update_coords(self):
+        """Update the coords and atomic_nums attributes.
+        
+        Notes
+        -----
+        * coords must be in atomic units. It is an (n,3)
+        numpy array, where n is the number of atoms.
+        * atomic_nums is a list representing
+        the atomic numbers of the atoms in the same
+        order that they appear in the coords array.
+        
+        """
+        self.coords = np.zeros((self.num_atoms, 3), float)
+        for i, atom in enumerate(self.parser.coords):
+            self.coords[i][0] = AU * atom[1]
+            self.coords[i][1] = AU * atom[2]
+            self.coords[i][2] = AU * atom[3]
+        self.atomic_nums = np.array(vetee.periodic_table(\
+            [self.parser.coords[i][0] for i in range(self.num_atoms)]))
+        
+        # now determine number of dihedral angles and where they
+        # are in the internal coordinates array
+        self.num_dihed = 0
+        self.dihed_indices = []
+        mol = Internal(self.coords, self.atomic_nums,
+                       self.charge, self.multip)
+        # generate internal coordinates, with one
+        # dihedral per rotatable bond
+        mol.auto_select_ic(minimum=True)
+        for i, intern_coord in enumerate(mol.ic):
+            # if the internal coordinate involves 4 atoms,
+            # it is a dihedral angle
+            if intern_coord._coordinates.shape == (4,3):
+                self.num_dihed += 1
+                self.dihed_indices.append(i)
+        
+        # check that number of dihedral angles is not 0
+        if self.num_dihed == 0:
+            raise InputError("No dihedral angles could be generated for the input molecule.")
+
+
     def update_inputs(self, input_dict):
         """Update the inputs from their default values.
 
@@ -303,7 +371,8 @@ class Inputs(DefaultInputs):
             # arg can be case insensitive
             arg = arg.lower()
             # make sure no new keys are added
-            assert arg in self._options
+            if arg not in self._options:
+                raise InputError(f"Invalid input: {arg} = {val}")
             # make sure lowercase is used
             # unless it's for structure (i.e.
             # SMILES strings are case sensitive)
@@ -319,11 +388,8 @@ class Inputs(DefaultInputs):
         # now update parser object
         self._update_parser()
 
+        # update coordinates using parser object
+        self._update_coords()
+
         # check that the inputs are valid
         self._check_input()
-
-        # run initial energy calc
-        # check initial geometry for convergence
-        # check method and basis are in chosen program
-        # TODO: put in gac
-        #run_energy_calc()

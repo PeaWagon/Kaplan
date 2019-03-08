@@ -4,55 +4,68 @@ of one set of conformers for a molecule."""
 
 import numpy as np
 
-# values for dihedral angles in degrees
+from kaplan.geometry import get_geom_from_dihedrals
+from kaplan.fitg import calc_fitness
+
+# values for dihedral angles in radians
 MIN_VALUE = 0
-MAX_VALUE = 360
+MAX_VALUE = 2*np.pi
 
 
 class Pmem:
     """Population member of the ring."""
 
-    def __init__(self, ring_loc, num_geoms, num_atoms,
-                 current_mev, dihedrals=None):
+    def __init__(self, ring_loc, current_mev, num_geoms, num_dihed, dihedrals=None):
         """Constructor for pmem object.
 
         Parameters
         ----------
         ring_loc : int
             Index of the ring where the pmem lives.
-        num_geoms : int
-            How many conformers we are trying to find.
-        num_atoms : int
-            Number of atoms in the input molecule. This
-            determines the length of the dihedral angles
-            list for each conformer.
         current_mev : int
             The mating event at which the pmem was constructed.
-        dihedrals : list(list(int))
+        num_geoms : int
+            How many conformers to search for.
+        num_dihed : int
+            The number of dihedral angles to optimise.
+        dihedrals : np.array(shape=(num_geoms, num_dihed),
+                             dtype=float)
             The dihedrals for the pmem. Defaults to None.
+
+        Raises
+        ------
+        AssertionError
+            The dihedrals parameter does not have the correct
+            shape (should be (num_geoms, num_dihed)).
 
         Attributes
         ----------
-        dihedrals : np.array(shape(num_atoms-3, num_geoms),
-                             dtype=int)
-            List of integers representing the dihedral angles
-            connecting the molecule under optimisation.
-
-        Notes
-        -----
-        The birthday attribute keeps track of when the pmem
-        was initialised. This will be helpful later in case
-        the age of the pmems are pertinent to solving my
-        problem.
+        fitness : float
+            The fitness of the pmem, as determined by
+            the kaplan fitg module.
+        birthday : int
+            The mating event during which the pmem
+            was generated.
 
         """
         self.ring_loc = ring_loc
+        self.num_geoms = num_geoms
+        self.num_dihed = num_dihed
         if dihedrals is None:
             # generate random dihedral angles (degrees)
             # each row is a set of dihedral angles for one conformer
-            self.dihedrals = np.random.randint(MIN_VALUE, MAX_VALUE,
-                                               size=(num_geoms, num_atoms-3))
+            self.dihedrals = np.random.uniform(MIN_VALUE, MAX_VALUE,
+                                               size=(self.num_geoms, self.num_dihed))
         else:
+            assert dihedrals.shape == (self.num_geoms, self.num_dihed)
             self.dihedrals = dihedrals
         self.fitness = None
         self.birthday = current_mev
+
+
+    def set_fitness(self):
+        """Set the pmem's fitness."""
+        all_coords = []
+        for geom in range(self.num_geoms):
+            all_coords.append(get_geom_from_dihedrals(self.dihedrals[geom]))
+        self.fitness = calc_fitness(all_coords)

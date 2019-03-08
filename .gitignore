@@ -21,3 +21,5 @@ kaplan/test/kaplan.egg-info/
 *.ipynb_checkpoints
 
 .vscode/*
+
+kaplan/test/jupyter-notebooks/kaplan_output/*

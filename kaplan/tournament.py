@@ -27,11 +27,11 @@ def run_tournament(ring, current_mev):
     """
     inputs = Inputs()
     # check ring has enough pmems for a tournament
-    if inputs.t_size > inputs.num_filled:
+    if inputs.t_size > ring.num_filled:
         raise RingEmptyError("Not enough pmems to run a tournament.")
 
     # choose random slots for a tournament
-    selected_pmems = select_pmems(inputs.t_size, ring, inputs.num_slots)
+    selected_pmems = select_pmems(inputs.t_size, ring)
 
     # select parents by fitness
     parents = select_parents(selected_pmems, ring)
@@ -47,7 +47,7 @@ def run_tournament(ring, current_mev):
     ring.update(parents[1], children[0], current_mev)
 
 
-def select_pmems(number, ring, num_slots):
+def select_pmems(number, ring):
     """Randomly selected pmems.
 
     Parameters
@@ -55,23 +55,15 @@ def select_pmems(number, ring, num_slots):
     number : int
         How many pmems to pick.
     ring : object
-    num_slots : int
-        number of slots in the ring.
-
-    Note
-    ----
-    Maybe move this to the ring as a method. Or turn
-    into a generator (calling next on the ring returns
-    a random pmem).
+        The ring from which to pick the pmems.
 
     """
-    selection = []
-    while len(selection) < number:
-        # choose random slot
-        choice = np.random.randint(0, num_slots)
-        # add slot to selection if its non-empty
-        if ring[choice]:
-            selection.append(choice)
+    # get a list of indices representing filled slots
+    occupied = [i for i in range(ring.num_slots) if ring[i] is not None]
+    # from the occupied slots, choose number of them
+    # without replacement (i.e. don't pick the same
+    # pmem twice)
+    selection = np.random.choice(occupied, number, replace=False)
     return selection
 
 
@@ -88,7 +80,7 @@ def select_parents(selected_pmems, ring):
 
     Returns
     -------
-    tuple : int,int
+    tuple : int, int
         Indices of two best pmems to be used as parents.
 
     """

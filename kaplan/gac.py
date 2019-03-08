@@ -9,6 +9,8 @@ In progress :D
 
 import sys
 
+import numpy as np
+
 from kaplan.inputs import Inputs, InputError
 from kaplan.ring import Ring, RingEmptyError
 from kaplan.tournament import run_tournament
@@ -28,18 +30,12 @@ def run_kaplan(input_dict):
     inputs = Inputs()
     inputs.update_inputs(input_dict)
 
-    # keep track of initial population size
-    # in case ring needs to be refilled
-    init_popsize = inputs.num_filled
-
     # check that initial geometry converges
-    assert run_energy_calc(inputs.parser.coords)
+    run_energy_calc(inputs.coords)
 
-    # make a ring
-    ring = Ring()
-
-    # fill ring with an initial population
-    ring.fill(init_popsize, 0)
+    # make a ring; constructor fills
+    # ring with an initial population
+    ring = Ring(inputs.num_slots, inputs.init_popsize)
 
     # run the mevs
     for mev in range(inputs.num_mevs):
@@ -47,7 +43,7 @@ def run_kaplan(input_dict):
             print(mev)
             run_tournament(ring, mev)
         except RingEmptyError:
-            ring.fill(init_popsize, mev)
+            ring.fill(inputs.init_popsize, mev)
 
     # run output
     run_output(ring)

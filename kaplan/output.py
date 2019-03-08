@@ -26,8 +26,10 @@ written as comments below."""
 import os
 
 from vetee.xyz import Xyz
+from vetee.gaussian_options import periodic_table
 
-from kaplan.geometry import update_zmatrix, zmatrix_to_xyz
+from kaplan.geometry import get_geom_from_dihedrals
+from kaplan.inputs import Inputs
 
 # OUTPUT_FORMAT = 'xyz'
 
@@ -101,6 +103,8 @@ def run_output(ring):
        The final ring data structure after evolution.
 
     """
+    inputs = Inputs()
+
     # find average fitness
     # find best pmem and its ring index
     total_fit = 0
@@ -120,16 +124,20 @@ def run_output(ring):
 
     # write a stats file
     with open(os.path.join(output_dir, "stats-file.txt"), "w") as fout:
-        fout.write(f"num conformers: {ring.num_geoms}\n")
+        fout.write(f"num conformers: {inputs.num_geoms}\n")
         fout.write(f"average fitness: {average_fit}\n")
         fout.write(f"best fitness: {best_fit}\n")
         fout.write(f"final percent filled: {100*ring.num_filled/ring.num_slots}%\n")
 
     # generate the output file for the best pmem
-    for geom in range(ring.num_geoms):
-        xyz_coords = zmatrix_to_xyz(update_zmatrix(ring.zmatrix, ring[best_pmem].dihedrals[geom]))
+    for geom in range(inputs.num_geoms):
+        xyz_coords = get_geom_from_dihedrals(ring[best_pmem].dihedrals[geom])
         xyz = Xyz()
-        xyz.coords = xyz_coords
-        xyz.num_atoms = ring.num_atoms
+        # convert coords to angstroms
+        for i, atom in enumerate(xyz_coords):
+            # need to convert from numpy's int64 to regular python int
+            label = periodic_table(int(inputs.atomic_nums[i]))
+            xyz.coords.append([label, atom[0], atom[1], atom[2]])
+        xyz.num_atoms = inputs.num_atoms
         xyz.comments = f"conformer {geom}"
         xyz.write_xyz(os.path.join(output_dir, f"conf{geom}.xyz"))

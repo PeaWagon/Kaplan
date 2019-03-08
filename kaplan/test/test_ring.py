@@ -18,30 +18,32 @@ def test_ring():
     """Test the Ring object from the ring module."""
     inputs = Inputs()
     input_dict = {
-        "num_slots": 10,
+        "num_slots": 20,
         "num_geoms": 3,
         "num_atoms": 24,
         "pmem_dist": 2,
         "struct_input": os.path.join(TEST_DIR, "caffeine.xyz"),
         "struct_type": "xyz",
         "charge": 0,
-        "multip": 1
+        "multip": 1,
+        "init_popsize": 15
     }
     inputs.update_inputs(input_dict)
     ring = Ring()
     # check that ring has its attributes
     assert inputs.parser.charge == 0
     assert inputs.parser.multip == 1
-    assert inputs.num_slots == 10
-    assert inputs.num_filled == 0
+    assert inputs.num_slots == 20
+    assert inputs.init_popsize == 15
+    assert ring.num_filled == 15
     assert inputs.num_geoms == 3
     assert inputs.num_atoms == 24
     assert inputs.pmem_dist == 2
     assert inputs.fit_form == 0
     assert inputs.coef_energy == 0.5
     assert inputs.coef_rmsd == 0.5
-    assert ring.pmems.shape == (10,)
-    assert all([ring.pmems[i] is None for i in range(10)])
+    assert ring.pmems.shape == (20,)
+    assert all([ring.pmems[i] is None for i in range(15, 20)])
     # check that the zmatrix is the same as the
     # zmatrix that comes out of the openbabel gui
     czmat = CAFFEINE_ZMATRIX.split('\n')
@@ -53,72 +55,110 @@ def test_ring():
 
 def test_ring_fill():
     """Test the Ring.fill method."""
-    parser = Xyz(os.path.join(TEST_DIR, "1,3-butadiene.xyz"))
-    parser.charge = 0
-    parser.multip = 1
-    ring = Ring(3, 10, 15, 2, 0, 0.5, 0.5, parser)
+    inputs = Inputs()
+    inputs.update_inputs({
+        "struct_input": os.path.join(TEST_DIR, "1,3-butadiene.xyz"),
+        "struct_type": "xyz",
+        "charge": 0,
+        "multip": 1,
+        "num_slots": 100,
+        "init_popsize": 10,
+        "num_geoms": 3,
+        "num_muts": 0,
+        "num_swaps": 2
+    })
+    ring = Ring()
     # try to put more pmems in than there are slots
     assert_raises(RingOverflowError, ring.fill, 200, 0)
-    assert ring.num_filled == 0
+    assert inputs.init_popsize == 10
     ring.fill(1, 0)
-    assert ring.num_filled == 1
+    assert ring.num_filled == 11
     # same test twice except getitem syntax can be used
     assert ring.pmems[0].birthday == 0
     assert ring[0].birthday == 0
     ring.fill(5, 1)
-    assert ring.num_filled == 6
-    assert ring[1].birthday == 1
+    assert ring.num_filled == 16
+    assert ring[11].birthday == 1
     # test adding without contiguous segment present
-    ring[9] = Pmem(9, 3, 10, 2)
+    ring[19] = Pmem(19, 3, 10, 2)
     ring.fill(5, 3)
-    assert ring.num_filled == 12
-    assert ring[11] is not None
-    assert ring[12] is None
-    assert ring[8].birthday == 3
+    assert ring.num_filled == 22
+    assert ring[19] is not None
+    assert ring[22] is None
+    assert ring[18].birthday == 3
 
 
 def test_ring_getitem():
     """Test the Ring.__getitem__ method."""
-    parser = Xyz(os.path.join(TEST_DIR, "1,3-butadiene.xyz"))
-    parser.charge = 0
-    parser.multip = 1
-    ring = Ring(3, 10, 15, 2, 0, 0.5, 0.5, parser)
+    inputs = Inputs()
+    inputs.update_inputs({
+        "struct_input": os.path.join(TEST_DIR, "1,3-butadiene.xyz"),
+        "struct_type": "xyz",
+        "charge": 0,
+        "multip": 1,
+        "num_slots": 100,
+        "init_popsize": 10,
+        "num_geoms": 3,
+        "num_muts": 0,
+        "num_swaps": 2
+    })
+    ring = Ring()
     ring.fill(5, 0)
-    for i in range(5):
+    for i in range(15):
         assert ring[i].birthday == 0
-    assert ring[5] is None
+    assert ring[16] is None
     with assert_raises(KeyError):
         ring[1000]
-        ring['one']
+        ring["one"]
 
 
 def test_ring_setitem():
     """Test the Ring.__setitem__ method."""
-    parser = Xyz(os.path.join(TEST_DIR, "1,3-butadiene.xyz"))
-    parser.charge = 0
-    parser.multip = 1
-    ring = Ring(3, 10, 15, 2, 0, 0.5, 0.5, parser)
+    inputs = Inputs()
+    inputs.update_inputs({
+        "struct_input": os.path.join(TEST_DIR, "1,3-butadiene.xyz"),
+        "struct_type": "xyz",
+        "charge": 0,
+        "multip": 1,
+        "num_slots": 100,
+        "init_popsize": 10,
+        "num_geoms": 3,
+        "num_muts": 0,
+        "num_swaps": 2
+    })
+    ring = Ring()
     with assert_raises(KeyError):
         ring[1000] = Pmem(1000, 3, 10, 1)
-        ring['two'] = Pmem(2, 3, 10, 1)
-        ring[1] = 'string'
+        ring["two"] = Pmem(2, 3, 10, 1)
+        ring[1] = "string"
     with assert_raises(AssertionError):
         ring[4] = Pmem(3, 3, 10, 1)
         ring[3] = Pmem(4, 2, 10, 1)
         ring[2] = Pmem(2, 3, 9, 1)
     ring.fill(1, 0)
-    assert ring.num_filled == 1
+    assert ring.num_filled == 11
     ring[0] = None
-    assert ring.num_filled == 0
+    assert ring.num_filled == 10
 
 
 def test_ring_update():
     """Test the Ring.update method."""
     # parent_index, child, current_mev
-    parser = Xyz(os.path.join(TEST_DIR, "1,3-butadiene.xyz"))
-    parser.charge = 0
-    parser.multip = 1
-    ring = Ring(3, 10, 15, 2, 0, 0.5, 0.5, parser)
+    inputs = Inputs()
+    inputs.update_inputs({
+        "struct_input": os.path.join(TEST_DIR, "1,3-butadiene.xyz"),
+        "struct_type": "xyz",
+        "charge": 0,
+        "multip": 1,
+        "num_slots": 100,
+        "num_geoms": 3,
+        "num_muts": 0,
+        "num_swaps": 2,
+        "pmem_dist": 2
+    })
+    # force initial population size to be 1
+    inputs.init_popsize = 0
+    ring = Ring()
     # ring is empty, try adding random pmems
     # testing backflow
     ring.update(0, [[1, 2, 3, 4, 5, 6, 7], [1, 2, 3, 4, 2, 1, 1],
@@ -134,14 +174,14 @@ def test_ring_update():
     ring[13] = None
     ring[14] = None
     # test case where pmem_dist is zero
-    ring.pmem_dist = 0
+    inputs.pmem_dist = 0
     ring.update(0, [[1, 2, 3, 4, 5, 6, 7], [1, 2, 3, 4, 2, 1, 1],
                     [7, 6, 5, 4, 3, 2, 1]], 0)
     assert ring[0] is not None
-    assert sum(ring[i] is not None for i in range(ring.num_slots)) == 1
+    assert sum(ring[i] is not None for i in range(inputs.num_slots)) == 1
     # test overflow
     ring[0] = None
-    ring.pmem_dist = 4
+    inputs.pmem_dist = 4
     ring.update(13, [[1, 2, 3, 4, 5, 6, 7], [1, 2, 3, 4, 2, 1, 1],
                      [7, 6, 5, 4, 3, 2, 1]], 0)
     slots = [13, 14, 0, 1, 2, 9, 10, 11, 12]
@@ -160,7 +200,7 @@ def test_ring_update():
     for slot in slots:
         ring[slot] = None
     # now check that slot is not updated if child has worse fitness
-    ring.pmem_dist = 0
+    inputs.pmem_dist = 0
     # fitness = 230.09933808553276
     ring[0] = Pmem(0, 3, 10, 0, [[239, 278, 5, 248, 40, 67, 299],
                                  [36, 123, 295, 111, 322, 267, 170],
@@ -170,7 +210,6 @@ def test_ring_update():
     ring.update(0, [[132, 272, 40, 226, 44, 154, 339],
                     [182, 119, 106, 157, 194, 244, 168],
                     [95, 81, 202, 261, 197, 166, 161]], 1)
-    print("jen", ring[0].dihedrals)
     assert ring[0].dihedrals == [[239, 278, 5, 248, 40, 67, 299],
                                  [36, 123, 295, 111, 322, 267, 170],
                                  [61, 130, 26, 139, 290, 238, 331]]

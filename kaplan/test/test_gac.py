@@ -18,3 +18,5 @@ def test_run_kaplan():
         "multip": 1
     }
     run_kaplan(test1)
+
+test_run_kaplan()

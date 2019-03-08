@@ -4,6 +4,8 @@ for a given geometry."""
 import os
 import psi4
 
+from vetee.gaussian_options import periodic_table
+
 from kaplan.inputs import Inputs
 
 # these values are used in energy calculations when no
@@ -29,13 +31,9 @@ def run_energy_calc(coords):
 
     Parameters
     ----------
-    coords : list
-        Has the format [[a1, x1, y1, z1],
-        [a2, x2, y2, z2], ..., [an, xn, yn, zn]]
-        Where a's are atom labels (i.e. H for
-        hydrogen) and x, y, and z coordinates
-        are given for n atoms. a's should be
-        strings and xyz should be floats.
+    coords : np.array(shape=(n,3), dtype=float)
+        xyz coordinates for a n-atom conformer.
+        Units of atomic units.
 
     Notes
     -----
@@ -66,7 +64,7 @@ def run_energy_calc(coords):
         if key not in extras:
             extras[key] = defaults[key]
     if inputs.prog == "psi4":
-        geom_str = prep_psi4_geom(coords, inputs.charge, inputs.multip)
+        geom_str = prep_psi4_geom(coords, inputs.atomic_nums, inputs.charge, inputs.multip)
         energy = psi4_energy_calc(geom_str, inputs.method, inputs.basis,
                                   extras["RAM"])
         # energy is in hartrees here
@@ -124,22 +122,24 @@ def psi4_energy_calc(geom, method, basis, ram, restricted=False):
     if restricted:
         psi4.set_options({"reference": "uhf"})
     try:
-        return psi4.energy(method+'/'+basis, return_wfn=False)
+        return psi4.energy(method+'/'+basis, return_wfn=False, molecule=geom)
     except psi4.driver.p4util.exceptions.ValidationError:
         raise MethodError(f"Invalid method: {method}")
     except psi4.driver.qcdb.exceptions.BasisSetNotFound:
         raise BasisSetError(f"Invalid basis set: {basis}")
 
 
-def prep_psi4_geom(coords, charge, multip):
+def prep_psi4_geom(coords, atomic_nums, charge, multip):
     """Make a psi4 compliant geometry string.
 
     Parameters
     ----------
-    coords : list(list)
+    coords : list(np.array((n,3), float)
         Atomic cartesian coordinates and atom types.
         Example for H_2:
-        [['H', 0.0, 0.0, 0.0], ['H', 0.0, 0.0, 1.0]]
+        np.array([['H', 0.0, 0.0, 0.0], ['H', 0.0, 0.0, 1.88]])
+    atomic_nums : np.array(shape=n, dtype=int)
+        Atomic numbers of the atoms in the geometry.
     charge : int
         The charge of the molecule.
     multip : int
@@ -150,7 +150,9 @@ def prep_psi4_geom(coords, charge, multip):
     A string as per psi4 input.
 
     """
+    elements = periodic_table(atomic_nums)
     psi4_str = f"\n{charge} {multip}\n"
-    for atom in coords:
-        psi4_str += f"{atom[0]} {atom[1]} {atom[2]} {atom[3]}\n"
+    for i, atom in enumerate(coords):
+        psi4_str += f"{elements[i]} {atom[0]} {atom[1]} {atom[2]}\n"
+    psi4_str += "units au\n"
     return psi4.geometry(psi4_str)

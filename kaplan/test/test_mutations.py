@@ -1,6 +1,6 @@
 """Test the mutations module from Kaplan."""
 
-from numpy.testing import assert_raises
+import numpy as np
 
 from kaplan.mutations import generate_children
 
@@ -41,15 +41,12 @@ def test_generate_children():
             num_changes2 += 1
     assert num_changes1 == num_changes2
     assert num_changes1 <= 1
-    # AssertionError when num_muts > num_atoms
-    # and when num_swaps > num_geoms
-    # or if parents are not the same length
-    with assert_raises(AssertionError):
-        generate_children(parent1, [[1, 2, 3, 4, 5], [13, 4, 2, 2, 5]], 0, 0)
-        generate_children(parent1, parent2, 10, 0)
-        generate_children(parent1, parent2, 0, 100)
     # just run the function a few times
     generate_children(parent1, parent2, 5, 3)
     generate_children(parent1, parent2, 4, 3)
     generate_children(parent1, parent2, 5, 2)
     generate_children(parent1, parent2, 3, 2)
+    # check the crossover results
+    p1 = np.array([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]])
+    p2 = np.array([[13, 14, 15, 16], [17, 18, 19, 20], [21, 22, 23, 24]])
+    generate_children(p1, p2, 0, 0, True)

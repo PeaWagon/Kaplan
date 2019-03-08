@@ -30,12 +30,12 @@ def sum_energies(xyz_coords):
         The length of xyz_coords is how many
         geometries are in the pmem. Each geometry
         is specified as:
-        [["A",x1,y1,z1], ["B",x2,y2,z2],
-                    ..., ["C",xn,yn,zn]]
-        Where the letters are the elements, and
-        there are x,y,z coordinates for each atom
+        np.array([[x1,y1,z1], [x2,y2,z2],
+                    ..., [xn,yn,zn]])
+        The x,y,z coordinates for each atom
         (for a total of n atoms). The coordinates
-        are given as integers.
+        are given as floating point numbers in
+        atomic units.
 
     """
     energies = np.zeros(len(xyz_coords), float)
@@ -59,21 +59,22 @@ def sum_rmsds(xyz_coords):
         The length of xyz_coords is how many
         geometries are in the pmem. Each geometry
         is specified as:
-        [["A",x1,y1,z1], ["B",x2,y2,z2],
-                    ..., ["C",xn,yn,zn]]
-        Where the letters are the elements, and
-        there are x,y,z coordinates for each atom
+        np.array([[x1,y1,z1], [x2,y2,z2],
+                    ..., [xn,yn,zn]])
+        The x,y,z coordinates for each atom
         (for a total of n atoms). The coordinates
-        are given as integers.
+        are given as floating point numbers in
+        atomic units.
 
     """
     num_geoms = len(xyz_coords)
-    rmsd_values = np.zeros(len(xyz_coords), float)
     # n choose k = n!/(k!(n-k)!)
     num_pairs = int(factorial(num_geoms)/(2*factorial(num_geoms-2)))
+    rmsd_values = np.zeros(num_pairs, float)
     pairs = all_pairs_gen(len(xyz_coords))
     for i in range(num_pairs):
         ind1, ind2 = next(pairs)
+        result = calc_rmsd(xyz_coords[ind1], xyz_coords[ind2])
         rmsd_values[i] = calc_rmsd(xyz_coords[ind1], xyz_coords[ind2])
     return sum(rmsd_values)
 
@@ -91,25 +92,25 @@ def all_pairs_gen(num_geoms):
             yield (i, j)
 
 
-def calc_fitness(sum_energy, sum_rmsd):
+def calc_fitness(all_coords):
     """Calculate the fitness of a pmem.
 
     Parameters
     ----------
+    all_coords : list
+        Each member of the list is:
+        np.array(shape=(n,3), dtype=float)
+        Where n is the number of atoms. These
+        arrays specify the xyz coordinates of
+        one conformer. The length of the list
+        is equal to num_geoms.
+
+    Notes
+    -----
     fit_form : int
         Represents the fitness formula to use.
         The only value currently available is 0,
         where fitness = CE*SE + Crmsd*Srmsd.
-    sum_energy : float
-        The summation of all of the individual
-        energy calculations for each of the geometries.
-    coef_energy : float
-        The energy coefficient in the fitness formula.
-    sum_rmsd : float
-        The summation of all rmsd when comparing
-        pairs of geometries.
-    coef_rmsd : float
-        The rmsd coefficient in the fitness formula.
 
     Raises
     ------
@@ -123,5 +124,5 @@ def calc_fitness(sum_energy, sum_rmsd):
     """
     inputs = Inputs()
     if inputs.fit_form == 0:
-        return sum_energy*inputs.coef_energy + sum_rmsd*inputs.coef_rmsd
+        return sum_energies(all_coords)*inputs.coef_energy + sum_rmsds(all_coords)*inputs.coef_rmsd
     raise ValueError("Unsupported fitness formula.")

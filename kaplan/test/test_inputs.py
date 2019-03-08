@@ -125,7 +125,7 @@ def test_inputs_update_inputs():
     test_dict["struct_input"] = "hydrogen"
     test_dict["struct_type"] = "name"
     test_dict["multip"] = 1
-    assert_raises(AssertionError, test.update_inputs, test_dict)
+    assert_raises(InputError, test.update_inputs, test_dict)
     test_dict["struct_input"] = "caffeine"
 
     # TODO: see why vetee is going into an infinite loop
@@ -138,9 +138,9 @@ def test_inputs_update_inputs():
     assert_raises(AssertionError, test.update_inputs, test_dict)
     test_dict["num_slots"] = 100
 
-    test_dict["num_filled"] = 150
+    test_dict["init_popsize"] = 150
     assert_raises(AssertionError, test.update_inputs, test_dict)
-    test_dict["num_filled"] = 20
+    test_dict["init_popsize"] = 20
 
     test_dict["num_mevs"] = -300
     assert_raises(AssertionError, test.update_inputs, test_dict)
