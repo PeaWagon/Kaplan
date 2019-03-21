@@ -13,6 +13,7 @@ dihedral angles.
 import vetee
 import openbabel
 import pybel
+import numpy as np
 
 from saddle.internal import Internal
 
@@ -44,10 +45,23 @@ def get_geom_from_dihedrals(dihedrals):
     # generate internal coordinates, with one
     # dihedral per rotatable bond
     mol.auto_select_ic(minimum=True)
+    # make a new array to hold the internal coordinates
+    new_ic_values = mol.ic_values
+    print(mol.ic)
+    print(mol.ic_values)
+
+    # keep track of the dihedral angle we are currently updating
+    dihed_index = 0
     # update new dihedral angles
-    for i, index in enumerate(inputs.dihed_indices):
-        mol.ic_values[index] = dihedrals[i]
+    for i, value in enumerate(new_ic_values):
+        if i in inputs.dihed_indices:
+            new_ic_values[i] = dihedrals[dihed_index]
+            dihed_index += 1
+    
+    # debugging test check. can remove later
+    assert dihed_index == len(inputs.dihed_indices)
+    
     # set the target to these new values
-    mol.set_target_ic(mol.ic_values)
+    mol.set_target_ic(new_ic_values)
     mol.optimize_to_target_ic()
     return mol.coordinates

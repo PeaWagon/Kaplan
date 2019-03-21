@@ -37,7 +37,6 @@ def calc_rmsd(coords1, coords2):
         the Kabsch algorithm).
 
     """
-    print(coords1, coords2)
     # first center each molecule
     coords1 -= rmsd.centroid(coords1)
     coords2 -= rmsd.centroid(coords2)
@@ -46,5 +45,4 @@ def calc_rmsd(coords1, coords2):
     # apply the rotation matrix
     coords1 = np.dot(coords1, rot_matrix)
     # finally get the rmsd
-    print(coords1, coords2)
     return rmsd.rmsd(coords1, coords2)
