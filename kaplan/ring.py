@@ -163,7 +163,7 @@ class Ring:
         # pick random index within +/-self.pmem_dist of parent
         possible_slots = []
         # first check if the range loops round the ring
-        if parent_index + inputs.pmem_dist > inputs.num_slots:
+        if parent_index + inputs.pmem_dist >= inputs.num_slots:
             possible_slots.extend(range(parent_index, inputs.num_slots))
             overflow = parent_index + inputs.pmem_dist - inputs.num_slots
             possible_slots.extend(range(overflow+1))
@@ -178,6 +178,9 @@ class Ring:
         else:
             possible_slots.extend(range(parent_index-inputs.pmem_dist, parent_index))
 
+        # sometimes there are duplicates in the list due to
+        # wrapping (i.e. pmem_dist high and num_slots low)
+        possible_slots = list(set(possible_slots))
         assert len(possible_slots) == 2*inputs.pmem_dist+1
 
         # select new child location

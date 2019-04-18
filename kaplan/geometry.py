@@ -63,5 +63,5 @@ def get_geom_from_dihedrals(dihedrals):
     
     # set the target to these new values
     mol.set_target_ic(new_ic_values)
-    mol.optimize_to_target_ic()
+    mol.optimize_to_target_ic(method="BFGS", max_iter=500, hess=True)
     return mol.coordinates

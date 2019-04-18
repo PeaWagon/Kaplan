@@ -4,6 +4,8 @@ of one set of conformers for a molecule."""
 
 import numpy as np
 
+from saddle.errors import NotConvergeError
+
 from kaplan.geometry import get_geom_from_dihedrals
 from kaplan.fitg import calc_fitness
 
@@ -64,8 +66,23 @@ class Pmem:
 
 
     def set_fitness(self):
-        """Set the pmem's fitness."""
+        """Set the pmem's fitness.
+        
+        Notes
+        -----
+        Regarding non-convergence issues:
+        Instead set the fitness to zero.
+        Future work: determine fitness
+        if 2 or more geometries converge
+        (recalculate average and rmsds
+        accordingly).
+        
+        """
         all_coords = []
         for geom in range(self.num_geoms):
-            all_coords.append(get_geom_from_dihedrals(self.dihedrals[geom]))
+            try:
+                all_coords.append(get_geom_from_dihedrals(self.dihedrals[geom]))
+            except NotConvergeError:
+                self.fitness = 0
+                return
         self.fitness = calc_fitness(all_coords)

@@ -5,14 +5,14 @@ This module decides where to put the output files, what
 the output files will be called, and what the output
 files contain.
 
-The output directory parent is:
+The default output directory is:
 os.cwd/kaplan_output/
 
 Each time Kaplan is run, a new job number is created:
 os.cwd/kaplan_output/job_0
 os.cwd/kaplan_output/job_1
         ....
-os.cwd/kaplan_output/job_n
+os.cwd/kaplan_output/job_n-1
 where n is the number of times Kaplan is run.
 
 Note: if run directories are deleted, Kaplan
@@ -24,6 +24,7 @@ Some new features that I'd like to add are
 written as comments below."""
 
 import os
+import pickle
 
 from vetee.xyz import Xyz
 from vetee.gaussian_options import periodic_table
@@ -35,8 +36,8 @@ from kaplan.inputs import Inputs
 
 # FEATURES TODO:
 # add option to change output format
-# add option to write to a user-specified output directory
 # make some images representing the population using matplotlib
+# stats file should include energies for each conformer and rmsd for each pair
 
 
 def get_output_dir(loc="pwd"):
@@ -48,16 +49,26 @@ def get_output_dir(loc="pwd"):
         The parent directory to use as output.
         Defaults to "pwd", which means use the
         present working directory (current working
-        directory). The other possible option is
+        directory). Another possible option is
         "home", which puts the output in the
         home directory (i.e. /user/home), but this
         option is only available for Linux users.
+        If loc is not home or pwd, then the
+        output will be generated in the given
+        directory.
 
     Raises
     ------
-    AssertionError
-        The user gave an option that was not "home"
-        or "pwd".
+    FileNotFoundError
+        The user gave a location that does not exist.
+    
+    Notes
+    -----
+    The output is placed in kaplan_output under a job
+    number, formatted as follows:
+    loc/kaplan_output/job_0 # for the first job
+    loc/kaplan_output/job_1 # for the second job
+    etc.
 
     Returns
     -------
@@ -66,9 +77,13 @@ def get_output_dir(loc="pwd"):
         be written.
 
     """
-    assert loc in ["pwd", "home"]
-    output_dir = os.path.join(os.getcwd(),
-                              "kaplan_output")
+    if loc == "pwd":
+        output_dir = os.path.join(os.getcwd(), "kaplan_output")
+    elif loc == "home":
+        output_dir = os.path.join(os.path.expanduser("~"), "kaplan_output")
+    else:
+        output_dir = os.path.join(os.path.abspath(loc), "kaplan_output")
+
     # first check that there is a place to put the
     # output files
     if not os.path.isdir(output_dir):
@@ -94,13 +109,20 @@ def get_output_dir(loc="pwd"):
     return output_dir
 
 
-def run_output(ring):
+def run_output(ring, save, output_dir="pwd"):
     """Run the output module.
 
     Parameters
     ----------
     ring : object
        The final ring data structure after evolution.
+    save : bool
+        If True, writes a pickle file of the ring and
+        input objects.
+        If False, does not write any pickle files.
+    output_dir : str
+        The directory where kaplan_output is generated.
+        Defaults to the current/present working directory.
 
     """
     inputs = Inputs()
@@ -141,3 +163,10 @@ def run_output(ring):
         xyz.num_atoms = inputs.num_atoms
         xyz.comments = f"conformer {geom}"
         xyz.write_xyz(os.path.join(output_dir, f"conf{geom}.xyz"))
+    
+    # pickel if requested
+    if save:
+        with open(os.path.join(output_dir,"ring.pickle"), "wb") as f:
+            pickle.dump(ring, f)
+        with open(os.path.join(output_dir, "inputs.pickle"), "wb") as f:
+            pickle.dump(inputs, f)

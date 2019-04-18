@@ -1,0 +1,4 @@
+num conformers: 5
+average fitness: 302.6372627464519
+best fitness: 303.82405735452414
+final percent filled: 60.0%

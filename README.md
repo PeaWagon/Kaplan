@@ -1,9 +1,5 @@
 # Kaplan
 
-Project for CAS741.
-
-Developer Name: Jen Garner
-
 This project implements conformer searching using evolutionary computation.
 
 The main folders in the project are:
@@ -24,10 +20,12 @@ in the list.
 * [numpy](https://pypi.org/project/numpy/)
 * [rmsd](https://github.com/charnley/rmsd)
     * [scipy](https://pypi.org/project/scipy/)
-* [psi4]()
-* [openbabel]()
+* [psi4](http://www.psicode.org/)
+* [openbabel](openbabel.org/docs/current/Installation/install.html)
 * vetee
     * [pubchempy](https://pubchempy.readthedocs.io/en/latest/guide/install.html)
+* GOpt
+    * [importlib_resources](https://importlib-resources.readthedocs.io/en/latest/)
 
 ## How to install
 
@@ -54,7 +52,11 @@ With the environment active, install the dependencies:
 4. rmsd  
 `(kenv) $ pip install rmsd`  
 5. vetee  
-`(kenv) $ pip install -i https://pypi.anaconda.org/kumrud/simple vetee`   
+`(kenv) $ pip install -i https://pypi.anaconda.org/kumrud/simple vetee`
+6. GOpt
+This is a private repositoy, and you will need to contact the developer to install it.
+7. importlib_resources
+`(kenv) $ conda install -c conda-forge importlib_resources`
 
 ### Installing Kaplan
 
@@ -97,6 +99,7 @@ The following people have contributed in some way to the making
 of this project.
 
 * Kumru Dikmenli
+* Xiaotian (Derrick) Yang
 * Xiaomin Huang
 * Laura Bickley
 * Brooks MacLachlan
