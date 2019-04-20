@@ -26,6 +26,8 @@ written as comments below."""
 import os
 import pickle
 
+import numpy as np
+
 from vetee.xyz import Xyz
 from vetee.gaussian_options import periodic_table
 
@@ -132,7 +134,7 @@ def run_output(ring, save, output_dir="pwd"):
     total_fit = 0
     best_pmem = 0
     best_fit = 0
-    for pmem in ring.pmems:
+    for pmem in ring:
         if pmem is not None:
             fitg = pmem.fitness
             total_fit += fitg
@@ -150,19 +152,27 @@ def run_output(ring, save, output_dir="pwd"):
         fout.write(f"average fitness: {average_fit}\n")
         fout.write(f"best fitness: {best_fit}\n")
         fout.write(f"final percent filled: {100*ring.num_filled/ring.num_slots}%\n")
+        fout.write("--------------------------------------------------------\n")
+        for conf in range(inputs.num_geoms):
+            fout.write(f"Conformer {conf}:\n")
+            fout.write(f"Dihedrals: {ring[best_pmem].dihedrals[conf]}\n")
+            fout.write(f"Energy: {ring[best_pmem].energies[conf]}\n")
+            fout.write("--------------------------------------------------------\n")
+        fout.write(f"RMSDs:\n")
+        for rmsd in ring[best_pmem].rmsds:
+            fout.write(f"Conf{rmsd[0]} & Conf{rmsd[1]} => {rmsd[2]}\n")
 
     # generate the output file for the best pmem
-    for geom in range(inputs.num_geoms):
-        xyz_coords = get_geom_from_dihedrals(ring[best_pmem].dihedrals[geom])
+    for i, geom in enumerate(ring[best_pmem].all_coords):
         xyz = Xyz()
         # convert coords to angstroms
-        for i, atom in enumerate(xyz_coords):
+        for j, atom in enumerate(geom):
             # need to convert from numpy's int64 to regular python int
-            label = periodic_table(int(inputs.atomic_nums[i]))
+            label = periodic_table(int(inputs.atomic_nums[j]))
             xyz.coords.append([label, atom[0], atom[1], atom[2]])
         xyz.num_atoms = inputs.num_atoms
-        xyz.comments = f"conformer {geom}"
-        xyz.write_xyz(os.path.join(output_dir, f"conf{geom}.xyz"))
+        xyz.comments = f"conformer {i}; energy {ring[best_pmem].energies[i]}"
+        xyz.write_xyz(os.path.join(output_dir, f"conf{i}.xyz"))
     
     # pickel if requested
     if save:

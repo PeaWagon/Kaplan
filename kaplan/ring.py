@@ -35,7 +35,6 @@ import numpy as np
 
 from kaplan.inputs import Inputs
 from kaplan.pmem import Pmem
-from kaplan.fitg import sum_energies, sum_rmsds, calc_fitness
 
 
 class RingEmptyError(Exception):
@@ -92,6 +91,31 @@ class Ring:
         # create initial population
         self.num_filled = 0
         self.fill(init_popsize, 0)
+
+    def __str__(self):
+        """What happens when print(ring) is called."""
+        return_string = f"Total ring slots: {self.num_slots}\n"
+        return_string += f"Filled ring slots: {self.num_filled}\n"
+        return_string += f"Available ring slots: {self.num_slots-self.num_filled}\n"
+        for i, pmem in enumerate(self):
+            if pmem:
+                return_string += str(pmem) + "\n"
+            else:
+                return_string += f"Slot #: {i} => Empty\n"
+        return return_string
+
+    def __iter__(self):
+        """Called at the start of iteration."""
+        self.slot_num = 0
+        return self
+    
+    def __next__(self):
+        """Called for iteration over slots."""
+        if self.slot_num == self.num_slots:
+            raise StopIteration
+        else:
+            self.slot_num += 1
+            return self.pmems[self.slot_num-1]
 
     def __getitem__(self, key):
         """What happens when ring[integer] is called."""

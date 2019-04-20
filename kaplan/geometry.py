@@ -47,8 +47,6 @@ def get_geom_from_dihedrals(dihedrals):
     mol.auto_select_ic(minimum=True)
     # make a new array to hold the internal coordinates
     new_ic_values = mol.ic_values
-    print(mol.ic)
-    print(mol.ic_values)
 
     # keep track of the dihedral angle we are currently updating
     dihed_index = 0
