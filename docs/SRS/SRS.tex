@@ -125,8 +125,7 @@ used in this document. Numerical constants are found in the appendix, Section
 \subsection{Table of Units and Constants}
 
 This section describes the units that are used in the document. For each unit, 
-the symbol is given followed by a
-description of the unit and its name. Some common constants are given.
+the symbol is given followed by a description of the unit and its name.
 ~\newline
 
 \renewcommand{\arraystretch}{1.2}
@@ -257,9 +256,10 @@ performing an exhaustive
 search of all possible geometries, \progname{} is a 
 package designed for the 
 efficient exploration and optimization of molecular 
-geometry with the end goal 
+geometries, with the end goal 
 of procuring a set of conformers.
-
+A classic example of conformers is the boat versus the chair 
+conformation of cyclohexane (see Figure \ref{C6H14}).
 
 \begin{figure}[H]
 	\begin{center}
@@ -270,23 +270,22 @@ of procuring a set of conformers.
 \end{figure}
 
 
-A classic example of conformational isomers is the boat versus the chair 
-conformation of cyclohexane (see Figure \ref{C6H14}). A simple geometry 
-optimization of cyclohexane would only afford the 
-global minimum to the 
-potential energy landscape, but, in using \progname{}, it will be possible to 
-find the local minima of this molecule. \wss{I am confused by the difference
-  between the global minimum and the local minima.  Are you saying that there
-  are times when the local minima is actually a better solution than the global
-  one?  If that is what you are saying, then I guess I'm not confused, but it
-  goes against the usual rules of optimization.   You are usually looking for
-  the global minimum and trying to avoid getting stuck in a local minimum.} Knowing the 
-local minima is useful in 
-areas such as drug design, where the molecule is restricted by its environment 
-(for example, in the interaction with an enzyme) to have a certain shape. 
-Molecules can also adopt different conformations when they are exposed to 
-certain solvents, especially when the molecule in question has charge 
-separation.
+Conformers are important for determining rates of interconversion and reaction, 
+stereochemistry of products and intermediates, and mechanisms. Knowing the
+likelihood for a molecule to adapt one conformation over another would indicate
+a preference for producing a particular product. Other interesting questions
+include those relating to guest-host chemistry and macromolecules (enzymes and substrates)
+ - what happens with increasing
+pressure or temperature, or when using different solvents? Does the structure
+change to adapt a new conformation? If there are multiple semi-stable structures,
+how many of these minima exist, and which ones do I care about for my given reaction?
+
+
+ A simple geometry 
+optimization of cyclohexane would only afford a single conformer, but, in using \progname{}, 
+it will be possible to 
+find multiple local minima of this molecule. The conformer search proceeds mainly through the
+manipulation of dihedral angles.
 
 \subsection{Purpose of Document}
 
@@ -487,8 +486,8 @@ atoms.
 each plane bisects 3 atoms. See Figure \ref{butane-dihedral} for an example.
 \item \textbf{bond order:} the number of chemical bonds connecting two atoms. 
 This value sometimes depends on the theory used.
-\item \textbf{conformational isomer:} molecules that have the same number of 
-atoms that are related by free rotation about single bonds. May also be 
+\item \textbf{conformational isomer:} molecules with the same number of 
+atoms that are related by free rotation*. May also be 
 referenced as conformer in the text. 
 \item \textbf{quantum chemical method:} the strategies used to solve the 
 Schr\"{o}dinger equation.
@@ -497,6 +496,17 @@ the Schr\"{o}dinger equation can be evaluated.
 \item \textbf{z-matrix:} an input file type that uses dihedral angles and 
 connectivities rather than Cartesian coordinates.
 \end{itemize}
+
+*Here is a definition of free rotation, from \cite{stereochem-terms}. Free rotation 
+can occur around single bonds, weak double bonds, triple bonds, and quintuple bonds.
+\begin{quote}
+In a stereochemical context the rotation about a bond is called `free' when the 
+rotational barrier is so low that different conformations are not perceptible as 
+different chemical species on the time scale of the experiment. The inhibition of 
+rotation of groups about a bond due to the presence of a sufficiently large 
+rotational barrier to make the phenomenon observable on the time scale of the 
+experiment is termed hindered rotation or restricted rotation.
+\end{quote}
 
 \subsubsection{Physical System Description}
 
@@ -714,7 +724,9 @@ Coupled-Cluster, Configuration-Interaction, perturbation theory, and density
 functional theory.
 
 The Born-Oppenheimer approximation is commonly used in quantum chemical 
-methods. Since the nuclei are much larger than the electrons, they move much 
+methods. The nuclear spatial bounds, as set by its wavefunction, are on
+the order of 100,000 times larger than those of the electron. Due to this
+size difference, the nuclei move much 
 more slowly. As a result, the nuclei are considered fixed and only the 
 electrons move in the system. Therefore, the $\hat{T_n}$ term of the 
 Hamiltonian is neglected and the $\hat{V_{nn}}$ term becomes constant. When a 
@@ -1313,7 +1325,7 @@ with an ``X'' may have to be modified as well.
 		The above equation gives the electronic 
 		Hamiltonian operator for a 
 		molecule with N-\ce{e-} and P-nuclei. $\hbar = \frac{h}{2\pi}$ is the 
-		reduced form of Plank's constant, $m_e$ is the mass of an electron, 
+		reduced form of Planck's constant, $m_e$ is the mass of an electron, 
 		$\nabla$ is the gradient, $Z_a$ is the atomic number for the given 
 		nuclei (a), $\epsilon_0$ is the permittivity of free space, $r_i$ are 
 		the 
@@ -1339,7 +1351,7 @@ These symbols appear in the documentation and represent real numbers.
 	$\hbar$ & reduced Planck's constant & $h/2\pi$\si{\joule\second} \\
 	$m_e$ & mass of an electron & 9.10938x$10^{-31}$\si{\kilogram} \\
 	$q_e$ & charge of an electron & 1.60217662x$10^{-19}$\si{\coulomb} \\
-	$\epsilon_0$ & permittivity of free space  & 8.854187817x$10^{−12} 
+	$\epsilon_0$ & permittivity of free space  & 8.854187817x$10^{-12} 
 	\si{\farad/\metre}$ \\
 	
 	\bottomrule
