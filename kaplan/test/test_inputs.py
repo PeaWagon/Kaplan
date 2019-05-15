@@ -180,7 +180,3 @@ def test_inputs_update_inputs():
 
     test_dict["t_size"] = 25
     assert_raises(AssertionError, test.update_inputs, test_dict)
-
-
-test_inputs()
-test_inputs_update_inputs()

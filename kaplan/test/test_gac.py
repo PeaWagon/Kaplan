@@ -48,5 +48,3 @@ def test_run_kaplan():
         "num_slots": 20 
     }
     run_kaplan(test3)
-
-test_run_kaplan()

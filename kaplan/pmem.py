@@ -12,13 +12,9 @@ from kaplan.geometry import get_geom_from_dihedrals
 from kaplan.fitg import calc_fitness
 from kaplan.rmsd import calc_rmsd
 from kaplan.energy import run_energy_calc
-
-
 # values for dihedral angles in radians
-MIN_VALUE = 0
-MAX_VALUE = 2*np.pi
 # convert radians to degrees for __str__ method
-RAD_TO_DEGREES = lambda x : x*180/np.pi
+from kaplan.inputs import MIN_VALUE, MAX_VALUE, RAD_TO_DEGREES
 
 
 class Pmem:

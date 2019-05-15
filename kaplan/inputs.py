@@ -27,6 +27,11 @@ from saddle.internal import Internal
 # https://github.com/psi4/psi4/blob/fbb2ff444490bf6b43cb6e027637d8fd857adcee/psi4/include/psi4/physconst.h
 # inverse of bohr to angstrom from psi4
 AU = 1/0.52917721067
+# values for dihedral angles in radians
+MIN_VALUE = 0
+MAX_VALUE = 2*np.pi
+# convert radians to degrees for __str__ method
+RAD_TO_DEGREES = lambda x : x*180/np.pi
 
 
 class InputError(Exception):
@@ -66,10 +71,12 @@ class DefaultInputs:
         "num_geoms": 5,
         # num_swaps and num_muts can have defaults based
         # on the num_geoms selection/default and the num_atoms
-        # default for num_swaps is equal to num_geoms when not set
+        # default for num_swaps is equal to num_geoms/2 when not set
         "num_swaps": None,
         # default for num_muts is equal to num_atoms/3 when not set
         "num_muts": None,
+        # default for num_cross is equal to num_geoms/2 when not set
+        "num_cross": None,
         "fit_form": 0,
         "coef_energy": 0.5,
         "coef_rmsd": 0.5,
@@ -132,6 +139,7 @@ class Inputs(DefaultInputs):
         self.num_geoms = 5
         self.num_swaps = None
         self.num_muts = None
+        self.num_cross = None
         self.fit_form = 0
         self.coef_energy = 0.5
         self.coef_rmsd = 0.5
@@ -173,7 +181,8 @@ class Inputs(DefaultInputs):
             "num_geoms",
             "num_swaps",
             "num_muts",
-            "num_dihed"
+            "num_cross",
+            "num_dihed",
         }
         expect_float = {"coef_energy", "coef_rmsd"}
         # make sure all values have been set
@@ -184,8 +193,9 @@ class Inputs(DefaultInputs):
                 # or other inputs
                 # val has to be reassigned otherwise
                 # a ValueError occurs when int(None) is performed
-                if arg == "num_swaps":
-                    self.num_swaps = self.num_geoms
+                if arg == "num_swaps" or arg == "num_cross":
+                    self.num_swaps = self.num_geoms//2
+                    self.num_cross = self.num_geoms//2
                     val = self.num_swaps
                 elif arg == "num_muts":
                     self.num_muts = int(self.num_dihed/2)
@@ -229,6 +239,7 @@ class Inputs(DefaultInputs):
         assert self.num_mevs > 0
         assert self.num_geoms > 0
         assert 0 <= self.num_swaps <= self.num_geoms
+        assert 0 <= self.num_cross <= self.num_geoms
         assert 0 <= self.num_muts <= self.num_dihed
         assert 0 <= self.pmem_dist < self.num_slots/2
         assert self.coef_energy >= 0

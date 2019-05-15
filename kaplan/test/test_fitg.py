@@ -17,5 +17,3 @@ def test_run_energy_calc():
     })
     ring = Ring(inputs.num_slots, inputs.init_popsize)
     print(ring[0])
-
-test_run_energy_calc()

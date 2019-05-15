@@ -37,5 +37,3 @@ def test_run_energy_calc():
     })
     result = run_energy_calc(inputs.coords)
     print(result)
-
-test_run_energy_calc()

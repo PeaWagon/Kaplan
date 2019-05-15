@@ -21,11 +21,11 @@ from numpy import concatenate
 from copy import deepcopy
 
 # values for dihedral angles in radians
-MIN_VALUE = 0
-MAX_VALUE = 2*pi
+from kaplan.inputs import MAX_VALUE, MIN_VALUE
 
 
-def generate_children(parent1, parent2, num_muts, num_swaps, cross=False):
+
+def generate_children(parent1, parent2, num_muts, num_swaps, num_cross):
     """Make some new pmems for the ring.
 
     Parameters
@@ -38,10 +38,16 @@ def generate_children(parent1, parent2, num_muts, num_swaps, cross=False):
         maximum number of mutations to perform
     num_swaps : int
         maximum number of swaps to perform
-    cross : bool
-        True means do single point crossover. False
-        means don't do single point crossover.
-
+    num_cross : int
+        maximum number of crossovers to perform.
+        Single-point crossover is implemented
+    
+    Notes
+    -----
+    The size of parent1 and parent2 should be the same.
+    num_cross and num_swaps should not exceed the length
+    of parent1.
+    
     Returns
     -------
     two new sets of dihedral angles with which
@@ -49,25 +55,74 @@ def generate_children(parent1, parent2, num_muts, num_swaps, cross=False):
     np.array(shape=(num_geoms, num_dihed), dtype=float)
 
     """
+    num_conf = len(parent1)
+    num_dihed = len(parent1[0])
+    assert num_conf == len(parent2)
+    assert num_swaps <= num_conf
+    assert num_cross <= num_conf
+    assert num_muts <= num_conf*num_dihed
+    
     child1 = deepcopy(parent1)
     child2 = deepcopy(parent2)
-    child1, child2 = swap(child1, child2, num_swaps)
-    if cross:
-        child1, child2 = crossover(child1, child2)
-    child1 = mutate(child1, num_muts)
-    child2 = mutate(child2, num_muts)
+    # choose how many swaps to do
+    num_swaps = randint(0, num_swaps)
+    # choose how many crossovers to do
+    num_cross = randint(0, num_cross)
+    # choose how many mutations to do
+    num_muts1 = randint(0, num_muts)
+    num_muts2 = randint(0, num_muts)
+
+    if num_swaps:
+        pmem1_indices = [i for i in range(num_conf)]
+        pmem2_indices = [i for i in range(num_conf)]
+        for _ in range(num_swaps):
+            # choose where to perform swap
+            conf1, conf2 = choice(pmem1_indices), choice(pmem2_indices)
+            # apply swap operator
+            child1, child2 = swap(child1, child2, conf1, conf2)
+            # without replacement
+            pmem1_indices.remove(conf1)
+            pmem2_indices.remove(conf2)
+        
+    if num_cross:
+        pmem1_indices = [i for i in range(num_conf)]
+        pmem2_indices = [i for i in range(num_conf)]
+        for _ in range(num_cross):
+            # choose where to perform crossover
+            conf1, conf2 = choice(pmem1_indices), choice(pmem2_indices)
+            # apply crossover operator
+            child1, child2 = crossover(child1, child2, conf1, conf2)
+            # without replacement
+            pmem1_indices.remove(conf1)
+            pmem2_indices.remove(conf2)
+
+    if num_muts1:
+        # comb is all the possible locations that can be mutated in the child pmem
+        comb = [(i,j) for i in range(num_conf) for j in range(num_dihed)]
+        # select a random location num_muts times
+        mutate_locations = sample(comb, num_muts1)
+        for loc in mutate_locations:
+            # apply mutate operator to child1
+            child1 = mutate(child1, loc)
+    
+    if num_muts2:
+        comb = [(i,j) for i in range(num_conf) for j in range(num_dihed)]
+        mutate_locations = sample(comb, num_muts2)
+        for loc in mutate_locations:
+            child2 = mutate(child2, loc)
+    
     return child1, child2
 
 
-def mutate(dihedrals, num_muts):
+def mutate(dihedrals, loc):
     """Mutate a list of dihedral angles.
 
     Parameters
     ----------
     dihedrals : list(list (int))
         List of lists of dihedral angles to mutate.
-    num_muts : int
-        Maximum number of mutations to perform on list.
+    loc : tuple(int, int)
+        Where in the dihedrals to mutate.
 
     Returns
     -------
@@ -75,20 +130,13 @@ def mutate(dihedrals, num_muts):
         Dihedral angles after mutations.
 
     """
-    rng_geoms = range(len(dihedrals))
-    rng_dihedrals = range(len(dihedrals[0]))
-    for geom in rng_geoms:
-        # choose how many mutations to do
-        num_muts = randint(0, num_muts)
-        # choose where to do the mutations
-        mut_ind = sample(rng_dihedrals, num_muts)
-        for mut in mut_ind:
-            dihedrals[geom][mut] = uniform(MIN_VALUE, MAX_VALUE)
+    geom, dihed = loc
+    dihedrals[geom][dihed] = uniform(MIN_VALUE, MAX_VALUE)
     return dihedrals
 
 
-def swap(child1, child2, num_swaps):
-    """Swap geometries between two children.
+def swap(child1, child2, conf1, conf2):
+    """Swap a conformer between two children.
 
     Parameters
     ----------
@@ -100,8 +148,12 @@ def swap(child1, child2, num_swaps):
     child2 : list
         Same as child1, except for a different
         pmem.
-    num_swaps : int
-        Maximum number of swaps to do.
+    conf1 : int
+        Location of conformer 1 in child1 to be
+        swapped.
+    conf2 : int
+        Location of conformer 2 in child2 to be
+        swapped.
 
     Returns
     -------
@@ -109,22 +161,16 @@ def swap(child1, child2, num_swaps):
     Each list of list represents
     sets of dihedral angles.
 
-    """
-    # choose how many swaps to do
-    num_swaps = randint(0, num_swaps)
-    # choose where to do the swaps
-    swap_ind = sample(range(len(child1)), num_swaps)
-    # apply swaps
-    for swp in swap_ind:
-        child1_value = child1[swp]
-        child1[swp] = child2[swp]
-        child2[swp] = child1_value
+    """  
+    child1_value = deepcopy(child1[conf1])
+    child1[conf1] = child2[conf2]
+    child2[conf2] = child1_value
     # return updated pmems
     return child1, child2
 
 
-def crossover(child1, child2):
-    """Perform single point crossover between two children.
+def crossover(child1, child2, conf1, conf2):
+    """Perform single point crossover for conformers from two children.
 
     Parameters
     ----------
@@ -132,7 +178,10 @@ def crossover(child1, child2):
         Set of dihedral angles for each conformer in child1.
     child2 : np.array(shape=(num_geoms, num_dihed), dtype=float)
         Set of dihedral angles for each conformer in child2.
-    The size of child1 and child2 should be the same.
+    conf1 : int
+        Location of conformer 1 in child1 for crossover.
+    conf2 : int
+        Location of conformer 2 in child2 for crossover.
 
     Algorithm
     ---------
@@ -167,13 +216,10 @@ def crossover(child1, child2):
 
     """
     cut_index = randint(1, (len(child1[0]) - 1))
-    max_select = len(child1) - 1
-    chosen1 = randint(0, max_select)
-    chosen2 = randint(0, max_select)
-    new1 = deepcopy(child1[chosen1])
-    new2 = deepcopy(child2[chosen2])
+    new1 = deepcopy(child1[conf1])
+    new2 = deepcopy(child2[conf2])
     # with numpy, adding two arrays adds element-wise
     # need to use concatenate to achieve list-like addition
-    child1[chosen1] = concatenate([new1[:cut_index], new2[cut_index:]])
-    child2[chosen2] = concatenate([new2[:cut_index], new1[cut_index:]])
+    child1[conf1] = concatenate([new1[:cut_index], new2[cut_index:]])
+    child2[conf2] = concatenate([new2[:cut_index], new1[cut_index:]])
     return child1, child2
