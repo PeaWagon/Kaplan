@@ -148,69 +148,80 @@ class Ring:
         self.pmems[key] = value
 
 
-    def update(self, parent_index, child, current_mev):
-        """Add child to ring based on parent location.
+    def mating_radius(self, parent_index, pmem_dist):
+        """Return indices of the ring in the mating radius of parent.
 
         Parameters
         ----------
         parent_index : int
-            The location of the parent from which
-            the child's location will be chosen.
-        child : np.array(shape=(num_geoms, num_dihed),
-                         dtype=float)
-        current_mev : int
-            The current mating event. This method
-            is called by the tournament. This value
-            is used to set the birthday of new pmems
-            (if the child is added to the ring).
-
-        Notes
-        -----
-        This method is quite long. Perhaps it should
-        be compartmentalised in the future.
-
+            Ring index for which to make a selection.
+        pmem_dist : int
+            How many pmems to the left and right of parent
+            are considered within the mating radius.
+        
         Returns
         -------
-        None
-
+        list(int)
+            Indices representing ring slots that are
+            in the mating radius of the parent slot.
+        
         """
-        inputs = Inputs()
-        num_dihed = len(child[0])
-        # create new pmem object using dihedral angles
-        new_pmem = Pmem(None, current_mev, inputs.num_geoms, num_dihed)
-        # determine fitness value for the child        
-        new_pmem.set_fitness()
-
         # TODO: see if this code should be replaced with negative
         # indices (since python lists are doubly-linked)
         # determine set of possible slots for the child to go
         # pick random index within +/-self.pmem_dist of parent
         possible_slots = []
         # first check if the range loops round the ring
-        if parent_index + inputs.pmem_dist >= inputs.num_slots:
-            possible_slots.extend(range(parent_index, inputs.num_slots))
-            overflow = parent_index + inputs.pmem_dist - inputs.num_slots
+        if parent_index + pmem_dist >= self.num_slots:
+            possible_slots.extend(range(parent_index, self.num_slots))
+            overflow = parent_index + pmem_dist - self.num_slots
             possible_slots.extend(range(overflow+1))
         else:
-            possible_slots.extend(range(parent_index, parent_index+inputs.pmem_dist+1))
+            possible_slots.extend(range(parent_index, parent_index+pmem_dist+1))
         # then check if loops around ring backwards
         # essentially checking if parent_index - pmem_dist is negative
-        if parent_index < inputs.pmem_dist:
+        if parent_index < pmem_dist:
             possible_slots.extend(range(0, parent_index))
-            backflow = inputs.num_slots - (inputs.pmem_dist - parent_index)
-            possible_slots.extend(range(backflow, inputs.num_slots))
+            backflow = self.num_slots - (pmem_dist - parent_index)
+            possible_slots.extend(range(backflow, self.num_slots))
         else:
-            possible_slots.extend(range(parent_index-inputs.pmem_dist, parent_index))
+            possible_slots.extend(range(parent_index-pmem_dist, parent_index))
 
         # sometimes there are duplicates in the list due to
         # wrapping (i.e. pmem_dist high and num_slots low)
         possible_slots = list(set(possible_slots))
-        assert len(possible_slots) == 2*inputs.pmem_dist+1
+        assert len(possible_slots) == 2*pmem_dist+1
 
-        # select new child location
-        chosen_slot = choice(possible_slots)
+        return possible_slots
+
+
+    def update(self, child, potential_slot, current_mev):
+        """Add child to ring based on parent location.
+
+        Parameters
+        ----------
+        child : np.array(shape=(num_geoms, num_dihed),
+                         dtype=float)
+        potential_slot : int
+            The slot to place the child.
+        current_mev : int
+            The current mating event. This method
+            is called by the tournament. This value
+            is used to set the birthday of new pmems
+            (if the child is added to the ring).
+
+        Returns
+        -------
+        None
+
+        """
+        num_geoms, num_dihed = child.shape
+        # create new pmem object using dihedral angles
+        new_pmem = Pmem(None, current_mev, num_geoms, num_dihed)
+        # determine fitness value for the child        
+        new_pmem.set_fitness()
         # check fitness vs current occupant (or empty slot)
-        if self[chosen_slot] is None or self[chosen_slot].fitness <= new_pmem.fitness:
+        if self[potential_slot] is None or self[potential_slot].fitness <= new_pmem.fitness:
             # add it there
             new_pmem.ring_loc = chosen_slot
             self[chosen_slot] = new_pmem

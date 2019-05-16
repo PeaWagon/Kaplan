@@ -42,11 +42,14 @@ from kaplan.inputs import Inputs
 # stats file should include energies for each conformer and rmsd for each pair
 
 
-def get_output_dir(loc="pwd"):
+def get_output_dir(structure, loc="pwd"):
     """Determine the name of the output directory.
 
     Parameters
     ----------
+    structure : str
+        Some identifier for the job. Example
+        a string representing the name of the molecule.
     loc : str
         The parent directory to use as output.
         Defaults to "pwd", which means use the
@@ -90,7 +93,7 @@ def get_output_dir(loc="pwd"):
     # output files
     if not os.path.isdir(output_dir):
         os.mkdir(output_dir)
-        output_dir = os.path.join(output_dir, "job_0")
+        output_dir = os.path.join(output_dir, f"job_0_{structure}")
         os.mkdir(output_dir)
         return output_dir
     # iterate over existing jobs to determine
@@ -100,12 +103,12 @@ def get_output_dir(loc="pwd"):
     dir_nums = []
     for val in dir_contents:
         val = val.name.split("_")
-        if val[0] == "job" and len(val) == 2:
+        if val[0] == "job" and len(val) == 3:
             try:
                 dir_nums.append(int(val[1]))
             except ValueError:
                 pass
-    new_dir = "job_" + str(max(dir_nums) + 1)
+    new_dir = f"job_{max(dir_nums)+1}_{structure}"
     output_dir = os.path.join(output_dir, new_dir)
     os.mkdir(output_dir)
     return output_dir
@@ -144,7 +147,7 @@ def run_output(ring, save, output_dir="pwd"):
     average_fit = total_fit / ring.num_filled
 
     # generate and get output directory
-    output_dir = get_output_dir()
+    output_dir = get_output_dir(inputs.struct_input, output_dir)
 
     # write a stats file
     with open(os.path.join(output_dir, "stats-file.txt"), "w") as fout:

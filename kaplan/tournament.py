@@ -2,11 +2,13 @@
 pick from the ring in order to apply updates
 to the population."""
 
-import numpy as np
+from math import inf
+
+from random import choice
 
 from kaplan.inputs import Inputs
 from kaplan.ring import RingEmptyError
-from kaplan.mutations import generate_children
+from kaplan.mutations import generate_children, single_parent_mutation
 
 
 def run_tournament(ring, current_mev):
@@ -27,43 +29,54 @@ def run_tournament(ring, current_mev):
     """
     inputs = Inputs()
     # check ring has enough pmems for a tournament
-    if inputs.t_size > ring.num_filled:
-        raise RingEmptyError("Not enough pmems to run a tournament.")
+    if not ring.num_filled:
+        raise RingEmptyError("Need at least one pmem to run a tournament.")
 
-    # choose random slots for a tournament
-    selected_pmems = select_pmems(inputs.t_size, ring)
+    # choose a random pmem for a tournament
+    # any pmem in its mating radius is considered
+    selected_pmems = select_pmems(inputs.pmem_dist, ring)
 
-    # select parents by fitness
-    parents = select_parents(selected_pmems, ring)
+    # select parents and worst slots by fitness
+    parents, worst = select_parents(selected_pmems, ring)
 
-    parent1 = ring[parents[0]].dihedrals
-    parent2 = ring[parents[1]].dihedrals
-
-    # generate children
-    children = generate_children(parent1, parent2, inputs.num_muts, inputs.num_swaps)
+    parent1 = ring[parents["p1"][1]].dihedrals
+    try:
+        parent2 = ring[parents["p2"][1]].dihedrals
+    # there is only one pmem in the mating radius
+    except AttributeError:
+        child1 = single_parent_mutation(parent1, inputs.num_muts)
+        child2 = None
+    else:
+        # generate children
+        child1, child2 = generate_children(
+                             parent1, parent2,
+                             inputs.num_muts, inputs.num_swaps,
+                             inputs.num_cross
+                         )
 
     # put children in ring
-    ring.update(parents[0], children[1], current_mev)
-    ring.update(parents[1], children[0], current_mev)
+    ring.update(child1, worst["w1"][1], current_mev)
+    if child2:
+        ring.update(child2, worst["w2"][1], current_mev)
 
 
-def select_pmems(number, ring):
+def select_pmems(pmem_dist, ring):
     """Randomly selected pmems.
 
     Parameters
     ----------
-    number : int
-        How many pmems to pick.
+    pmem_dist : int
+        How many slots (to the left and right) to
+        consider when selecting pmems from the ring.
     ring : object
         The ring from which to pick the pmems.
 
     """
     # get a list of indices representing filled slots
     occupied = [i for i in range(ring.num_slots) if ring[i] is not None]
-    # from the occupied slots, choose number of them
-    # without replacement (i.e. don't pick the same
-    # pmem twice)
-    selection = np.random.choice(occupied, number, replace=False)
+    # from the occupied slots, choose a random pmem as parent1
+    parent1 = choice(occupied)
+    selection = ring.mating_radius(parent1, pmem_dist)
     return selection
 
 
@@ -84,13 +97,22 @@ def select_parents(selected_pmems, ring):
         Indices of two best pmems to be used as parents.
 
     """
-    fit_vals = np.array([ring[i].fitness for i in selected_pmems])
-    # from here:
-    # https://stackoverflow.com/questions/6910641/how-do-i-get-indices-of-n-maximum-values-in-a-numpy-array
-    # use numpy to get the two best fitness value indices
-    # from the list and link it to ring index
-    # note: this makes generator object
-    parents_gen = (selected_pmems[parent] for parent in np.argpartition(fit_vals, -2)[-2:])
-    parents = [next(parents_gen)]
-    parents.append(next(parents_gen))
-    return parents
+    # values are tuple(fitness, ring index)
+    best_two = {"p1": (-inf, None), "p2": (-inf, None)}
+    worst_two = {"w1": (inf, None), "w2": (inf, None)}
+    for s in select_pmems:
+        try:
+            fit = ring[s].fitness
+        # ring at slot is empty
+        # AttributeError: 'NoneType' object has no attribute 'fitness'
+        except AttributeError:
+            fit = -inf
+        if fit > best_two["p1"][0]:
+            best_two["p1"] = (fit, s)
+        elif fit > best_two["p2"][0]:
+            best_two["p2"] = (fit, s)
+        elif fit < worst_two["w1"][0]:
+            worst_two["p2"] = (fit, s)
+        elif fit < worst_two["w2"][0]:
+            worst_two["p2"] = (fit, s)
+    return best_two, worst_two

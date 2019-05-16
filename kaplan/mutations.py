@@ -114,6 +114,37 @@ def generate_children(parent1, parent2, num_muts, num_swaps, num_cross):
     return child1, child2
 
 
+def single_parent_mutation(parent, num_muts):
+    """Mutate a parent.
+
+    Parameters
+    ----------
+    parent : np.array(shape=(num_geoms, num_dihed), dtype=float)
+        list of lists of dihedral angles
+    num_muts : int
+        maximum number of mutations to perform
+
+    Returns
+    -------
+    parent with x point mutations, where x <= num_muts
+
+    """
+    num_conf = len(parent)
+    num_dihed = len(parent[0])
+    child = deepcopy(parent)
+    # choose how many mutations to do
+    num_muts = randint(0, num_muts)
+    if num_muts:
+        # comb is all the possible locations that can be mutated in the child pmem
+        comb = [(i,j) for i in range(num_conf) for j in range(num_dihed)]
+        # select a random location num_muts times
+        mutate_locations = sample(comb, num_muts)
+        for loc in mutate_locations:
+            # apply mutate operator to child1
+            child = mutate(child, loc)
+    return child
+
+
 def mutate(dihedrals, loc):
     """Mutate a list of dihedral angles.
 
