@@ -217,14 +217,14 @@ class Ring:
         """
         num_geoms, num_dihed = child.shape
         # create new pmem object using dihedral angles
-        new_pmem = Pmem(None, current_mev, num_geoms, num_dihed)
-        # determine fitness value for the child        
+        new_pmem = Pmem(None, current_mev, num_geoms, num_dihed, dihedrals=child)
+        # determine fitness value for the child
         new_pmem.set_fitness()
         # check fitness vs current occupant (or empty slot)
         if self[potential_slot] is None or self[potential_slot].fitness <= new_pmem.fitness:
             # add it there
-            new_pmem.ring_loc = chosen_slot
-            self[chosen_slot] = new_pmem
+            new_pmem.ring_loc = potential_slot
+            self[potential_slot] = new_pmem
 
 
     def fill(self, num_pmems, current_mev):

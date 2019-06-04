@@ -111,6 +111,7 @@ github issues\\
 November 14, 2018 (Wednesday) & 1.3 & remove original wss comments, move 
 numerical constants table to appendix, fix traceability issues \\
 November 21, 2018 (Wednesday) & 1.4 & fix some issues from Github \\
+May 21, 2019 (Tuesday) & 1.5 & update to the current state of the code; remove references to z-matrices \\
 \bottomrule
 \end{tabularx}
 
@@ -459,14 +460,19 @@ the instance models.
 
 \progname{} is designed to search the potential energy surface for 
 conformational isomers of an input molecule by manipulating dihedral angles. 
+The program will look for a set of conformers that are geometrically distinct
+and stable (meaning they have a relatively large, negative energy). To generate
+a conformer, the program will start with a full geometry specification. Then,
+the dihedral angles that are most integral to the molecule's backbone will
+be selected for optimisation. These dihedral angles will be manipulated as to
+explore the energetic landscape. 
 The solution to a fitness function, which is related to the energies of and 
 spatial differences between conformers, will be found and maximized. As 
 calculated using a quantum mechanical approach, the energies of the conformers 
 will be optimized when they have the lowest energy (largest negative value). 
 The set of conformers will be optimized when the RMSD (root-mean-squared 
 deviation) is maximized since this is a measure of how different the conformers 
-are from one another. If the user specifies that they wish to obtain 3 
-conformers, the RMSD measure is necessary, otherwise the user could get 3 
+are from one another. The RMSD measure is necessary, otherwise the user could get 3 
 global minima of the potential energy space representing the exact same 
 molecule. 
 
@@ -477,6 +483,13 @@ sections and their meaning, with the purpose of reducing ambiguity and making it
 easier to correctly understand the requirements:
 
 \begin{itemize}
+\item \textbf{covalent bond:} a connection that involves sharing electronic
+density between two atoms.
+\item \textbf{ionic bond:} a connection that is the result of electrostatic
+attraction that occurs between a cation (positively charged ion) and an anion
+(negatively charged ion).
+\item \textbf{bond order:} the number of chemical bonds connecting two atoms. 
+This value sometimes depends on the theory used.
 \item \textbf{molecule:} a collection of atoms that are related in space, 
 either covalently or non-covalently.
 \item \textbf{bond angle:} the angle formed between three atoms.
@@ -484,8 +497,10 @@ either covalently or non-covalently.
 atoms.
 \item \textbf{dihedral angle} the angle between two intersecting planes, where 
 each plane bisects 3 atoms. See Figure \ref{butane-dihedral} for an example.
-\item \textbf{bond order:} the number of chemical bonds connecting two atoms. 
-This value sometimes depends on the theory used.
+\item \textbf{internal coordinates:} a way to specify how atoms are connected (relative
+to one another), such through bond lengths, bond angles, dihedral angles.
+\item \textbf{cartesian coordinates:} a mapping of atoms in space using 3-dimensions,
+centred about the origin (0,0,0).
 \item \textbf{conformational isomer:} molecules with the same number of 
 atoms that are related by free rotation*. May also be 
 referenced as conformer in the text. 
@@ -493,8 +508,6 @@ referenced as conformer in the text.
 Schr\"{o}dinger equation.
 \item \textbf{basis set:} how to describe the molecule mathematically such that 
 the Schr\"{o}dinger equation can be evaluated.
-\item \textbf{z-matrix:} an input file type that uses dihedral angles and 
-connectivities rather than Cartesian coordinates.
 \end{itemize}
 
 *Here is a definition of free rotation, from \cite{stereochem-terms}. Free rotation 
@@ -514,10 +527,14 @@ The physical system of \progname{} includes the following elements:
 
 \begin{itemize}
 
-\item[PS1:] Molecule for which to find conformers. This molecule is specified 
-by a file, such as xyz (Cartesian coordinates) or a 
-z-matrix, a SMILES string, 
-or a name. From this geometry, the dihedral angles can be obtained.
+\item[PS1:] A molecular identifier. Describes the molecule in a unique way. Examples
+include: name, InChiKey, and SMILES string. 
+\item[PS2:] A molecular geometry. Describes how the atoms in the molecule are
+explicitly connected/related in 3-dimensional space. Includes cartesian and internal
+coordinates.
+\item[PS3:] A set of dihedral angles. Can be extracted from a geometry. Some dihedral
+angles are more important than others (i.e. make a larger change in the energy when
+manipulated).
 
 \end{itemize}
 
@@ -538,34 +555,32 @@ found in Table \ref{input-butane}. A visual for the molecule itself is
 displayed in Figure \ref{butane-dihedral}.
 
 \begin{table}[H]
-	\begin{tabular}{llll}
+	\begin{tabular}{lll}
 		\toprule
-		\textbf{Z-Matrix} & \textbf{XYZ (Cartesian)} & 
-		\textbf{SMILES} & \textbf{Dihedral} \\
-		& \textbf{Coordinates} & \textbf{String} & \textbf{Angles} \\
+		\textbf{XYZ (Cartesian)} & 
+		\textbf{SMILES} & InChiKey \\
+	  \textbf{Coordinates} & \textbf{String} & \\
 		\hline
-	C   1 	&		14		&  CCCC & 178.8 \\
-	C   1 1.527	&	butane  		&		& 238.9 \\
-	C   1 1.520  2 111.489			& C -0.5630  0.5160  0.0071 &	& 121.2 \\
-	C   2 1.520  1 111.497  3 178.8	& C  0.5630 -0.5159  0.0071	&	& 300.1 \\
-	H   1 1.096  2 109.879  3 238.9	& C -1.9293 -0.1506 -0.0071	&	& 57.8 \\
-	H   1 1.096  2 109.864  3 121.2	& C  1.9294  0.1505 -0.0071	&	& 299.7 \\
-	H   2 1.096  1 109.866  3 300.1	& H -0.4724  1.1666 -0.8706	&	& 60.2 \\
-	H   2 1.096  1 109.874  3  57.8	& H -0.4825  1.1551  0.8940	&	& 180.0 \\
-	H   3 1.095  1 111.018  2 299.7	& H  0.4825 -1.1551  0.8940	&	& 299.7 \\
-	H   3 1.095  1 110.996  2  60.2	& H  0.4723 -1.1665 -0.8706	&	& 180.0 \\
-	H   3 1.095  1 110.265  2 180.0	& H -2.0542 -0.7710 -0.9003	&	& 60.2 \\
-	H   4 1.095  2 111.009  1 299.7	& H -2.0651 -0.7856  0.8742	&	&	\\
-	H   4 1.095  2 110.262  1 180.0	& H -2.7203  0.6060 -0.0058	&	&	\\
-	H   4 1.095  2 110.989  1  60.2	& H  2.0542  0.7709 -0.9003	&	&	\\
-									& H  2.7202 -0.6062 -0.0059	&	&	\\
-									& H  2.0652  0.7854  0.8743	&	&	\\
+	14		&  CCCC & IJDNQMDRQITEOD-UHFFFAOYSA-N\\
+	butane  		&	& \\
+  C -0.5630  0.5160  0.0071 &	& \\
+  C  0.5630 -0.5159  0.0071	&	& \\
+	C -1.9293 -0.1506 -0.0071	&	& \\
+	C  1.9294  0.1505 -0.0071	&	& \\
+	H -0.4724  1.1666 -0.8706	&	& \\
+	H -0.4825  1.1551  0.8940	&	& \\
+	H  0.4825 -1.1551  0.8940	&	& \\
+	H  0.4723 -1.1665 -0.8706	&	& \\
+	H -2.0542 -0.7710 -0.9003	&	& \\
+	H -2.0651 -0.7856  0.8742	&	& \\
+	H -2.7203  0.6060 -0.0058	&	& \\
+	H  2.0542  0.7709 -0.9003	&	& \\
+	H  2.7202 -0.6062 -0.0059	&	& \\
+	H  2.0652  0.7854  0.8743	&	& \\
 	\bottomrule
 	\end{tabular}
 \caption{The physical system of \progname{}, using butane as an example 
-molecule. The first three columns represent equivalent geometries, given in 
-three different formats. The last column is the list of dihedral angles to be 
-optimised by the program. During optimization, it is 
+molecule. Dihedral angles can be extracted from the cartesian coordinates. During optimization, it is 
 important that the 
 dihedral angles map back to the input geometry using the same ordering for the 
 atoms.}
@@ -594,8 +609,15 @@ from the optimization.
 %Alternatively, this GS can be described as: maximize the fitness function, 
 %$Fit_G$.
 
-\wss{I'm confused by the output being a set.  How many elements in the set?  All
-  of them?  All of the ones the calculation can find?}
+During the optimisation, the potential solutions are represented by sets of dihedral 
+angles. Each solution instance is therefore a set of geometries. The size of 
+the set of geometries is specified at runtime by the user. For example, the 
+user requests 3 conformers and a population size of 100, then there will be 
+300 total sets of dihedral angles for the input molecule. It may be that some 
+of the geometry specifications do not allow the energy to be calculated (for 
+example, a dihedral angle causes two atoms to overlap). In these cases, the fitness 
+will be very small for the solution instance, as one or more of the geometries 
+is not viable.
 
 \end{itemize}
 
@@ -647,8 +669,6 @@ RMSD values. [\iref{IM:fitg}][\lcref{LC_linear-fit}]
 \item[A\refstepcounter{assumpnum}\theassumpnum \label{A:conf=min}:] Conformers 
 correspond to local minima on the potential energy surface. [\iref{IM:fitg}]
 
-\meow{A\ref{A:conf=min} might be too similar to A\ref{A:stability}.}.
-
 \item[A\refstepcounter{assumpnum}\theassumpnum \label{A:stability}:] Within one 
 potential well, the molecular geometry corresponding to a lower (more negative) 
 energy will be more stable than a geometry of a higher energy. [\iref{IM:fitg}]
@@ -659,7 +679,7 @@ and bond angles will be held fixed). [\iref{IM:fitg}]
 
 \item[A\refstepcounter{assumpnum}\theassumpnum \label{A:fixed-mol}:] The 
 molecular composition does not change during the 
-optimization [\tref{T_SE}]
+optimization. [\tref{T_SE}]
 
 \item[A\refstepcounter{assumpnum}\theassumpnum \label{A:one-mol}:] The 
 molecule is the only calculable object in the system (no solvent, other 
@@ -667,7 +687,8 @@ molecules, etc.). This assumption does not exclude guest-host chemistry, or
 non-bonded ``molecules", from the list of permissible inputs. [\iref{IM:fitg}]
 
 \item[A\refstepcounter{assumpnum}\theassumpnum \label{A:atom-ordering}:] The 
-conformer space is independent of the ordering of the input atoms. This may 
+conformer space is independent of the ordering of the input atoms in a cartesian 
+coordinate system. This may 
 change (subject to proof/benchmarking). 
 [\iref{IM:fitg}][\lcref{LC_indep-ordering}]
 
@@ -817,10 +838,6 @@ number of total atoms.
 \end{tabular}
 \end{minipage}\\
 
-\wss{Can GD1 be viewed as a refinement of T1?  If so, this should be pointed
-  out.  If not, GD1 might make more sense as a data definition, or maybe as a
-  theoretical model?}
-
 \subsubsection{Data Definitions}\label{sec_datadef}
 
 This section collects and defines all the data needed to build the instance
@@ -926,7 +943,8 @@ The goal \gsref{goal} is solved by \iref{IM:fitg}
   \hline
   Label& \bf Fitness of conformer geometries $Fit_G$\\
   \hline
-  Input&$C_E$, $C_\text{RMSD}$, $S_E$, $S_\text{RMSD}$ \\
+	Input&$n_G$ sets of dihedral angles, each with an associated energy, 
+	$C_E$, $C_\text{RMSD}$, $S_E$, and $S_\text{RMSD}$ \\
   & The input is constrained so that $C_E > 0$ and $C_\text{RMSD} > 0$\\
   \hline
   Output&$Fit_G = C_E S_E + C_\text{RMSD} S_\text{RMSD}$ \\
@@ -992,7 +1010,7 @@ basins, then the emphasis on $C_\text{RMSD}$ would afford a better result. The
 number of conformers may not be known at the start of the program; the user may 
 have to determine this value through experimentation with the code.
 
-\begin{table}[!h]
+\begin{table}[!ht]
   \caption{Input Variables} \label{TblInputVar}
   \renewcommand{\arraystretch}{1.2}
 \noindent \begin{longtable*}{l l l l c} 
@@ -1017,7 +1035,7 @@ have to determine this value through experimentation with the code.
 changed to only consider the energy term and not the RMSD term.
 \end{description}
 
-\begin{table}[!h]
+\begin{table}[!ht]
 \caption{Specification Parameter Values} \label{TblSpecParams}
 \renewcommand{\arraystretch}{1.2}
 \noindent \begin{longtable*}{l l} 
@@ -1029,7 +1047,7 @@ changed to only consider the energy term and not the RMSD term.
 \end{longtable*}
 \end{table}
 
-\begin{table}[!h]
+\begin{table}[!ht]
 \caption{Output Variables} \label{TblOutputVar}
 \renewcommand{\arraystretch}{1.2}
 \noindent \begin{longtable*}{l l} 

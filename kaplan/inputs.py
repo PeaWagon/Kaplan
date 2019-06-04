@@ -16,22 +16,16 @@ will be shifted to the energy module.
 """
 
 
+import os
 import numpy as np
-import vetee
+
+from vetee.coordinates import write_xyz
+
+from kaplan.geometry import update_obmol, create_obmol,\
+                            remove_ring_dihed, get_min_dihed, get_rings,\
+                            get_struct_info, get_atomic_nums
 
 from saddle.internal import Internal
-
-
-# 1 "angstrom" = 1.8897261339213 "atomic unit (length)"
-#AU = 1.8897261339213
-# https://github.com/psi4/psi4/blob/fbb2ff444490bf6b43cb6e027637d8fd857adcee/psi4/include/psi4/physconst.h
-# inverse of bohr to angstrom from psi4
-AU = 1/0.52917721067
-# values for dihedral angles in radians
-MIN_VALUE = 0
-MAX_VALUE = 2*np.pi
-# convert radians to degrees for __str__ method
-RAD_TO_DEGREES = lambda x : x*180/np.pi
 
 
 class InputError(Exception):
@@ -45,60 +39,58 @@ class DefaultInputs:
     _avail_progs = {"psi4"}
 
     # available structure inputs for vetee to use to generate coordinates
-    _avail_structs = {"smiles", "com", "xyz", "glog", "name", "cid"}
+    _avail_structs = {"smiles", "com", "xyz", "name", "cid", "inchi", "inchikey"}
 
     # available fitness function formats
     _avail_fit_form = [0]
 
     _options = {
+        "output_dir": "pwd",    # where to store the output
         # mol inputs
-        "prog": "psi4",
-        "basis": "sto-3g",
-        "method": "hf",
-        "struct_input": None,
-        "struct_type": None,
-        "num_atoms": None,
-        "charge": None,
-        "multip": None,
+        "prog": "psi4",         # program to use to run energy calculations
+        "basis": "sto-3g",      # basis set to use in quantum calculations
+        "method": "hf",         # method to run for energy evaluation
+        "struct_input": None,   # value for input
+        "struct_type": None,    # type of structural input (defaults to "name")
+        "charge": None,         # total molecular charge
+        "multip": None,         # molecule multiplicity
+        "no_ring_dihed": True,  # remove ring dihedral angles
         # ga inputs
-        "num_mevs": 10_000,
-        "num_slots": 100,
+        "num_mevs": 100,
+        "num_slots": 50,
         "init_popsize": 10,
-        "pmem_dist": 3,
-        "t_size": 7,
-        # TODO: num_geoms should be defaulted based on a function
-        # i.e. the num_geoms is guessed by the program
+        "mating_rad": 3,
         "num_geoms": 5,
-        # num_swaps and num_muts can have defaults based
-        # on the num_geoms selection/default and the num_atoms
-        # default for num_swaps is equal to num_geoms/2 when not set
+        # default for num_swaps is equal to num_geoms//2 when not set
         "num_swaps": None,
-        # default for num_muts is equal to num_atoms/3 when not set
+        # default for num_muts is equal to (num_dihed*num_geoms)//5 when not set
         "num_muts": None,
-        # default for num_cross is equal to num_geoms/2 when not set
+        # default for num_cross is equal to num_geoms//2 when not set
         "num_cross": None,
         "fit_form": 0,
         "coef_energy": 0.5,
         "coef_rmsd": 0.5,
-        # geometry specification for GOpt
+        # geometry specification for GOpt/openbabel
         # none of these should be set by the user
-        "atomic_nums": None,
-        "coords": None,
+        "atomic_nums": None,    # atomic numbers by atom in the molecule
+        # np.array((num_atoms,3), float) representing xyz coordinates
+        # of the original input; preserved to ensure obmol retains
+        # the same connections throughout optimisation
+        "coords": None,         
         # How many dihedrals can be used to represent
         # the molecule (assuming one dihedral per
-        # rotatable bond).
+        # rotatable bond); dihedrals encased by rings
+        # can be removed (set no_ring_dihed to True)
         "num_dihed": None,
-        # List of indices representing where the dihedrals
-        # are in the list of internal coordinates for the
-        # molecule.
-        "dihed_indices": None,
-        # parser object from vetee
-        "parser": None,
+        # list of tuples, where each tuple has 4 integers
+        # representing atom indices that make up a minimum
+        # dihedral angle
+        "min_diheds": None,
         # extra is a dictionary that
         # contains keywords to use in the energy
         # calculations (such as convergence criteria)
         # these may be program specific
-        "extra": {}
+        "extra": {},
     }
 
 
@@ -123,19 +115,19 @@ class Inputs(DefaultInputs):
         execution.
         
         """
+        self.output_dir = "pwd"
         self.prog = "psi4"
         self.basis = "sto-3g"
         self.method = "hf"
         self.struct_input = None
         self.struct_type = None
-        self.num_atoms = None
         self.charge = None
         self.multip = None
-        self.num_mevs = 10_000
-        self.num_slots = 100
+        self.no_ring_dihed = True
+        self.num_mevs = 100
+        self.num_slots = 50
         self.init_popsize = 10
-        self.pmem_dist = 3
-        self.t_size = 7
+        self.mating_rad = 3
         self.num_geoms = 5
         self.num_swaps = None
         self.num_muts = None
@@ -143,11 +135,10 @@ class Inputs(DefaultInputs):
         self.fit_form = 0
         self.coef_energy = 0.5
         self.coef_rmsd = 0.5
-        self.parser = None
         self.atomic_nums = None
         self.coords = None
         self.num_dihed = None
-        self.dihed_indices = None
+        self.min_diheds = None
         self.extra = {}
 
     def _check_input(self):
@@ -170,14 +161,12 @@ class Inputs(DefaultInputs):
         # to be integers or floats respectively
         # keys should not appear in both sets
         expect_int = {
-            "num_atoms",
             "charge",
             "multip",
             "num_mevs",
             "num_slots",
             "init_popsize",
-            "pmem_dist",
-            "t_size",
+            "mating_rad",
             "num_geoms",
             "num_swaps",
             "num_muts",
@@ -185,6 +174,7 @@ class Inputs(DefaultInputs):
             "num_dihed",
         }
         expect_float = {"coef_energy", "coef_rmsd"}
+        expect_bool = {"no_ring_dihed"}
         # make sure all values have been set
         # and are set to the correct type
         for arg, val in self._options.items():
@@ -193,12 +183,14 @@ class Inputs(DefaultInputs):
                 # or other inputs
                 # val has to be reassigned otherwise
                 # a ValueError occurs when int(None) is performed
-                if arg == "num_swaps" or arg == "num_cross":
+                if arg == "num_swaps":
                     self.num_swaps = self.num_geoms//2
-                    self.num_cross = self.num_geoms//2
                     val = self.num_swaps
+                elif arg == "num_cross":
+                    self.num_cross = self.num_geoms//2
+                    val = self.num_cross
                 elif arg == "num_muts":
-                    self.num_muts = int(self.num_dihed/2)
+                    self.num_muts = (self.num_dihed*self.num_geoms)//5
                     val = self.num_muts
                 else:
                     raise InputError(f"Missing required input argument: {arg}")
@@ -216,12 +208,11 @@ class Inputs(DefaultInputs):
                     setattr(self, arg, float(val))
                 except ValueError:
                     raise InputError(f"Could not convert to float: {arg} = {val}")
-
-        # update parser charge and multip if not already set
-        if self.parser.charge is None:
-            self.parser.charge = self.charge
-        if self.parser.multip is None:
-            self.parser.multip = self.multip
+            elif arg in expect_bool:
+                try:
+                    assert isinstance(val, bool)
+                except ValueError:
+                    raise InputError(f"Value should be True or False and not a string: {arg} = {val}")
 
         # only program currently available is psi4
         # if a program is added, add it to _avail_progs list in
@@ -231,7 +222,6 @@ class Inputs(DefaultInputs):
         # if new fit forms are added, add them to _avail_fit_form
         # list in DefaultInputs class
         assert self.fit_form in self._avail_fit_form
-        assert self.num_atoms > 3
         # multiplicity cannot be negative 2S+1 (where S is spin)
         assert self.multip > 0
         assert self.init_popsize > 0
@@ -240,116 +230,149 @@ class Inputs(DefaultInputs):
         assert self.num_geoms > 0
         assert 0 <= self.num_swaps <= self.num_geoms
         assert 0 <= self.num_cross <= self.num_geoms
-        assert 0 <= self.num_muts <= self.num_dihed
-        assert 0 <= self.pmem_dist < self.num_slots/2
+        assert 0 <= self.num_muts <= self.num_dihed*self.num_geoms
+        assert 2 <= self.mating_rad <= self.num_slots//2
         assert self.coef_energy >= 0
         assert self.coef_rmsd >= 0
-        # t_size must be at least 2 (for 2 parents)
-        assert 2 <= self.t_size <= self.init_popsize
 
 
-    def _update_parser(self):
-        """Updates the parser object (from vetee).
-
-        Notes
-        -----
-        The following are required to be set:
-            1. struct_type
-            2. struct_input
-            3. method
-            4. basis
-        The following are set to vetee defaults
-        if left as None:
-            1. charge
-            2. multip
-            3. num_atoms
-
-        """
-        try:
-            if self.struct_type is None:
-                raise InputError()
-            assert self.struct_type in self._avail_structs
-            # check the structure file exists (if applicable)
-            if self.struct_type in ("xyz", "glog", "com"):
-                with open(self.struct_input, "r"):
-                    pass
-            # make parser object using vetee
-            if self.struct_type == "xyz":
-                self.parser = vetee.xyz.Xyz(self.struct_input)
-            elif self.struct_type == "com":
-                self.parser = vetee.com.Com(self.struct_input)
-            elif self.struct_type == "glog":
-                self.parser = vetee.glog.Glog(self.struct_input)
-            elif self.struct_type in ("smiles", "cid", "name"):
-                self.parser = vetee.structure.Structure(self.struct_type,
-                                                           self.struct_input)
-        except InputError:
-            raise InputError(f"Missing required input argument: struct_type")
-        except AssertionError:
+    def _update_geometry(self):
+        if self.struct_type is None:
+            self.struct_type = "name"
+        if self.struct_type not in self._avail_structs:
             raise InputError(f"Invalid structure type: {self.struct_type}")
-        except FileNotFoundError:
-            raise FileNotFoundError(f"No such struct_input file: {self.struct_input}")
-        except ValueError:
-            raise InputError(f"\n---Error generating parser object---\
-                               \nStructure type: {self.struct_type}\
-                               \nStructure input: {self.struct_input}")
-
-        # update basis set and method
-        self.parser.parse_gkeywords(f"#{self.method} {self.basis}")
-        # if the user did not input charge/multip/num_atoms,
-        # then try to use the defaults from vetee
-        # if any of these values is set to None,
-        # an input error will be raised by the update_inputs function
+        
+        # create vetee job object and read in coordinates
+        job = get_struct_info(self.struct_input, self.struct_type)
+        # if any of the following were given, compare to inputs
+        # vetee obtained
         if self.charge is None:
-            self.charge = self.parser.charge
+            if job.charge is None:
+                raise InputError("Unable to determine molecule charge.")
+            self.charge = job.charge
         if self.multip is None:
-            self.multip = self.parser.multip
-        if self.num_atoms is None:
-            self.num_atoms = len(self.parser.coords)
-        # make sure they agree for number of atoms
-        else:
-            assert self.num_atoms == len(self.parser.coords)
+            if job.multip is None:
+                raise InputError("Unable to determine molecule multiplicity.")
+            self.multip = job.multip  
+        if job.charge != self.charge:
+            print(f"Warning: default charge ({job.charge}) not equal \
+                    to input charge ({self.charge}).")
+        if job.multip != self.multip:
+            print(f"Warning: default multiplicity ({job.multip}) not equal \
+                    to input multiplicity ({self.multip}).")
 
+        # check basis set and method agree if they were parsed in
+        if self.struct_type == "com":
+            basis = job._gaussian["gkeywords"]["basis"]
+            method = job._gaussian["gkeywords"]["method"]
+            if self.basis is None:
+                self.basis = basis
+            elif self.basis != basis:
+                print(f"Warning: parsed basis set ({basis}) not equal \
+                        to input basis set ({self.basis}).")
+            if self.method is None:
+                self.method = method
+            elif self.method != method:
+                print(f"Warning: parsed method ({method}) not equal \
+                        to input method ({self.method}).")
 
-    def _update_coords(self):
-        """Update the coords and atomic_nums attributes.
+        # write an xyz file to the current directory in order to generate
+        # minimum dihedrals and openbabel object
+        ofile = os.path.join(self.output_dir, "input_coords.xyz")
+        write_xyz({"_coords": job.coords}, ofile)
+        self.coords = job.xyz_coords
         
-        Notes
-        -----
-        * coords must be in atomic units. It is an (n,3)
-        numpy array, where n is the number of atoms.
-        * atomic_nums is a list representing
-        the atomic numbers of the atoms in the same
-        order that they appear in the coords array.
+        # now determine minimum dihedrals by atom index
+        self.min_diheds = get_min_dihed(ofile, self.charge, self.multip)
+        self.obmol = create_obmol(ofile, self.charge, self.multip)
         
-        """
-        self.coords = np.zeros((self.num_atoms, 3), float)
-        for i, atom in enumerate(self.parser.coords):
-            self.coords[i][0] = AU * atom[1]
-            self.coords[i][1] = AU * atom[2]
-            self.coords[i][2] = AU * atom[3]
-        self.atomic_nums = np.array(vetee.periodic_table(\
-            [self.parser.coords[i][0] for i in range(self.num_atoms)]))
-        
-        # now determine number of dihedral angles and where they
-        # are in the internal coordinates array
-        self.num_dihed = 0
-        self.dihed_indices = []
-        mol = Internal(self.coords, self.atomic_nums,
-                       self.charge, self.multip)
-        # generate internal coordinates, with one
-        # dihedral per rotatable bond
-        mol.auto_select_ic(minimum=True)
-        for i, intern_coord in enumerate(mol.ic):
-            # if the internal coordinate involves 4 atoms,
-            # it is a dihedral angle
-            if intern_coord._coordinates.shape == (4,3):
-                self.num_dihed += 1
-                self.dihed_indices.append(i)
-        
+        # remove ring dihedrals where all four atoms are in a ring
+        if self.no_ring_dihed:
+            rings = get_rings(self.obmol)
+            self.min_diheds = remove_ring_dihed(rings, self.min_diheds)
+        self.num_dihed = len(self.min_diheds)
         # check that number of dihedral angles is not 0
         if self.num_dihed == 0:
             raise InputError("No dihedral angles could be generated for the input molecule.")
+
+        # set atomic numbers
+        self.atomic_nums = get_atomic_nums(self.obmol)
+
+
+    def _set_output_dir(self):
+        """Determine the name of the output directory.
+
+        Parameters
+        ----------
+        structure : str
+            Some identifier for the job. Example
+            a string representing the name of the molecule.
+        loc : str
+            The parent directory to use as output.
+            Defaults to "pwd", which means use the
+            present working directory (current working
+            directory). Another possible option is
+            "home", which puts the output in the
+            home directory (i.e. /user/home), but this
+            option is only available for Linux users.
+            If loc is not home or pwd, then the
+            output will be generated in the given
+            directory.
+
+        Raises
+        ------
+        FileNotFoundError
+            The user gave a location that does not exist.
+        
+        Notes
+        -----
+        The output is placed in kaplan_output under a job
+        number, formatted as follows:
+        loc/kaplan_output/job_0 # for the first job
+        loc/kaplan_output/job_1 # for the second job
+        etc.
+
+        Returns
+        -------
+        output_dir : str
+            The directory where the job output will
+            be written.
+
+        """
+        if self.output_dir == "pwd":
+            self.output_dir = os.path.join(os.getcwd(), "kaplan_output")
+        elif self.output_dir == "home":
+            self.output_dir = os.path.join(os.path.expanduser("~"), "kaplan_output")
+        else:
+            self.output_dir = os.path.join(os.path.abspath(self.output_dir), "kaplan_output")
+
+        # first check that there is a place to put the
+        # output files
+        if not os.path.isdir(self.output_dir):
+            os.mkdir(self.output_dir)
+            self.output_dir = os.path.join(self.output_dir, f"job_0_{self.struct_input}")
+            os.mkdir(self.output_dir)
+            return
+        # iterate over existing jobs to determine
+        # dir_num for newest job
+        dir_contents = os.scandir(self.output_dir)
+        # keep track of how many jobs have been run
+        dir_nums = []
+        for val in dir_contents:
+            val = val.name.split("_")
+            if val[0] == "job" and len(val) == 3:
+                try:
+                    dir_nums.append(int(val[1]))
+                except ValueError:
+                    pass
+        try:
+            new_dir = f"job_{max(dir_nums)+1}_{self.struct_input}"
+        # max() arg is an empty sequence
+        except ValueError:
+            new_dir = f"job_0_{self.struct_input}"
+        self.output_dir = os.path.join(self.output_dir, new_dir)
+        os.mkdir(self.output_dir)
+
 
 
     def update_inputs(self, input_dict):
@@ -396,11 +419,15 @@ class Inputs(DefaultInputs):
             # overwrite default value
             setattr(self, arg, val)
 
-        # now update parser object
-        self._update_parser()
+        # only required input
+        assert self.struct_input is not None
 
-        # update coordinates using parser object
-        self._update_coords()
+        # generate output directory
+        self._set_output_dir()
+
+        # read in structural information from file/openbabel/pubchem
+        # writes an xyz file to the output directory
+        self._update_geometry()
 
         # check that the inputs are valid
         self._check_input()

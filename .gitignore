@@ -23,3 +23,4 @@ kaplan/test/kaplan.egg-info/
 .vscode/*
 
 kaplan/test/jupyter-notebooks/kaplan_output/*
+notes/*

@@ -21,7 +21,7 @@ from numpy import concatenate
 from copy import deepcopy
 
 # values for dihedral angles in radians
-from kaplan.inputs import MAX_VALUE, MIN_VALUE
+from kaplan.geometry import MAX_VALUE, MIN_VALUE
 
 
 

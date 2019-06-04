@@ -2,7 +2,6 @@
 
 import os
 
-from vetee.xyz import Xyz
 from numpy.testing import assert_raises
 
 from kaplan.ring import Ring, RingEmptyError, RingOverflowError
@@ -21,7 +20,7 @@ def test_ring():
         "num_slots": 20,
         "num_geoms": 3,
         "num_atoms": 24,
-        "pmem_dist": 2,
+        "mating_rad": 2,
         "struct_input": os.path.join(TEST_DIR, "caffeine.xyz"),
         "struct_type": "xyz",
         "charge": 0,
@@ -29,7 +28,7 @@ def test_ring():
         "init_popsize": 15
     }
     inputs.update_inputs(input_dict)
-    ring = Ring()
+    ring = Ring(20, 15)
     # check that ring has its attributes
     assert inputs.parser.charge == 0
     assert inputs.parser.multip == 1
@@ -37,8 +36,8 @@ def test_ring():
     assert inputs.init_popsize == 15
     assert ring.num_filled == 15
     assert inputs.num_geoms == 3
-    assert inputs.num_atoms == 24
-    assert inputs.pmem_dist == 2
+    assert len(inputs.coords) == 24
+    assert inputs.mating_rad == 2
     assert inputs.fit_form == 0
     assert inputs.coef_energy == 0.5
     assert inputs.coef_rmsd == 0.5
@@ -67,7 +66,7 @@ def test_ring_fill():
         "num_muts": 0,
         "num_swaps": 2
     })
-    ring = Ring()
+    ring = Ring(100, 10)
     # try to put more pmems in than there are slots
     assert_raises(RingOverflowError, ring.fill, 200, 0)
     assert inputs.init_popsize == 10
@@ -97,14 +96,14 @@ def test_ring_getitem():
         "charge": 0,
         "multip": 1,
         "num_slots": 100,
-        "init_popsize": 10,
+        "init_popsize": 1,
         "num_geoms": 3,
         "num_muts": 0,
         "num_swaps": 2
     })
-    ring = Ring()
+    ring = Ring(1, 100)
     ring.fill(5, 0)
-    for i in range(15):
+    for i in range(6):
         assert ring[i].birthday == 0
     assert ring[16] is None
     with assert_raises(KeyError):
@@ -121,12 +120,12 @@ def test_ring_setitem():
         "charge": 0,
         "multip": 1,
         "num_slots": 100,
-        "init_popsize": 10,
+        "init_popsize": 1,
         "num_geoms": 3,
         "num_muts": 0,
         "num_swaps": 2
     })
-    ring = Ring()
+    ring = Ring(1, 10)
     with assert_raises(KeyError):
         ring[1000] = Pmem(1000, 3, 10, 1)
         ring["two"] = Pmem(2, 3, 10, 1)
@@ -154,15 +153,18 @@ def test_ring_update():
         "num_geoms": 3,
         "num_muts": 0,
         "num_swaps": 2,
-        "pmem_dist": 2
+        "mating_rad": 2,
+        "init_popsize": 1,
     })
-    # force initial population size to be 1
-    inputs.init_popsize = 0
-    ring = Ring()
+    ring = Ring(100, 1)
     # ring is empty, try adding random pmems
     # testing backflow
-    ring.update(0, [[1, 2, 3, 4, 5, 6, 7], [1, 2, 3, 4, 2, 1, 1],
-                    [7, 6, 5, 4, 3, 2, 1]], 0)
+    # as of 28-05-19 1,3-butadiene has 3 dihedral angles (minimum selection)
+    pmem_dihedrals = np.array([[0.25, 0.5, 0.75], [0.2, 0.5, 0.2],
+                    [0.8, 0.3, 0.7]])
+    ring.update(pmem_dihedrals, 0, 0)
+    assert ring[0].dihedrals == pmem_dihedrals
+    """
     # possible places the update took place
     slots = [0, 1, 2, 13, 14]
     not_slots = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
@@ -173,15 +175,15 @@ def test_ring_update():
     ring[2] = None
     ring[13] = None
     ring[14] = None
-    # test case where pmem_dist is zero
-    inputs.pmem_dist = 0
+    # test case where mating_rad is zero
+    inputs.mating_rad = 0
     ring.update(0, [[1, 2, 3, 4, 5, 6, 7], [1, 2, 3, 4, 2, 1, 1],
                     [7, 6, 5, 4, 3, 2, 1]], 0)
     assert ring[0] is not None
     assert sum(ring[i] is not None for i in range(inputs.num_slots)) == 1
     # test overflow
     ring[0] = None
-    inputs.pmem_dist = 4
+    inputs.mating_rad = 4
     ring.update(13, [[1, 2, 3, 4, 5, 6, 7], [1, 2, 3, 4, 2, 1, 1],
                      [7, 6, 5, 4, 3, 2, 1]], 0)
     slots = [13, 14, 0, 1, 2, 9, 10, 11, 12]
@@ -200,7 +202,7 @@ def test_ring_update():
     for slot in slots:
         ring[slot] = None
     # now check that slot is not updated if child has worse fitness
-    inputs.pmem_dist = 0
+    inputs.mating_rad = 0
     # fitness = 230.09933808553276
     ring[0] = Pmem(0, 3, 10, 0, [[239, 278, 5, 248, 40, 67, 299],
                                  [36, 123, 295, 111, 322, 267, 170],
@@ -215,6 +217,7 @@ def test_ring_update():
                                  [61, 130, 26, 139, 290, 238, 331]]
     assert ring.num_filled == 1
     assert ring[0].birthday == 0
+    """
 
 
 CAFFEINE_ZMATRIX = """#Put Keywords Here, check Charge and Multiplicity.

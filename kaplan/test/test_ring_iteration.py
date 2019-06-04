@@ -18,10 +18,8 @@ def test_ring_iteration():
         "struct_input": "propane",
         "charge": 0,
         "multip": 1,
-        "num_mevs": 100,
         "init_popsize": 5,
-        "num_slots": 20,
-        "t_size": 5
+        "num_slots": 20
     })
     ring = Ring(20, 5)
 

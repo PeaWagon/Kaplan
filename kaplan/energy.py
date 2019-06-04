@@ -3,10 +3,12 @@ for a given geometry."""
 
 import os
 import psi4
+import pybel
 
-from vetee.gaussian_options import periodic_table
+from vetee.tools import periodic_table
 
 from kaplan.inputs import Inputs
+from kaplan.geometry import set_coords
 
 # these values are used in energy calculations when no
 # options are provided
@@ -23,7 +25,14 @@ class BasisSetError(Exception):
 
 
 class MethodError(Exception):
-    """Raised if quantum chemical method is unavailable."""
+    """Raised if there is an issue whereby the energy cannot be calculated.
+    
+    This includes:
+    * quantum chemical method is unavailable
+    * force field cannot be setup for a molecule
+    * forcefield is unavailable
+
+    """
 
 
 def run_energy_calc(coords):
@@ -68,6 +77,11 @@ def run_energy_calc(coords):
         energy = psi4_energy_calc(geom_str, inputs.method, inputs.basis,
                                   extras["RAM"])
         # energy is in hartrees here
+        return energy
+    elif inputs.prog == "openbabel":
+        # update obmol geometry with current geometry
+        set_coords(inputs.obmol, coords)
+        energy = obabel_energy(inputs.method, inputs.obmol)
         return energy
     raise NotImplementedError("Program not found.")
 
@@ -154,5 +168,38 @@ def prep_psi4_geom(coords, atomic_nums, charge, multip):
     psi4_str = f"\n{charge} {multip}\n"
     for i, atom in enumerate(coords):
         psi4_str += f"{elements[i]} {atom[0]} {atom[1]} {atom[2]}\n"
-    psi4_str += "units au\n"
+    psi4_str += "units angstrom\n"
     return psi4.geometry(psi4_str)
+
+
+def obabel_energy(ff, obmol):
+    """Use Openbabel to calculate the energy of a molecule.
+
+    Parameters
+    ----------
+    ff : str
+        The name of the forcefield to use. Should be one of:
+        'gaff', 'ghemical', 'mmff94', 'mmff94s', 'uff'
+    obmol : openbabel.OBMol object
+        An openbabel molecule for which to calculate
+        the energy.
+
+    Notes
+    -----
+    This function attempts to implement the obenergy function.
+    
+    Returns
+    -------
+    energy : float
+        The energy of the input molecule using ff forcefield
+        in kcal/mol.    
+
+    """
+    if ff not in pybel.forcefields:
+        raise MethodError(f"Forcefield unavailable: {ff}")
+    ff_instance = pybel.ob.OBForceField.FindForceField(ff)
+    result = ff_instance.Setup(obmol)
+    if not result:
+        raise MethodError("Unable to setup forcefield for molecule")
+    energy = ff_instance.Energy(False)
+    return energy

@@ -6,15 +6,12 @@ from math import factorial
 
 import numpy as np
 
-from saddle.errors import NotConvergeError
-
-from kaplan.geometry import get_geom_from_dihedrals
-from kaplan.fitg import calc_fitness
 from kaplan.rmsd import calc_rmsd
 from kaplan.energy import run_energy_calc
 # values for dihedral angles in radians
 # convert radians to degrees for __str__ method
-from kaplan.inputs import MIN_VALUE, MAX_VALUE, RAD_TO_DEGREES
+from kaplan.geometry import MIN_VALUE, MAX_VALUE, RAD_TO_DEGREES, update_obmol
+from kaplan.inputs import Inputs, InputError
 
 
 class Pmem:
@@ -123,21 +120,32 @@ class Pmem:
         is 0.
         
         """
+        # make sure everything is empty before setting up fitness
+        assert self.all_coords == []
+        assert self.energies == []
+        assert self.rmsds == []
+        inputs = Inputs()
         # get atomic coordinates for each conformer using dihedral angles
-        for geom in range(self.num_geoms):
+        # then run an energy calculation
+        for i, geom in enumerate(self.dihedrals):
             try:
-                self.all_coords.append(get_geom_from_dihedrals(self.dihedrals[geom]))
-            except NotConvergeError:
-                print("Warning: GOpt did not converge.")
+                self.all_coords.append(update_obmol(inputs.obmol, inputs.min_diheds, geom))
+            except AttributeError:
+                raise InputError("Missing inputs. Unable to calculate fitness for pmem.")
+            except Exception as e:
+                # expect openbabel to fall over at some point here...
+                print('\n')
+                print(geom)
+                print(e)
+                print(e.__traceback__)
+                print(vars(inputs))
+                print('\n')
                 self.all_coords.append(None)
-
-        # get energies of conformers
-        for geometry in self.all_coords:
-            if geometry is None:
                 self.energies.append(0)
                 continue
+            # get energies of conformers
             try:
-                self.energies.append(run_energy_calc(geometry))
+                self.energies.append(run_energy_calc(self.all_coords[i]))
             except Exception:
                 # if there is a convergence error (atom too close)
                 # give an energy of zero
@@ -157,4 +165,46 @@ class Pmem:
                                                          self.all_coords[ind2])))
         
         # get fitness of pmem
-        self.fitness = calc_fitness(self)
+        self.fitness = self.calc_fitness(inputs.fit_form, inputs.coef_energy, inputs.coef_rmsd)
+
+    def calc_fitness(self, fit_form, coef_energy, coef_rmsd):
+        """Calculate the fitness of a pmem.
+
+        Parameters
+        ----------
+        fit_form : int
+            Fitness formula to use (from inputs).
+        coef_energy : float
+            Energy term coefficient (from inputs).
+        coef_rmsd : float
+            Root-mean-square deviation coefficient
+            (from inputs).
+
+        Notes
+        -----
+        This method calculates the fitness of a
+        population member (pmem). The fitness is
+        broken into two main parts: energy and
+        rmsd. The energy is calculated using a
+        user-specified quantum chemical method
+        and basis set for each geometry in the pmem.
+        The rmsd is calculated as all the possible
+        pairs of rmsd between geometries.
+
+        fit_form : int
+            Represents the fitness formula to use.
+            The only value currently available is 0,
+            where fitness = CE*SE + Crmsd*Srmsd.
+
+        Returns
+        -------
+        fitness : float
+
+        """
+        # make sure the rmsds and energies are not empty
+        assert self.energies != []
+        assert self.rmsds != []
+        if fit_form == 0:
+            return abs(sum(self.energies))*coef_energy + \
+                sum([x[2] for x in self.rmsds])*coef_rmsd
+        raise InputError("No such fitness formula.")

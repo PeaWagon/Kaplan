@@ -16,7 +16,7 @@ from kaplan.tournament import run_tournament
 from kaplan.output import run_output
 from kaplan.energy import run_energy_calc
 
-def run_kaplan(input_dict, ring=None, save=True, output_loc="pwd"):
+def run_kaplan(input_dict, ring=None, save=True):
     """Run the Kaplan programme.
 
     Parameters
@@ -30,12 +30,6 @@ def run_kaplan(input_dict, ring=None, save=True, output_loc="pwd"):
         to write a pickle binary file to the output
         directory containing the ring and input objects.
         False means no pickle files will be generated.
-    output_loc : str
-        Where to save the output. Defaults to present/
-        current working directory, under kaplan_output
-        followed by a job directory. If home is specified,
-        the output for the first job is written to:
-        /home/username/kaplan_output/job_0).
     
     Raises
     ------
@@ -74,10 +68,10 @@ def run_kaplan(input_dict, ring=None, save=True, output_loc="pwd"):
             run_tournament(ring, mev)
             # write a temporary file every 10 mating events
             if mev%10 == 0:
-                with open(f"temp_{inputs.struct_input}.pickle", "wb") as f:
+                with open(os.path.join(inputs.output_dir, f"temp_{inputs.struct_input}.pickle"), "wb") as f:
                     pickle.dump(ring, f)
         except RingEmptyError:
             ring.fill(inputs.init_popsize, mev)
 
     # run output
-    run_output(ring, save, output_loc)
+    run_output(ring, save)

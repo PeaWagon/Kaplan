@@ -2,7 +2,9 @@
 
 import os
 
-from vetee.xyz import Xyz
+from random import seed
+from copy import deepcopy
+
 from numpy.testing import assert_raises
 
 from kaplan.tournament import run_tournament
@@ -16,6 +18,8 @@ TEST_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'testfiles'
 
 def test_run_tournament():
     """Test run_tournament function from tournament module."""
+    # make tests reproducible
+    seed(1234567)
     # ring init:
     # num_geoms, num_atoms, num_slots, pmem_dist, fit_form,
     # coef_energy, coef_rmsd, parser
@@ -26,12 +30,35 @@ def test_run_tournament():
         "charge": 0,
         "multip": 1,
         "num_geoms": 3,
+        "init_popsize": 5,
         "num_slots": 20,
-        "pmem_dist": 2
+        "mating_rad": 2,
+        "num_cross": 0,
+        "num_muts": 6,
+        "num_swaps": 0,
     })
-    ring = Ring()
-    ring.fill(3, 0)
-    run_tournament(ring, 0)
+    # pre-determined tests via output of randomization
+    ring = Ring(20, 5)
+    run_tournament(ring, 1)
+    mutations = 0
+    for i, geom in enumerate(ring[3].dihedrals):
+        for j, dihedral in enumerate(geom):
+            if dihedral != ring[5].dihedrals[i][j]:
+                mutations += 1
+    assert mutations == 4
+    run_tournament(ring, 2)
+    mutations = 0
+    for i, geom in enumerate(ring[0].dihedrals):
+        for j, dihedral in enumerate(geom):
+            if dihedral != ring[18].dihedrals[i][j]:
+                mutations += 1
+    assert mutations == 1
+    mutations = 0
+    for i, geom in enumerate(ring[1].dihedrals):
+        for j, dihedral in enumerate(geom):
+            if dihedral != ring[19].dihedrals[i][j]:
+                mutations += 1
+    assert mutations == 6
 
 
 def test_select_pmems():
