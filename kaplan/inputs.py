@@ -36,7 +36,7 @@ class DefaultInputs:
 
 
     # programs available in kaplan
-    _avail_progs = {"psi4"}
+    _avail_progs = {"psi4", "openbabel"}
 
     # available structure inputs for vetee to use to generate coordinates
     _avail_structs = {"smiles", "com", "xyz", "name", "cid", "inchi", "inchikey"}
@@ -49,7 +49,10 @@ class DefaultInputs:
         # mol inputs
         "prog": "psi4",         # program to use to run energy calculations
         "basis": "sto-3g",      # basis set to use in quantum calculations
-        "method": "hf",         # method to run for energy evaluation
+        # if the prog is openbabel, use mmff94 as default forcefield
+        # if the prog is psi4, use hf
+        # if no method is specified, and com is input, then use method from com
+        "method": None,         # method to run for energy evaluation
         "struct_input": None,   # value for input
         "struct_type": None,    # type of structural input (defaults to "name")
         "charge": None,         # total molecular charge
@@ -118,7 +121,7 @@ class Inputs(DefaultInputs):
         self.output_dir = "pwd"
         self.prog = "psi4"
         self.basis = "sto-3g"
-        self.method = "hf"
+        self.method = None
         self.struct_input = None
         self.struct_type = None
         self.charge = None
@@ -214,7 +217,7 @@ class Inputs(DefaultInputs):
                 except ValueError:
                     raise InputError(f"Value should be True or False and not a string: {arg} = {val}")
 
-        # only program currently available is psi4
+        # only programs currently available are psi4 and openbabel
         # if a program is added, add it to _avail_progs list in
         # DefaultInputs class
         assert self.prog in self._avail_progs
@@ -254,27 +257,36 @@ class Inputs(DefaultInputs):
             if job.multip is None:
                 raise InputError("Unable to determine molecule multiplicity.")
             self.multip = job.multip  
-        if job.charge != self.charge:
+        if job.charge != self.charge and job.charge is not None:
             print(f"Warning: default charge ({job.charge}) not equal \
-                    to input charge ({self.charge}).")
-        if job.multip != self.multip:
+                    \nto input charge ({self.charge}).")
+        if job.multip != self.multip and job.multip is not None:
             print(f"Warning: default multiplicity ({job.multip}) not equal \
-                    to input multiplicity ({self.multip}).")
+                    \nto input multiplicity ({self.multip}).")
 
         # check basis set and method agree if they were parsed in
         if self.struct_type == "com":
             basis = job._gaussian["gkeywords"]["basis"]
             method = job._gaussian["gkeywords"]["method"]
             if self.basis is None:
+                assert basis is not None
                 self.basis = basis
             elif self.basis != basis:
                 print(f"Warning: parsed basis set ({basis}) not equal \
-                        to input basis set ({self.basis}).")
+                        \nto input basis set ({self.basis}).")
             if self.method is None:
+                assert method is not None
                 self.method = method
             elif self.method != method:
                 print(f"Warning: parsed method ({method}) not equal \
-                        to input method ({self.method}).")
+                        \nto input method ({self.method}).")
+
+        # set default method if not read from com file
+        if self.method is None:
+            if self.prog == "openbabel":
+                self.method = "mmff94"
+            elif self.prog == "psi4":
+                self.method = "hf"
 
         # write an xyz file to the current directory in order to generate
         # minimum dihedrals and openbabel object
@@ -343,14 +355,25 @@ class Inputs(DefaultInputs):
             self.output_dir = os.path.join(os.getcwd(), "kaplan_output")
         elif self.output_dir == "home":
             self.output_dir = os.path.join(os.path.expanduser("~"), "kaplan_output")
+        # don't make more subdirectories
+        elif self.output_dir.endswith("kaplan_output"):
+            pass
         else:
             self.output_dir = os.path.join(os.path.abspath(self.output_dir), "kaplan_output")
+
+        # make an identifier for the molecule
+        name = self.struct_input
+        if self.struct_type in ("xyz", "com"):
+            name = os.path.basename(name)
+        # get rid of characters that should not be in file names
+        # get rid of white space
+        name = name.strip("!@#$%^&*()<>?/").replace(" ", "")
 
         # first check that there is a place to put the
         # output files
         if not os.path.isdir(self.output_dir):
             os.mkdir(self.output_dir)
-            self.output_dir = os.path.join(self.output_dir, f"job_0_{self.struct_input}")
+            self.output_dir = os.path.join(self.output_dir, f"job_0_{name}")
             os.mkdir(self.output_dir)
             return
         # iterate over existing jobs to determine
@@ -366,10 +389,10 @@ class Inputs(DefaultInputs):
                 except ValueError:
                     pass
         try:
-            new_dir = f"job_{max(dir_nums)+1}_{self.struct_input}"
+            new_dir = f"job_{max(dir_nums)+1}_{name}"
         # max() arg is an empty sequence
         except ValueError:
-            new_dir = f"job_0_{self.struct_input}"
+            new_dir = f"job_0_{name}"
         self.output_dir = os.path.join(self.output_dir, new_dir)
         os.mkdir(self.output_dir)
 
@@ -431,3 +454,62 @@ class Inputs(DefaultInputs):
 
         # check that the inputs are valid
         self._check_input()
+
+
+def read_input(input_file, new_output_dir=True):
+    """Open a previously-written inputs pickle file.
+    
+    Parameters
+    ----------
+    input_file : str
+        Explicit path and filename for inputs.pickle.
+    new_output_dir : bool
+        If True (default), then a new job directory will
+        be generated for the inputs. If False, then the
+        original directory (read from inputs object) will
+        be used.
+
+    Returns
+    -------
+    inputs object complete with obmol object and (possibly)
+    update to output_dir.
+    
+    """
+    inputs = Inputs()
+    with open(input_file, "rb") as f:
+        old_inputs = pickle.load(f)
+    for var in old_inputs.__dict__:
+        inputs.__dict__[var] = old_inputs.__dict__[var]
+    # cannot pickle obmol object (since it's a swig object)
+    # if the original input_coords.xyz file is not available,
+    # have to regenerate obmol with the old coordinates
+    # make an xyz file for openbabel to read
+    orig_xyzfile = os.path.join(inputs.output_dir, "input_coords.xyz")
+
+    if new_output_dir:
+        # get rid of job_#_str directory
+        # if the output_dir ends with a slash, then only the
+        # slash is removed with dirname (could
+        # nest kaplan_output by accident)
+        if inputs.output_dir.endswith("/"):
+            inputs.output_dir = inputs.output_dir[:-1]
+        inputs.output_dir = os.path.dirname(inputs.output_dir)
+        inputs._set_output_dir()
+
+    if os.path.isfile(orig_xyzfile):
+        obmol_obj = create_obmol(orig_xyzfile, inputs.charge, inputs.multip)
+        if new_output_dir:
+            os.rename(orig_xyzfile, os.path.join(inputs.output_dir, "input_coords.xyz"))
+
+    else:
+        full_coords = []
+        for atom, coord in zip(inputs.atomic_nums, inputs.coords):
+            full_coords.append([periodic_table(atom)] + list(coord))
+        new_xyzfile = os.path.join(inputs.output_dir, "input_coords.xyz")
+        write_xyz({"_coords": full_coords, "_comments": inputs.struct_input}, new_xyzfile)
+        obmol_obj = create_obmol(new_xyzfile, inputs.charge, inputs.multip)
+
+    # make sure the inputs are still valid
+    inputs.obmol = obmol_obj
+    inputs._check_input()
+    return inputs

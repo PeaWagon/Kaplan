@@ -11,9 +11,7 @@ from kaplan.geometry import get_min_dihed, create_obmol, get_rings,\
     update_obmol, remove_ring_dihed, construct_fours, MIN_VALUE, MAX_VALUE,\
     get_struct_info
 from kaplan.inputs import Inputs
-
-# directory for this test file
-TEST_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "testfiles")
+from kaplan.tools import TEST_DIR
 
 
 def test_get_min_dihed():

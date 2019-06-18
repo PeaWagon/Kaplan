@@ -2,15 +2,12 @@
 
 import os
 
-from numpy.testing import assert_raises
+from numpy.testing import assert_raises, assert_allclose
 
 from kaplan.ring import Ring, RingEmptyError, RingOverflowError
 from kaplan.pmem import Pmem
 from kaplan.inputs import Inputs
-
-
-# directory for this test file
-TEST_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'testfiles')
+from kaplan.tools import TEST_DIR
 
 
 def test_ring():
@@ -50,6 +47,27 @@ def test_ring():
     assert len(czmat) == len(ring_czmat)
     for i, val in enumerate(czmat):
         assert val == ring_czmat[i]
+
+
+def test_ring_properties():
+    inputs = Inputs()
+    inputs.update_inputs({
+        "struct_input": "propane",
+        "init_popsize": 10,
+        "num_slots": 50,
+    })
+    r = Ring(50, 10)
+    assert r.occupied == [i for i in range(10)]
+    assert_allclose(r.median_energy, -117, atol=2)
+    assert_allclose(r.mean_energy, -117, atol=2)
+    assert_allclose(r.median_rmsd, 1, atol=0.2)
+    assert_allclose(r.mean_rmsd, 1, atol=0.2)
+    assert_allclose(r.median_fitness, 297, atol=5)
+    assert_allclose(r.mean_fitness, 297, atol=5)
+    assert_allclose(r.stdev_fitness, 0.5, atol=0.25)
+    assert_allclose(r.stdev_energy, 0.003, atol=0.003)
+    assert_allclose(r.stdev_rmsd, 0.26, atol=0.05)
+
 
 
 def test_ring_fill():
@@ -318,3 +336,5 @@ a24= 108.59
 d24= 301.39
 
 """
+
+test_ring_properties()

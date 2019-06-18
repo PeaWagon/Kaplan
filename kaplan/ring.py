@@ -30,6 +30,7 @@ Important information that this object will contain:
 """
 
 from random import choice
+from statistics import median, stdev, mean
 
 import numpy as np
 
@@ -284,3 +285,103 @@ class Ring:
                 self[i] = Pmem(i, current_mev, inputs.num_geoms,
                                inputs.num_dihed)
                 self[i].set_fitness()
+
+    @property
+    def occupied(self):
+        """Return a list of slots that have a pmem."""
+        slots = []
+        for pmem in self:
+            if pmem:
+                slots.append(pmem.ring_loc)
+        assert len(slots) == self.num_filled
+        return slots
+
+    @property
+    def best_pmem(self):
+        """Return the slot number and fitness value for the pmem with the highest fitness."""
+        # need at least one pmem
+        if not self.num_filled:
+            raise RingEmptyError("No pmems in the ring.")
+        best = 0
+        slot_num = 0
+        for slot in self.occupied:
+            if self[slot].fitness > best:
+                best = self[slot].fitness
+                slot_num = slot
+        return (slot_num, best)
+
+    @property
+    def mean_fitness(self):
+        return mean([self[i].fitness for i in self.occupied])
+
+    @property
+    def mean_energy(self):
+        total = 0
+        count = 0
+        for slot in self.occupied:
+            for energy in self[slot].energies:
+                # -1 means invalid geometry
+                if energy != -1:
+                    total += energy
+                    count += 1
+        return total/count
+
+    @property
+    def mean_rmsd(self):
+        total = 0
+        count = 0
+        for slot in self.occupied:
+            for rmsd in self[slot].rmsds:
+                # -1 means one or two invalid geometries
+                if rmsd[2] != -1:
+                    total += rmsd[2]
+                    count += 1
+        return total/count
+
+    @property
+    def median_fitness(self):
+        return median([self[i].fitness for i in self.occupied])
+
+    @property
+    def median_energy(self):
+        energy_vals = []
+        for slot in self.occupied:
+            for energy in self[slot].energies:
+                # -1 means invalid geometry
+                if energy != -1:
+                    energy_vals.append(energy)
+        return median(energy_vals)
+
+    @property
+    def median_rmsd(self):
+        rmsd_vals = []
+        for slot in self.occupied:
+            for rmsd in self[slot].rmsds:
+                # -1 means one or two invalid geometries
+                if rmsd[2] != -1:
+                    rmsd_vals.append(rmsd[2])
+        return median(rmsd_vals)
+    
+    @property
+    def stdev_fitness(self):
+        return stdev([self[i].fitness for i in self.occupied])
+
+    @property
+    def stdev_energy(self):
+        energy_vals = []
+        for slot in self.occupied:
+            for energy in self[slot].energies:
+                # -1 means invalid geometry
+                if energy != -1:
+                    energy_vals.append(energy)
+        return stdev(energy_vals)
+
+    @property
+    def stdev_rmsd(self):
+        rmsd_vals = []
+        for slot in self.occupied:
+            for rmsd in self[slot].rmsds:
+                # -1 means one or two invalid geometries
+                if rmsd[2] != -1:
+                    rmsd_vals.append(rmsd[2])
+        return stdev(rmsd_vals)

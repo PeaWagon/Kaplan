@@ -6,10 +6,7 @@ import numpy as np
 from vetee.job import Job, JobError
 
 from kaplan.rmsd import calc_rmsd
-
-
-# directory for this test file
-TEST_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'testfiles')
+from kaplan.tools import TEST_DIR
 
 
 def test_calc_rmsd():

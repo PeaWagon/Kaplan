@@ -16,10 +16,7 @@ import vetee
 from numpy.testing import assert_raises
 
 from kaplan.inputs import Inputs, InputError
-
-
-# directory for this test file
-TEST_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'testfiles')
+from kaplan.tools import TEST_DIR
 
 
 def test_inputs():
@@ -180,3 +177,11 @@ def test_inputs_update_inputs():
 
     test_dict["t_size"] = 25
     assert_raises(AssertionError, test.update_inputs, test_dict)
+
+
+def test_read_input():
+    # note: tested manually; will have to generate some
+    # output first before this can be tested (output that
+    # goes somewhere in the kaplan directory as to not
+    # be putting my directories on the github)
+    pass

@@ -5,10 +5,12 @@ import os
 import psi4
 import pybel
 
+from numpy import allclose
+
 from vetee.tools import periodic_table
 
 from kaplan.inputs import Inputs
-from kaplan.geometry import set_coords
+from kaplan.geometry import set_coords, get_coords
 
 # these values are used in energy calculations when no
 # options are provided
@@ -16,6 +18,7 @@ from kaplan.geometry import set_coords
 # how much RAM to use for psi4 calculations
 # should be less than what your computer has available
 DEFAULT_INPUTS = {"psi4": {"RAM": "4 GB"},
+                  "openbabel": {},
                   "other": {}
 }
 
@@ -46,16 +49,15 @@ def run_energy_calc(coords):
 
     Notes
     -----
-    Other options can be added and incorporated.
-        options : dict
-        Requires the following:
-        options["charge"] - molecule charge
-        options["multip"] - molecule multiplicity
-        These options can be set:
-        options["prog"] - program (default is psi4)
-        options["basis"] - basis set (default is sto-3g)
-        options["method"] - quantum chem method (default is hf)
-        options["RAM"] - memory to use (default is 4 GB)
+    This function uses the DEFAULT_INPUTS dictionary
+    located at the top of this file. Other input
+    arguments can be added to the inputs extra
+    dictionary (i.e. inputs.extra["myarg"] = "myval").
+    If an argument is added to the extra dictionary
+    that is in the default arguments, the extra
+    dictionary takes precedence. Unless the user
+    has changed the code, the extras are unlikely
+    to impact the energy calculation.
 
     Returns
     -------
@@ -79,8 +81,9 @@ def run_energy_calc(coords):
         # energy is in hartrees here
         return energy
     elif inputs.prog == "openbabel":
-        # update obmol geometry with current geometry
-        set_coords(inputs.obmol, coords)
+        # check obmol has current geometry
+        if not allclose(coords, get_coords(inputs.obmol)):
+            set_coords(inputs.obmol, coords)
         energy = obabel_energy(inputs.method, inputs.obmol)
         return energy
     raise NotImplementedError("Program not found.")

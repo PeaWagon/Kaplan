@@ -27,3 +27,5 @@ def test_ring_iteration():
         print(i, r)
 
     print(ring)
+
+test_ring_iteration()

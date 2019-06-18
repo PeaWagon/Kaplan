@@ -11,9 +11,7 @@ from kaplan.tournament import run_tournament
 # , select_pmems, select_parents
 from kaplan.ring import Ring, RingEmptyError
 from kaplan.inputs import Inputs
-
-# directory for this test file
-TEST_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'testfiles')
+from kaplan.tools import TEST_DIR
 
 
 def test_run_tournament():

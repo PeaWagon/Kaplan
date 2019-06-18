@@ -32,6 +32,8 @@ MAX_VALUE = 2*np.pi
 # convert radians to degrees for __str__ method
 RAD_TO_DEGREES = lambda x : x*180/np.pi
 
+class GeometryError(Exception):
+    """Raised when geometry problem occurs."""
 
 def get_struct_info(struct_input, struct_type="name", prog="psi4"):
     """Get structure information from an input query using Vetee.
@@ -100,10 +102,12 @@ def create_obmol(xyz_file, charge, multip):
     mol = pybel.readfile("xyz", xyz_file).__next__()
     mol = mol.OBMol
     if mol.GetTotalCharge() != charge:
-        print("Warning: openbabel molecule charge different from input charge.")
+        print(f"Warning: openbabel molecule charge ({mol.GetTotalCharge()})\
+                \ndifferent from input charge ({charge}).")
         mol.SetTotalCharge(charge)
     if mol.GetTotalSpinMultiplicity() != multip:
-        print("Warning: openbabel molecule multiplicity different from input multiplicity.")
+        print(f"Warning: openbabel molecule multiplicity ({mol.GetTotalSpinMultiplicity()})\
+                \ndifferent from input multiplicity ({multip}).")
         mol.SetTotalSpinMultiplicity(multip)
     return mol
 
@@ -128,7 +132,11 @@ def update_obmol(obmol, dihedrals, new_dihed):
         New coordinates in angstroms.
 
     """
-    assert len(dihedrals) == len(new_dihed)
+    if len(dihedrals) != len(new_dihed):
+        raise GeometryError(
+            f"\nCurrent number of dihedrals ({len(dihedrals)})\
+              \ndoes not match given number ({len(new_dihed)})"
+        )
     # obmol.BeginModify()
     for i, newt in enumerate(new_dihed):
         # get atom uses Idx which is atom index + 1
@@ -146,6 +154,16 @@ def update_obmol(obmol, dihedrals, new_dihed):
         new_coords[i][1] = atom.y()
         new_coords[i][2] = atom.z()
     return new_coords
+
+
+def get_coords(obmol):
+    """Get the coordinates of an openbabel molecule."""
+    coords = np.zeros((obmol.NumAtoms(), 3), float)
+    for i, atom in enumerate(openbabel.OBMolAtomIter(obmol)):
+        coords[i][0] = atom.x()
+        coords[i][1] = atom.y()
+        coords[i][2] = atom.z()
+    return coords
 
 
 def set_coords(obmol, coords):

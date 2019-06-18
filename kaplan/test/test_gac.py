@@ -4,9 +4,7 @@ with some dummy input files."""
 import os
 
 from kaplan.gac import run_kaplan
-
-# directory for this test file
-TEST_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'testfiles')
+from kaplan.tools import TEST_DIR
 
 
 def test_run_kaplan():
