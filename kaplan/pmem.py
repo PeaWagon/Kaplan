@@ -22,8 +22,10 @@ class Pmem:
 
         Parameters
         ----------
-        ring_loc : int
+        ring_loc : int, None
             Index of the ring where the pmem lives.
+            Is None if the pmem is generated but not
+            yet in the ring.
         current_mev : int
             The mating event at which the pmem was constructed.
         num_geoms : int
@@ -51,18 +53,26 @@ class Pmem:
             is equal to num_geoms.
         energies : list
             List of energies for the conformers.
+            Starts as list of None. If an energy can't be
+            calculated, then it retains a value of None.
         rmsds: list
-            Each member of the list is a tuple:
-            conf_index1, conf_index2, rmsd
+            Each member of the list is a list containing:
+            conf_index1, conf_index2, rmsd. The rmsd
+            starts as None. If a geometry cannot
+            be made for conformer 1 and/or conformer
+            2, then the rmsd is kept as None. Rmsd
+            can still be calculated even if the geometry
+            does not converge; the calculation only
+            requires a geometry to be made.
         fitness : float
-            The fitness of the pmem, as determined by
-            the kaplan fitg module.
+            The fitness of the pmem, as set by the ring
+            module.
         birthday : int
             The mating event during which the pmem
             was generated.
 
         """
-        self.ring_loc = ring_loc
+        self._ring_loc = ring_loc
         self.num_geoms = num_geoms
         self.num_dihed = num_dihed
         if dihedrals is None:
@@ -74,9 +84,9 @@ class Pmem:
             assert dihedrals.shape == (self.num_geoms, self.num_dihed)
             self.dihedrals = dihedrals
         self.energies = [None for _ in range(self.num_geoms)]
-        self.rmsds = []
+        self.rmsds = [[i,j,None] for i,j in self.all_pairs_gen()]
         self.fitness = None
-        self.birthday = current_mev
+        self._birthday = current_mev
 
     def __str__(self):
         """What happens when print(pmem) is called."""
@@ -126,6 +136,14 @@ class Pmem:
         # n choose k = n!/(k!(n-k)!)
         return int(factorial(self.num_geoms)/(2*factorial(self.num_geoms-2)))
 
+    @property
+    def ring_loc(self):
+        return self._ring_loc
+
+    @property
+    def birthday(self):
+        return self._birthday
+
     def get_geometry(self, conf_index):
         """Get a centred geometry for a given conformer index.
         
@@ -161,19 +179,7 @@ class Pmem:
             result = update_obmol(inputs.obmol, inputs.min_diheds, self.dihedrals[conf_index])
         except AttributeError:
             raise InputError(f"Missing inputs. Unable to calculate geometry\
-                               for pmem {self.ring_loc}, conformer {conf_index}.")
-        """
-        except Exception as e:
-            # expect openbabel to fall over at some point here...
-            print("\n")
-            print("Error determining coordinates for:")
-            print(f"conformer: {conf_index}, pmem: {self.ring_loc}")
-            print(e)
-            print(e.__traceback__)
-            print(vars(inputs))
-            print("\n")
-            return None
-        """
+                               \nfor pmem {self.ring_loc}, conformer {conf_index}.")
         return apply_centroid(result)
 
     def set_energy_get_coords(self, conf_index):
@@ -193,39 +199,37 @@ class Pmem:
         # atoms being too close)
         except Exception as e:
             # if there is a convergence error
-            # give an energy of -1
+            # give an energy of None
             # note: qcelemental.exceptions.ValidationError
             # is the atoms too close error
             print("Warning: psi4 did not converge.")
-            self.energies[conf_index] = -1
+            self.energies[conf_index] = None
         return new_coords
 
-    def set_fitness(self):
-        """Set the pmem's fitness.
+    def set_energy_rmsd(self):
+        """Set the pmem's fitness precursors, energies and rmsds.
 
         Notes
         -----
-        Also updates the all_coords attribute.
-        If the dihedral angles do not converge
-        to a geometry, then the geometry becomes
-        None.
-        Regarding non-convergence issues:
-        If geometry is None, rmsd for that
-        geometry (and any other geometry)
-        is 0 and energy for that geometry
-        is 0.
+        Coordinates are calculated as needed, but
+        not stored. If the geometry specified by a
+        set of dihedral angles does not converge,
+        then the energy becomes None. For an rmsd
+        calculation, if either of the geometries
+        were non-convergent, the rmsd is None.
+        This function should be called such that
+        the ring can determine a pmem's fitness.
         
         """
         # make sure everything is empty before setting up fitness
         assert self.energies == [None for _ in range(self.num_geoms)]
-        assert self.rmsds == []
+        assert self.rmsds == [[i,j,None] for i,j in self.all_pairs_gen()]
         inputs = Inputs()
 
         # if there is only one geometry, fitness should only be based on
         # the energy (since no RMSD can be calculated)
         if self.num_geoms == 1:
             self.set_energy_get_coords(0)
-            self.fitness = self.calc_fitness(inputs.fit_form, inputs.coef_energy, inputs.coef_rmsd)
             return None
 
         # keep track of which geometries we have already calculated centroid for
@@ -233,26 +237,19 @@ class Pmem:
         coords = [0 for _ in range(self.num_geoms)] # retain coords for this function only
 
         # get rmsd for all pairs of conformers and energies for all geoms
-        pairs = self.all_pairs_gen()
-        for _ in range(self.num_pairs):
-            ind1, ind2 = next(pairs)
+        for i, (ind1, ind2, _) in enumerate(self.rmsds):
             if coords[ind1] is 0:
                 coords[ind1] = self.set_energy_get_coords(ind1)
             if coords[ind2] is 0:
                 coords[ind2] = self.set_energy_get_coords(ind2)
 
             # if either of the geometries could not be constructed,
-            # set the rmsd to -1
-            if coords[ind1] is None or coords[ind2] is None:
-                self.rmsds.append((ind1, ind2, -1))
-            else:
-                self.rmsds.append((ind1, ind2, calc_rmsd(coords[ind1], coords[ind2])))
-        
-        # get fitness of pmem
-        self.fitness = self.calc_fitness(inputs.fit_form, inputs.coef_energy, inputs.coef_rmsd)
+            # keep the rmsd as None
+            if coords[ind1] is not None and coords[ind2] is not None:
+                self.rmsds[i][2] = calc_rmsd(coords[ind1], coords[ind2])
 
-    def calc_fitness(self, fit_form, coef_energy, coef_rmsd):
-        """Calculate the fitness of a pmem.
+    def set_fitness(self, fit_form, coef_energy, coef_rmsd):
+        """Calculate the absolute fitness of a pmem.
 
         Parameters
         ----------
@@ -289,8 +286,14 @@ class Pmem:
         # rmsds can be empty in the case where there
         # is only one geometry per pmem (sum of empty list
         # is zero)
-        assert self.energies != []
+        valid_energies = [e for e in self.energies if e is not None]
+        valid_rmsds = [rmsd[2] for rmsd in self.rmsds if rmsd[2] is not None]
+        # if all components for the fitness are None, return None
+        if valid_energies == [] and valid_rmsds == []:
+            self.fitness = None
+            return None
         if fit_form == 0:
-            return -1*(sum(self.energies))*coef_energy + \
-                sum([x[2] for x in self.rmsds])*coef_rmsd
+            fitness = -1*coef_energy*sum(valid_energies) + coef_rmsd*sum(valid_rmsds)
+            self.fitness = fitness
+            return fitness
         raise InputError("No such fitness formula.")

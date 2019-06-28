@@ -6,7 +6,7 @@ from math import inf
 
 from random import choice
 
-from kaplan.inputs import Inputs
+from kaplan.inputs import Inputs, InputError
 from kaplan.ring import RingEmptyError
 from kaplan.mutations import generate_children, single_parent_mutation
 
@@ -35,11 +35,20 @@ def run_tournament(ring, current_mev):
     # choose a random pmem for a tournament
     # any pmem in its mating radius is considered
     selected_pmems, parent1_loc = select_pmems(inputs.mating_rad, ring)
+
+    # if normalise is selected, apply it to the tournament selection
+    # the fitness of parent1 does not need to be updated at this time
+    # it should only be updated if the parent1's slot is available
+    # as a slot for child1 or child2 (right now, the minimum number
+    # of slots for a tournament is 5 - the user can force this to
+    # change, but it would probably break the program)
+    if inputs.normalise:
+        for slot in selected_pmems:
+            ring.set_fitness(ring[slot])
     p1_dihed = ring[parent1_loc].dihedrals
 
     # select parents and worst slots by fitness
     parent2_loc, worst = select_parents(selected_pmems, ring)
-
     try:    
         p2_dihed = ring[parent2_loc].dihedrals
     # there is only one pmem in the mating radius
@@ -79,14 +88,76 @@ def select_pmems(mating_rad, ring):
     """
     # get a list of indices representing filled slots
     occupied = [i for i in range(ring.num_slots) if ring[i] is not None]
+    print(occupied)
     # from the occupied slots, choose a random pmem as parent1
     parent1 = choice(occupied)
     selection = ring.mating_radius(parent1, mating_rad)
+    print("selection:", selection)
     # don't include parent1 in the selection, so its fitness is not
     # compared to the other pmems
     # this choice gives low-fitness pmems a chance to mate
     selection.remove(parent1)
     return selection, parent1
+
+
+def sortby(ring, sortkey, include_slots="all"):
+    """Sort a selection of ring slots by pmem attribute.
+
+    Parameters
+    ----------
+    ring : kaplan.ring.Ring object
+        Contains pmems that should be sorted.
+    sortkey : str
+        How to sort the pmems in the ring. The sortkey
+        should be a valid pmem attribute. Examples
+        include fitness and birthday.
+    include_slots : list(int)
+        Each integer is a ring index that is included
+        in the sorting. Defaults to "all", which means
+        all slots are included.
+    
+    Raises
+    ------
+    AssertionError
+        The number of slots to include exceeds the
+        ring's capacity (in terms of number of slots).
+        Also raised if there is a slot number that
+        is not within the ring's available slots.
+
+    Returns
+    -------
+    index_val_pairs : list(tuple(int, float or None))
+        A list containing sorted slot indices, with
+        the value given as a float or None (for empty
+        or pmems with uninitialised values).
+        The slots start lowest values (or None)
+        to highest values.
+    
+    """
+    if include_slots == "all":
+        include_slots = range(ring.num_slots)
+    else:
+        # remove duplicated slot numbers
+        include_slots = set(include_slots)
+        # make sure slots are valid
+        assert len(include_slots) <= ring.num_slots
+        assert all(slot in range(ring.num_slots) for slot in include_slots)
+
+    index_val_pairs = []
+    empty_slots = []
+    last_index = -1
+    # values are tuple(ring index, fitness)
+    for s in include_slots:
+        # attribute error should occur here if invalid
+        # sortkey is called
+        if ring[s] is None or getattr(ring[s], sortkey) is None:
+            empty_slots.append((s, None))
+        else:
+            last_index += 1
+            index_val_pairs.append((s, getattr(ring[s], sortkey)))
+    quicksort(index_val_pairs, 0, last_index)
+    index_val_pairs = empty_slots + index_val_pairs
+    return index_val_pairs
 
 
 def select_parents(selected_pmems, ring):
@@ -101,6 +172,13 @@ def select_parents(selected_pmems, ring):
     ring : object
         Instance of Ring class.
 
+    Notes
+    -----
+    If a pmem does not have its fitness set (i.e. fitness
+    value of None), it will be treated as an empty slot
+    and placed at the worst end of the list during fitness
+    sorting.
+
     Returns
     -------
     tuple : int, tuple(int, int)
@@ -108,18 +186,7 @@ def select_parents(selected_pmems, ring):
         to potentially be replaced.
 
     """
-    index_fit_pairs = []
-    last_index = -1
-    # values are tuple(ring index, fitness)
-    for s in selected_pmems:
-        last_index += 1
-        try:
-            index_fit_pairs.append((s, ring[s].fitness))
-        # ring at slot is empty
-        # AttributeError: 'NoneType' object has no attribute 'fitness'
-        except AttributeError:
-            index_fit_pairs.append((s, -1))
-    quicksort(index_fit_pairs, 0, last_index)
+    index_fit_pairs = sortby(ring, "fitness", selected_pmems)
     worst_two = index_fit_pairs[0][0], index_fit_pairs[1][0]
     parent2 = index_fit_pairs[-1][0]
     return parent2, worst_two

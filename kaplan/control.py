@@ -8,20 +8,24 @@ number of mating events.
 import os
 import pickle
 
+from random import random
+
 import numpy as np
 
 from kaplan.inputs import Inputs, InputError, read_input
 from kaplan.ring import Ring, RingEmptyError
 from kaplan.tournament import run_tournament
+from kaplan.extinction import asteroid, agathic, deluge, plague
 from kaplan.output import run_output
 from kaplan.energy import run_energy_calc
+from kaplan.tools import make_2d, plot_2d
 
-def run_kaplan(inputs, ring=None, save=True, new_dir=True):
+def run_kaplan(job_inputs, ring=None, save=True, new_dir=True):
     """Run the Kaplan programme.
 
     Parameters
     ----------
-    inputs : dict or str
+    job_inputs : dict or str
         Contains inputs required to run Kaplan.
         If dict, key/value pairs are used to generate
         the inputs object. If str, then this should
@@ -53,17 +57,21 @@ def run_kaplan(inputs, ring=None, save=True, new_dir=True):
 
     """
     # read in and verify inputs
-    if isinstance(inputs, str):
-        assert os.path.isfile(inputs)
-        inputs = read_input(inputs, new_dir)
+    if isinstance(job_inputs, str):
+        assert os.path.isfile(job_inputs)
+        inputs = read_input(job_inputs, new_dir)
     else:
         inputs = Inputs()
-        inputs.update_inputs(input_dict)
+        inputs.update_inputs(job_inputs)
+
+    # generate 2d images in the output_dir
+    make_2d()
+    plot_2d()
 
     # check that initial geometry converges
+    # note error is not handled here, so any errors
+    # will stop program execution
     result = run_energy_calc(inputs.coords)
-    if result == -1:
-        print("Warning: initial geometry did not converge.")
 
     # biggest_bday is initial mating event number
     # it is set to the age of the oldest exsiting pmem
@@ -91,10 +99,30 @@ def run_kaplan(inputs, ring=None, save=True, new_dir=True):
         try:
             print(f"Mating event: {mev}")
             run_tournament(ring, mev)
+            
+            # extinction events
+            if inputs.asteroid:
+                percent_chance = random()
+                if inputs.asteroid >= percent_chance:
+                    asteroid(ring, ring.occupied)
+            if inputs.plague:
+                percent_chance = random()
+                if inputs.plague >= percent_chance:
+                    plague(ring, inputs.normalise)
+            if inputs.agathic:
+                percent_chance = random()
+                if inputs.agathic >= percent_chance:
+                    agathic(ring)
+            if inputs.deluge:
+                percent_chance = random()
+                if inputs.deluge >= percent_chance:
+                    deluge(ring, ring.occupied, inputs.normalise)
+
             # write a temporary file every 10 mating events
             if mev%10 == 0:
                 with open(os.path.join(inputs.output_dir, f"temp_{temp_name}.pickle"), "wb") as f:
                     pickle.dump(ring, f)
+
         except RingEmptyError:
             ring.fill(inputs.init_popsize, mev)
 

@@ -46,6 +46,7 @@ class DefaultInputs:
 
     _options = {
         "output_dir": "pwd",    # where to store the output
+        
         # mol inputs
         "prog": "psi4",         # program to use to run energy calculations
         "basis": "sto-3g",      # basis set to use in quantum calculations
@@ -58,6 +59,7 @@ class DefaultInputs:
         "charge": None,         # total molecular charge
         "multip": None,         # molecule multiplicity
         "no_ring_dihed": True,  # remove ring dihedral angles
+        
         # ga inputs
         "num_mevs": 100,
         "num_slots": 50,
@@ -70,9 +72,25 @@ class DefaultInputs:
         "num_muts": None,
         # default for num_cross is equal to num_geoms//2 when not set
         "num_cross": None,
+
+        # extinction operator inputs
+        # each value is percent chance per mating event to apply operator
+        "asteroid": 0.0,
+        "plague": 0.0,
+        "agathic": 0.0,
+        "deluge": 0.0,
+
+        # fitness function inputs
         "fit_form": 0,
         "coef_energy": 0.5,
         "coef_rmsd": 0.5,
+        # normalise means that each energy and rmsd
+        # value is normalised using z-score using all
+        # available values in the ring
+        # if normalise is false, the fitness is calculated
+        # for each pmem as an absolute value
+        "normalise": True,
+
         # geometry specification for GOpt/openbabel
         # none of these should be set by the user
         "atomic_nums": None,    # atomic numbers by atom in the molecule
@@ -135,9 +153,14 @@ class Inputs(DefaultInputs):
         self.num_swaps = None
         self.num_muts = None
         self.num_cross = None
+        self.asteroid = 0.0
+        self.plague = 0.0
+        self.agathic = 0.0
+        self.deluge = 0.0
         self.fit_form = 0
         self.coef_energy = 0.5
         self.coef_rmsd = 0.5
+        self.normalise = True
         self.atomic_nums = None
         self.coords = None
         self.num_dihed = None
@@ -176,8 +199,11 @@ class Inputs(DefaultInputs):
             "num_cross",
             "num_dihed",
         }
-        expect_float = {"coef_energy", "coef_rmsd"}
-        expect_bool = {"no_ring_dihed"}
+        expect_float = {
+            "coef_energy", "coef_rmsd", "asteroid",
+            "plague", "agathic", "deluge",
+        }
+        expect_bool = {"no_ring_dihed", "normalise"}
         # make sure all values have been set
         # and are set to the correct type
         for arg, val in self._options.items():
@@ -228,13 +254,13 @@ class Inputs(DefaultInputs):
         # multiplicity cannot be negative 2S+1 (where S is spin)
         assert self.multip > 0
         assert self.init_popsize > 0
-        assert 0 < self.num_slots >= self.init_popsize
+        assert 5 < self.num_slots >= self.init_popsize
         assert self.num_mevs > 0
         assert self.num_geoms > 0
         assert 0 <= self.num_swaps <= self.num_geoms
         assert 0 <= self.num_cross <= self.num_geoms
         assert 0 <= self.num_muts <= self.num_dihed*self.num_geoms
-        assert 2 <= self.mating_rad <= self.num_slots//2
+        assert 2 <= self.mating_rad <= (self.num_slots-1)//2
         assert self.coef_energy >= 0
         assert self.coef_rmsd >= 0
 

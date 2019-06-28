@@ -14,7 +14,7 @@ charge, and its multiplicity. The example given below is for
 the molecule propane, specified by name.
 ```
 (kenv) $ python
->>> from kaplan.gac import run_kaplan
+>>> from kaplan.control import run_kaplan
 >>> input_dict = {
         "struct_input": "propane",
         "struct_type": "name",
@@ -45,14 +45,13 @@ are indicated in parentheses ().
 * **num_slots (100)**: number of ring slots total
 * **init_popsize (10)**: number of starting filled slots in the ring
 * **num_geoms (5)**: number of conformers to find
-* **t_size (7)**: the tournament size (how many slots to choose
-from the ring during a mating event)
 * **num_muts (num_atoms/3)**: the maximum number of mutations to do on one
 list of dihedral angles
 * **num_swaps (num_geoms)**: the maximum number of swaps to perform between
 two sets of geometries
-* **pmem_dist (3)**: the maximum distance (in number of slots) that
-a new population member can be placed away from its parent
+* **mating_rad (3)**: the maximum distance (in number of slots) that
+a new population member can be placed away from its parent. Also decides
+the size of the tournament.
 * **fit_form (0)**: only fit_form 0 is supported at the moment
 * **coef_energy (0.5)**: the coefficient of the energy summation in
 the fitness function
@@ -80,8 +79,8 @@ Other molecular attributes:
 Here are some basic checks to do:  
 * All of the dependencies should be installed (see main
 repo page for instructions). The python version *must* be
-at least 3.6 (otherwise you will get syntax errors for the
-f-strings).
+at least 3.7 (otherwise you will get syntax errors for the
+f-strings and import errors).
 * If using an environment, the environment should be active.
 * Example input files are available in the
 kaplan/test/testfiles directory.

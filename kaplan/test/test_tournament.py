@@ -18,9 +18,6 @@ def test_run_tournament():
     """Test run_tournament function from tournament module."""
     # make tests reproducible
     seed(1234567)
-    # ring init:
-    # num_geoms, num_atoms, num_slots, pmem_dist, fit_form,
-    # coef_energy, coef_rmsd, parser
     inputs = Inputs()
     inputs.update_inputs({
         "struct_input": os.path.join(TEST_DIR, "1,3-butadiene.xyz"),

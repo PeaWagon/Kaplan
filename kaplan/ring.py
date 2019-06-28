@@ -1,36 +1,26 @@
-"""
-Consider the conversion of cartesian coordinates
-to a z-matrix.
+"""Kaplan ring module.
 
-Likely to achieve using openbabel.
+This module is responsible for keeping track of
+solution instances in the form of pmem objects.
+This module is called by the tournament module
+to perform updates to the population. This module
+can also be used to determine summary statistics
+about the population, such as mean, median,
+and standard deviation for solution fitness,
+energetic, and rmsd values. This module generates
+an initial population at the start of evolution
+by instantiating pmem objects.
 
-Need to clarify: does a z-matrix contain all
-potential dihedral angles in a molecule?
-
-Need to parse a coordinate system and generate
-a list of dihedral angles.
-
-Vetee already has the ability to read a z-matrix
-file and write a z-matrix file using openbabel.
-All that remains to be done is read a z-matrix
-file and pull out dihedrals.
-
-Generates an initial population to be used in evolution.
-
-This will be an object file.
-
-Important information that this object will contain:
-
-* population size
-* population structure (i.e. ring, koth, simple)
-* molecule structure and connectivity
-* instances of population members
-*
+The ring has a fixed number of slots, which are
+iterable. Each slot either contains a pmem object
+or None (when empty). The ring attribute num_filled
+indicates how many slots are occupied at any given
+time.
 
 """
 
 from random import choice
-from statistics import median, stdev, mean
+from statistics import median, stdev, mean, StatisticsError
 
 import numpy as np
 
@@ -149,14 +139,14 @@ class Ring:
         self.pmems[key] = value
 
 
-    def mating_radius(self, parent_index, pmem_dist):
+    def mating_radius(self, parent_index, mating_rad):
         """Return indices of the ring in the mating radius of parent.
 
         Parameters
         ----------
         parent_index : int
             Ring index for which to make a selection.
-        pmem_dist : int
+        mating_rad : int
             How many pmems to the left and right of parent
             are considered within the mating radius.
         
@@ -167,31 +157,29 @@ class Ring:
             in the mating radius of the parent slot.
         
         """
-        # TODO: see if this code should be replaced with negative
-        # indices (since python lists are doubly-linked)
         # determine set of possible slots for the child to go
-        # pick random index within +/-self.pmem_dist of parent
+        # pick random index within +/-self.mating_rad of parent
         possible_slots = []
         # first check if the range loops round the ring
-        if parent_index + pmem_dist >= self.num_slots:
+        if parent_index + mating_rad >= self.num_slots:
             possible_slots.extend(range(parent_index, self.num_slots))
-            overflow = parent_index + pmem_dist - self.num_slots
+            overflow = parent_index + mating_rad - self.num_slots
             possible_slots.extend(range(overflow+1))
         else:
-            possible_slots.extend(range(parent_index, parent_index+pmem_dist+1))
+            possible_slots.extend(range(parent_index, parent_index+mating_rad+1))
         # then check if loops around ring backwards
-        # essentially checking if parent_index - pmem_dist is negative
-        if parent_index < pmem_dist:
+        # essentially checking if parent_index - mating_rad is negative
+        if parent_index < mating_rad:
             possible_slots.extend(range(0, parent_index))
-            backflow = self.num_slots - (pmem_dist - parent_index)
+            backflow = self.num_slots - (mating_rad - parent_index)
             possible_slots.extend(range(backflow, self.num_slots))
         else:
-            possible_slots.extend(range(parent_index-pmem_dist, parent_index))
+            possible_slots.extend(range(parent_index-mating_rad, parent_index))
 
         # sometimes there are duplicates in the list due to
-        # wrapping (i.e. pmem_dist high and num_slots low)
+        # wrapping (i.e. mating_rad high and num_slots low)
         possible_slots = list(set(possible_slots))
-        assert len(possible_slots) == 2*pmem_dist+1
+        assert len(possible_slots) == 2*mating_rad+1
 
         return possible_slots
 
@@ -219,14 +207,140 @@ class Ring:
         num_geoms, num_dihed = child.shape
         # create new pmem object using dihedral angles
         new_pmem = Pmem(None, current_mev, num_geoms, num_dihed, dihedrals=child)
+        # set the energetic and distance metrics needed for fitness calculation
+        new_pmem.set_energy_rmsd()
+        # note: the new pmem's energetic/rmsd values are not considered in the
+        # normalisation. only pmems in the ring are considered
         # determine fitness value for the child
-        new_pmem.set_fitness()
+        # if normalise is False, then absolute fitness is used
+        self.set_fitness(new_pmem)
         # check fitness vs current occupant (or empty slot)
-        if self[potential_slot] is None or self[potential_slot].fitness <= new_pmem.fitness:
+        if self[potential_slot] is None or self[potential_slot].fitness == None or \
+           self[potential_slot].fitness <= new_pmem.fitness:
             # add it there
-            new_pmem.ring_loc = potential_slot
+            new_pmem._ring_loc = potential_slot
             self[potential_slot] = new_pmem
 
+
+    def set_fitness(self, pmem):
+        """Set the fitness for a given pmem.
+
+        Parameters
+        ----------
+        pmem : kaplan.pmem.Pmem object
+            The pmem whose fitness will be set.
+        
+        Notes
+        -----
+        This method was moved from the pmem module
+        in order to accomodate for normalising
+        energies and rmsd values. The normalisation
+        is achieved by applying a z-score to each
+        energy and rmsd. Normalising these values
+        helps to make the coefficient inputs more
+        intuitive, as energies and rmsd values are
+        on a similar scale.
+
+        z-score is defined as:
+        z_score = (x-sample_mean)/sample_stdev
+
+        The fitness of a pmem will change over the
+        course of evolution (the sample mean and
+        sample standard deviation will change), but
+        its energy and rmsd values should remain
+        constant. Therefore, the fitness of a pmem
+        must be re-evaluated prior to:
+        (1) tournament selection,
+        (2) an extinction event (like plague
+        or deluge) that orders pmems by fitness, and
+        (3) the output-generation phase (when the
+        best pmem is chosen).
+
+        This method calculates the fitness of a
+        population member (pmem). The fitness is
+        broken into two main parts: energy and
+        rmsd. The energy is calculated using a
+        user-specified quantum chemical method
+        and basis set for each geometry in the pmem.
+        The rmsd is calculated as all the possible
+        pairs of rmsd between geometries.
+
+        fit_form : int
+            Represents the fitness formula to use.
+            The only value currently available is 0,
+            where fitness = CE*SE + Crmsd*Srmsd.
+
+        Returns
+        -------
+        fitness : float
+
+        """
+        inputs = Inputs()
+        if not inputs.normalise:
+            pmem.set_fitness(inputs.fit_form, inputs.coef_energy, inputs.coef_rmsd)
+            return pmem.fitness
+        # make sure energies is not empty
+        # rmsds can be empty in the case where there
+        # is only one geometry per pmem (sum of empty list
+        # is zero)
+        # since we are maximising fitness, each energy value
+        # should be negated (to favour low negative energies
+        # and disfavour high positive energies - in the case
+        # of forcefield calculations; quantum energies will
+        # always be at least zero)
+        valid_energies = [-e for e in pmem.energies if e is not None]
+        valid_rmsds = [rmsd[2] for rmsd in pmem.rmsds if rmsd[2] is not None]
+        # if all components for the fitness are None, return None
+        if valid_energies == [] and valid_rmsds == []:
+            pmem.fitness = None
+            return None
+
+        # account for statistics error in the case where there are 2 or
+        # fewer entries for either energies or rmsds
+        # mean requires 1 data point
+        # stdev requires 2 data points
+        try:
+            mean_energy = -self.mean_energy
+            stdev_energy = self.stdev_energy
+        # division by zero
+        except ZeroDivisionError:
+            # there are no valid energies in the ring
+            mean_energy = 0
+            stdev_energy = 1
+        # variance requires at least two data points
+        except StatisticsError:
+            stdev_energy = 1
+
+        try:
+            mean_rmsd = self.mean_rmsd
+            stdev_rmsd = self.stdev_rmsd
+        # division by zero
+        except ZeroDivisionError:
+            # there are no valid rmsds in the ring
+            mean_rmsd = 0
+            stdev_rmsd = 1
+        # variance requires at least two data points
+        except StatisticsError:
+            stdev_rmsd = 1
+
+        # normalise the energies and rmsds
+        norm_energies = [(e-mean_energy)/stdev_energy for e in valid_energies]
+        norm_rmsds = [(r-mean_rmsd)/stdev_rmsd for r in valid_rmsds]
+
+        # now consider that the number of rmsd values and the number of energy
+        # values are not the same
+        energy_sum = sum(norm_energies)/inputs.num_geoms
+        if inputs.num_geoms != 1:
+            rmsd_sum = sum(norm_rmsds)/pmem.num_pairs
+        else:
+            rmsd_sum = 0
+        
+        if inputs.fit_form == 0:
+            fitness = inputs.coef_energy*energy_sum + inputs.coef_rmsd*rmsd_sum
+            pmem.fitness = fitness
+            return fitness
+        raise InputError("No such fitness formula.")
+        
 
     def fill(self, num_pmems, current_mev):
         """Fill the ring with additional pmems.
@@ -256,6 +370,9 @@ class Ring:
         """
         # generate necessary inputs
         inputs = Inputs()
+
+        # make sure ring has the same size as inputs
+        assert inputs.num_slots == self.num_slots
         
         # check that adding pmems doesn't overflow ring
         num_avail = inputs.num_slots - self.num_filled
@@ -266,11 +383,19 @@ class Ring:
         
         # if there are no pmems in the ring, add a contiguous segment
         # and set fitness values
+        # if setting normalised fitness, fill the slots first
+        # then calculate fitness values
         if self.num_filled == 0:
             for i in range(0, num_pmems):
                 self[i] = Pmem(i, current_mev, inputs.num_geoms,
                                inputs.num_dihed)
-                self[i].set_fitness()
+                self[i].set_energy_rmsd()
+                if not inputs.normalise:
+                    self[i].set_fitness(inputs.fit_form, inputs.coef_energy, inputs.coef_rmsd)
+            if not inputs.normalise:
+                return None
+            for slot in range(0, num_pmems):
+                self.set_fitness(self[slot])
             return None
         
         # if there are some pmems in the ring
@@ -280,11 +405,17 @@ class Ring:
         total = self.num_filled + num_pmems
         for i in range(inputs.num_slots):
             if self.num_filled == total:
-                return None
+                if not self.normalise:
+                    return None
+                break
             if self[i] is None:
                 self[i] = Pmem(i, current_mev, inputs.num_geoms,
                                inputs.num_dihed)
-                self[i].set_fitness()
+                self[i].set_energy_rmsd()
+                if not inputs.normalise:
+                    self[i].set_fitness(inputs.fit_form, inputs.coef_energy, inputs.coef_rmsd)
+        for pmem in self.occupied:
+            self.set_fitness(self[pmem])
 
     @property
     def occupied(self):
@@ -302,17 +433,18 @@ class Ring:
         # need at least one pmem
         if not self.num_filled:
             raise RingEmptyError("No pmems in the ring.")
-        best = 0
-        slot_num = 0
+        best = None
+        slot_num = None
         for slot in self.occupied:
-            if self[slot].fitness > best:
-                best = self[slot].fitness
-                slot_num = slot
+            if self[slot].fitness is not None:
+                if best is None or self[slot].fitness > best:
+                    best = self[slot].fitness
+                    slot_num = slot
         return (slot_num, best)
 
     @property
     def mean_fitness(self):
-        return mean([self[i].fitness for i in self.occupied])
+        return mean([self[i].fitness for i in self.occupied if self[i].fitness is not None])
 
     @property
     def mean_energy(self):
@@ -320,8 +452,8 @@ class Ring:
         count = 0
         for slot in self.occupied:
             for energy in self[slot].energies:
-                # -1 means invalid geometry
-                if energy != -1:
+                # None means energy could not be calculated
+                if energy != None:
                     total += energy
                     count += 1
         return total/count
@@ -332,23 +464,23 @@ class Ring:
         count = 0
         for slot in self.occupied:
             for rmsd in self[slot].rmsds:
-                # -1 means one or two invalid geometries
-                if rmsd[2] != -1:
+                # None means one or two invalid geometries
+                if rmsd[2] != None:
                     total += rmsd[2]
                     count += 1
         return total/count
 
     @property
     def median_fitness(self):
-        return median([self[i].fitness for i in self.occupied])
+        return median([self[i].fitness for i in self.occupied if self[i].fitness is not None])
 
     @property
     def median_energy(self):
         energy_vals = []
         for slot in self.occupied:
             for energy in self[slot].energies:
-                # -1 means invalid geometry
-                if energy != -1:
+                # None means energy could not be calculated
+                if energy != None:
                     energy_vals.append(energy)
         return median(energy_vals)
 
@@ -357,22 +489,22 @@ class Ring:
         rmsd_vals = []
         for slot in self.occupied:
             for rmsd in self[slot].rmsds:
-                # -1 means one or two invalid geometries
-                if rmsd[2] != -1:
+                # None means one or two invalid geometries
+                if rmsd[2] != None:
                     rmsd_vals.append(rmsd[2])
         return median(rmsd_vals)
     
     @property
     def stdev_fitness(self):
-        return stdev([self[i].fitness for i in self.occupied])
+        return stdev([self[i].fitness for i in self.occupied if self[i].fitness is not None])
 
     @property
     def stdev_energy(self):
         energy_vals = []
         for slot in self.occupied:
             for energy in self[slot].energies:
-                # -1 means invalid geometry
-                if energy != -1:
+                # None means energy could not be calculated
+                if energy != None:
                     energy_vals.append(energy)
         return stdev(energy_vals)
 
@@ -381,7 +513,7 @@ class Ring:
         rmsd_vals = []
         for slot in self.occupied:
             for rmsd in self[slot].rmsds:
-                # -1 means one or two invalid geometries
-                if rmsd[2] != -1:
+                # None means one or two invalid geometries
+                if rmsd[2] != None:
                     rmsd_vals.append(rmsd[2])
         return stdev(rmsd_vals)

@@ -3,12 +3,12 @@ with some dummy input files."""
 
 import os
 
-from kaplan.gac import run_kaplan
+from kaplan.control import run_kaplan
 from kaplan.tools import TEST_DIR
 
 
 def test_run_kaplan():
-    """Test run_kaplan function from gac module."""
+    """Test run_kaplan function from control module."""
     
     test1 = {
         "struct_input": "propane",

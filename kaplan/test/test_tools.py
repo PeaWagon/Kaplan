@@ -2,8 +2,23 @@
 
 import os
 
-from kaplan.tools import TEST_DIR, profile_function, analyse_profile
+from numpy.testing import assert_raises
 
+from kaplan.inputs import Inputs, InputError
+from kaplan.pmem import Pmem
+from kaplan.tools import TEST_DIR, profile_function, analyse_profile, \
+     plot_2d, make_2d, energy_barplot, energy_rmsd_scatter
+
+
+# see what amino acids look like since I will be using
+# these structures frequently
+names = [
+    "asparagine", "glutamine", "aspartate", "glycine",
+    "tryptophan", "cysteine", "threonine", "alanine",
+    "isoleucine", "leucine", "tyrosine", "glutamate",
+    "proline", "histidine", "lysine", "serine",
+    "arginine", "valine", "methionine", "phenylalanine",
+]
 
 def test_profile_function():
     """Test the profile_function function from kaplan.tools.
@@ -34,4 +49,99 @@ def test_profile_function():
     os.remove("test_pf.dmp")
     os.remove("test_pf.log")
 
-test_profile_function()
+
+
+def test_plot2d():
+    inputs = Inputs()
+    inputfile = os.path.join(TEST_DIR, "caffeine.xyz")
+    inputs.update_inputs({
+        "struct_input": inputfile,
+        "struct_type": "xyz",
+        "charge": 0,
+        "multip": 1,
+    })
+    plot_2d(inputfile)
+
+    inputfile = os.path.join(TEST_DIR, "1,3-butadiene.xyz")
+    inputs.update_inputs({
+        "struct_input": inputfile,
+        "struct_type": "xyz",
+        "charge": 0,
+        "multip": 1,
+    })
+    plot_2d(inputfile)
+
+    for name in names:
+        inputs.update_inputs({
+            "struct_input": name,
+        })
+        plot_2d()
+
+def test_make2d():
+    inputs = Inputs()
+    for name in names:
+        inputs.update_inputs({
+            "struct_input": name,
+        })
+        make_2d()
+
+
+def test_energy_barplot():
+    # mostly have to check the test output manually here
+    # test barplot works for regular pmem
+    inputs = Inputs()
+    inputs.update_inputs({
+        "struct_input": "propane",
+        "num_geoms": 10,
+        "normalise": False,
+    })
+    pmem = Pmem(0, 0, 10, inputs.num_dihed)
+    pmem.set_energy_rmsd()
+    pmem.set_fitness(inputs.fit_form, inputs.coef_energy, inputs.coef_rmsd)
+    energy_barplot(pmem)
+
+    # test error is raised when pmem has no energies
+    pmem2 = Pmem(4, 0, 10, inputs.num_dihed)
+    assert_raises(InputError, energy_barplot, pmem2)
+    pmem2.set_energy_rmsd()
+    pmem2.set_fitness(inputs.fit_form, inputs.coef_energy, inputs.coef_rmsd)
+    pmem2.energies[3] = None
+    pmem2.energies[4] = None
+    pmem2.energies[0] = None
+    # test barplot works when some energies are None and that the conf
+    # numbers are correctly assigned
+    # also make sure two separate plots are generated and that the names
+    # correspond to the pmem locations
+    energy_barplot(pmem2)
+
+    # test energy range works even if the range is:
+    # (1) neg to pos
+    # (2) neg to neg (tested above)
+    # (3) pos to pos
+    # also here test that image is correctly overwritten
+    pmem3 = Pmem(4, 0, 10, inputs.num_dihed)
+    for i in range(10):
+        pmem3.energies[i] = -i+5
+    # also test here what happens when in and out units are the same
+    energy_barplot(pmem3, outunits="Ha")
+    pmem4 = Pmem(6, 0, 10, inputs.num_dihed)
+    for i in range(10):
+        pmem4.energies[i] = i
+    energy_barplot(pmem4)
+
+def test_energy_rmsd_scatter():
+    # tests must be checked manually here
+    inputs = Inputs()
+    inputs.update_inputs({
+        "struct_input": "propane",
+        "num_geoms": 10,
+        "normalise": False,
+    })
+    # test sizes 1-15 to make sure scaling factor allows all values
+    # to be shown; 1 should not work since you need 2 values to show delta/rmsd
+    assert_raises(InputError, energy_rmsd_scatter, Pmem(0,0,1,inputs.num_dihed))
+    for i in range(2,16):
+        pmem = Pmem(i, 0, i, inputs.num_dihed)
+        pmem.set_energy_rmsd()
+        energy_rmsd_scatter(pmem)
+
