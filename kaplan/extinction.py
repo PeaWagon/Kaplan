@@ -12,6 +12,7 @@ from kaplan.tournament import sortby
 
 from random import uniform, randint
 
+
 def apply_extinction(ring, operator, normalise):
     """Apply an extinction event to a ring object.
 
@@ -29,7 +30,7 @@ def apply_extinction(ring, operator, normalise):
         and plague) will re-evaluate all fitness values
         prior to the extinction event. If False, then
         the operators use the absolute fitness value.
-    
+
     Raises
     ------
     NotImplementedError
@@ -84,45 +85,45 @@ def apply_extinction(ring, operator, normalise):
         agathic(ring)
     else:
         raise NotImplementedError(f"No such extinction operator: {operator}")
-    
+
     return ring
-    
+
 
 def asteroid(ring, occupied_indices):
     """Apply the asteroid extinction operator to the ring.
-    
+
     The asteroid operator deletes a contiguous segment
     of the ring. The size of the deleted segment is chosen
     at random between 10-90% of the total number of slots.
     The starting slot of the segment (for deletion) is chosen
     at random, provided it does not kill the entire population,
     in which case another starting slot is chosen.
-    
+
     """
     while True:
-        start_slot = randint(0, ring.num_slots-1)
-        asteroid_size = int(uniform(0.1, 0.9)*ring.num_slots)
+        start_slot = randint(0, ring.num_slots - 1)
+        asteroid_size = int(uniform(0.1, 0.9) * ring.num_slots)
         end_slot = start_slot + asteroid_size - 1
-        
-        #print("start slot", start_slot)
-        #print("asteroid size", asteroid_size)
-        #print("end slot", end_slot)
+
+        # print("start slot", start_slot)
+        # print("asteroid size", asteroid_size)
+        # print("end slot", end_slot)
         # no ring wrapping
         if end_slot < ring.num_slots:
-            #print("No wrap")
+            # print("No wrap")
             if any(slot < start_slot or slot > end_slot for slot in occupied_indices):
-                for slot in range(start_slot, end_slot+1):
+                for slot in range(start_slot, end_slot + 1):
                     ring[slot] = None
                 return ring
-        
+
         # consider ring wrapping
         else:
-            #print("Wrap")
+            # print("Wrap")
             overflow = end_slot - ring.num_slots
             # overflow is the last index of pmem to be killed
-            #print("overflow", overflow)
+            # print("overflow", overflow)
             if any(slot > overflow and slot < start_slot for slot in occupied_indices):
-                for slot in range(overflow+1):
+                for slot in range(overflow + 1):
                     ring[slot] = None
                 for slot in range(start_slot, ring.num_slots):
                     ring[slot] = None
@@ -131,11 +132,11 @@ def asteroid(ring, occupied_indices):
 
 def plague(ring, normalise):
     """Apply the plague extinction operator to the ring.
-    
+
     Removes the fraction of the population with the lowest
     fitness, where the fraction is chosen as 10-90% of
     the current population size.
-    
+
     """
     if normalise:
         for pmem in ring.occupied:
@@ -148,7 +149,7 @@ def plague(ring, normalise):
     index_fit_pairs = index_fit_pairs[empty:]
 
     # choose random amount of pmems to kill
-    plague_size = int(uniform(0.1, 0.9)*ring.num_filled)
+    plague_size = int(uniform(0.1, 0.9) * ring.num_filled)
     # apply plague operator
     for death in range(plague_size):
         slot = index_fit_pairs[death][0]
@@ -156,16 +157,15 @@ def plague(ring, normalise):
     return ring
 
 
-
 def agathic(ring):
     """Apply the agathic extinction operator to the ring.
-    
+
     The agathic operator works in the same way as the
     plague operator, except the pmems are sorted by
     age and not fitness. The oldest fraction are removed.
     The fraction to remove is 10-90% of the current
     population size.
-    
+
     """
     # essentially the same procedure to sort pmems
     # as in the tournament module
@@ -175,7 +175,7 @@ def agathic(ring):
     index_bday_pairs = index_bday_pairs[empty:]
 
     # choose random amount of pmems to kill
-    agathic_size = int(uniform(0.1, 0.9)*ring.num_filled)
+    agathic_size = int(uniform(0.1, 0.9) * ring.num_filled)
     # apply plague operator
     for death in range(agathic_size):
         slot = index_bday_pairs[death][0]
@@ -185,7 +185,7 @@ def agathic(ring):
 
 def deluge(ring, occupied_indices, normalise):
     """Apply the deluge extinction operator to the ring.
-    
+
     This operator first chooses a water-level, which is
     a fraction of the maximum (current) population fitness.
     The water-level is randomly chosen between 10-90%
@@ -208,15 +208,15 @@ def deluge(ring, occupied_indices, normalise):
     # if max fitness is negative, don't want to kill all pmems
     # instead treat as a minimisation problem
     if max_fit < 0:
-        water_level = uniform(1.1, 1.9)*max_fit*-1
+        water_level = uniform(1.1, 1.9) * max_fit * -1
         for slot in occupied_indices:
-            if ring[slot].fitness is None or -1*ring[slot].fitness > water_level:
+            if ring[slot].fitness is None or -1 * ring[slot].fitness > water_level:
                 ring[slot] = None
         return ring
 
     # in the case where the fitness values are positive, then it should be
     # possible to kill all pmems except those with at least 90% of the max fitness
-    water_level = uniform(0.1, 0.9)*max_fit
+    water_level = uniform(0.1, 0.9) * max_fit
     for slot in occupied_indices:
         if ring[slot].fitness is None or ring[slot].fitness < water_level:
             ring[slot] = None

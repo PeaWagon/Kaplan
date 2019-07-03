@@ -2,8 +2,6 @@
 pick from the ring in order to apply updates
 to the population."""
 
-from math import inf
-
 from random import choice
 
 from kaplan.inputs import Inputs, InputError
@@ -11,7 +9,7 @@ from kaplan.ring import RingEmptyError
 from kaplan.mutations import generate_children, single_parent_mutation
 
 
-def run_tournament(ring, current_mev):
+def run_tournament(ring, current_mev, test=False):
     """Run the tournament (i.e. a mating event).
 
     Parameters
@@ -21,6 +19,10 @@ def run_tournament(ring, current_mev):
     current_mev : int
         The current mating event number. Used
         to give pmems birthdays.
+    test : bool
+        Defaults to False. If set to True, extra information
+        is printed to the terminal detailing the tournament
+        participants and results.
 
     Returns
     -------
@@ -36,6 +38,10 @@ def run_tournament(ring, current_mev):
     # any pmem in its mating radius is considered
     selected_pmems, parent1_loc = select_pmems(inputs.mating_rad, ring)
 
+    if test:
+        print("Pmems in tournament:", selected_pmems)
+        print("Parent 1:", parent1_loc)
+
     # if normalise is selected, apply it to the tournament selection
     # the fitness of parent1 does not need to be updated at this time
     # it should only be updated if the parent1's slot is available
@@ -44,12 +50,18 @@ def run_tournament(ring, current_mev):
     # change, but it would probably break the program)
     if inputs.normalise:
         for slot in selected_pmems:
-            ring.set_fitness(ring[slot])
+            if ring[slot] is not None:
+                ring.set_fitness(ring[slot])
     p1_dihed = ring[parent1_loc].dihedrals
 
     # select parents and worst slots by fitness
     parent2_loc, worst = select_parents(selected_pmems, ring)
-    try:    
+
+    if test:
+        print("Worst pmem locations:", worst)
+        print("Parent 2:", parent2_loc)
+
+    try:
         p2_dihed = ring[parent2_loc].dihedrals
     # there is only one pmem in the mating radius
     except AttributeError:
@@ -58,10 +70,10 @@ def run_tournament(ring, current_mev):
     else:
         # generate children
         child1, child2 = generate_children(
-                             p1_dihed, p2_dihed,
-                             inputs.num_muts, inputs.num_swaps,
-                             inputs.num_cross
-                         )
+            p1_dihed, p2_dihed,
+            inputs.num_muts, inputs.num_swaps,
+            inputs.num_cross
+        )
     # put children in ring
     ring.update(child1, worst[0], current_mev)
     if child2 is not None:
@@ -78,7 +90,7 @@ def select_pmems(mating_rad, ring):
         consider when selecting pmems from the ring.
     ring : object
         The ring from which to pick the pmems.
-    
+
     Returns
     -------
     tuple : (list(int), int)
@@ -88,11 +100,9 @@ def select_pmems(mating_rad, ring):
     """
     # get a list of indices representing filled slots
     occupied = [i for i in range(ring.num_slots) if ring[i] is not None]
-    print(occupied)
     # from the occupied slots, choose a random pmem as parent1
     parent1 = choice(occupied)
     selection = ring.mating_radius(parent1, mating_rad)
-    print("selection:", selection)
     # don't include parent1 in the selection, so its fitness is not
     # compared to the other pmems
     # this choice gives low-fitness pmems a chance to mate
@@ -115,7 +125,7 @@ def sortby(ring, sortkey, include_slots="all"):
         Each integer is a ring index that is included
         in the sorting. Defaults to "all", which means
         all slots are included.
-    
+
     Raises
     ------
     AssertionError
@@ -132,7 +142,7 @@ def sortby(ring, sortkey, include_slots="all"):
         or pmems with uninitialised values).
         The slots start lowest values (or None)
         to highest values.
-    
+
     """
     if include_slots == "all":
         include_slots = range(ring.num_slots)
@@ -205,7 +215,7 @@ def quicksort(pairs, low, high):
     high : int
         Highest index to consider from pairs to sort.
         Should NOT be equal to the length of pairs.
-    
+
     Notes
     -----
     This is the quicksort algorithm that starts by setting the pivot
@@ -217,8 +227,8 @@ def quicksort(pairs, low, high):
     if low < high:
         # after partition, pi is in the correct place
         pi = partition(pairs, low, high)
-        quicksort(pairs, low, pi-1)
-        quicksort(pairs, pi+1, high)
+        quicksort(pairs, low, pi - 1)
+        quicksort(pairs, pi + 1, high)
 
 
 def partition(pairs, low, high):
@@ -243,13 +253,13 @@ def partition(pairs, low, high):
 
     """
     pivot = pairs[high]
-    i = (low-1)
+    i = (low - 1)
     for j in range(low, high):
         if pairs[j][1] <= pivot[1]:
             i += 1
             swap(pairs, i, j)
-    swap(pairs, i+1, high)
-    return i+1
+    swap(pairs, i + 1, high)
+    return i + 1
 
 
 def swap(pairs, i, j):

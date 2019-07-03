@@ -17,9 +17,10 @@ from kaplan.geometry import set_coords, get_coords
 # if a new program is added, add defaults for it
 # how much RAM to use for psi4 calculations
 # should be less than what your computer has available
-DEFAULT_INPUTS = {"psi4": {"RAM": "4 GB"},
-                  "openbabel": {},
-                  "other": {}
+DEFAULT_INPUTS = {
+    "psi4": {"RAM": "4 GB"},
+    "openbabel": {},
+    "other": {},
 }
 
 
@@ -29,7 +30,7 @@ class BasisSetError(Exception):
 
 class MethodError(Exception):
     """Raised if there is an issue whereby the energy cannot be calculated.
-    
+
     This includes:
     * quantum chemical method is unavailable
     * force field cannot be setup for a molecule
@@ -139,7 +140,7 @@ def psi4_energy_calc(geom, method, basis, ram, restricted=False):
     if restricted:
         psi4.set_options({"reference": "uhf"})
     try:
-        return psi4.energy(method+'/'+basis, return_wfn=False, molecule=geom)
+        return psi4.energy(method + "/" + basis, return_wfn=False, molecule=geom)
     except psi4.driver.p4util.exceptions.ValidationError:
         raise MethodError(f"Invalid method: {method}")
     except psi4.driver.qcdb.exceptions.BasisSetNotFound:
@@ -190,12 +191,12 @@ def obabel_energy(ff, obmol):
     Notes
     -----
     This function attempts to implement the obenergy function.
-    
+
     Returns
     -------
     energy : float
         The energy of the input molecule using ff forcefield
-        in kcal/mol.    
+        in kcal/mol.
 
     """
     if ff not in pybel.forcefields:

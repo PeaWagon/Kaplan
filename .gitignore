@@ -15,6 +15,8 @@ kaplan.egg-info/*
 kaplan/__pycache__/
 kaplan/test/__pycache__/
 kaplan/test/kaplan.egg-info/
+kaplan/test/kaplan_output/
+kaplan_output
 
 *timer.dat
 *psi.*.clean
@@ -22,4 +24,3 @@ kaplan/test/kaplan.egg-info/
 
 .vscode/*
 notes/*
-kaplan/*/kaplan_output/*

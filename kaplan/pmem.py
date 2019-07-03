@@ -10,7 +10,7 @@ from kaplan.rmsd import calc_rmsd, apply_centroid
 from kaplan.energy import run_energy_calc, MethodError, BasisSetError
 # values for dihedral angles in radians
 # convert radians to degrees for __str__ method
-from kaplan.geometry import MIN_VALUE, MAX_VALUE, RAD_TO_DEGREES, update_obmol, set_coords
+from kaplan.geometry import MIN_VALUE, MAX_VALUE, geometry_units, update_obmol, set_coords
 from kaplan.inputs import Inputs, InputError
 
 
@@ -78,24 +78,35 @@ class Pmem:
         if dihedrals is None:
             # generate random dihedral angles (degrees)
             # each row is a set of dihedral angles for one conformer
-            self.dihedrals = np.random.uniform(MIN_VALUE, MAX_VALUE,
-                                               size=(self.num_geoms, self.num_dihed))
+            try:
+                self.dihedrals = np.random.uniform(
+                    MIN_VALUE, MAX_VALUE, size=(self.num_geoms, self.num_dihed)
+                )
+            # TypeError: 'NoneType' object cannot be interpreted as an integer
+            except TypeError:
+                raise InputError("Mising required inputs: num_geoms or num_dihed")
         else:
             assert dihedrals.shape == (self.num_geoms, self.num_dihed)
             self.dihedrals = dihedrals
         self.energies = [None for _ in range(self.num_geoms)]
-        self.rmsds = [[i,j,None] for i,j in self.all_pairs_gen()]
+        self.rmsds = [[i, j, None] for i, j in self.all_pairs_gen()]
         self.fitness = None
         self._birthday = current_mev
 
     def __str__(self):
-        """What happens when print(pmem) is called."""
+        """What happens when print(pmem) is called.
+
+        Notes
+        -----
+        Dihedral angles are printed in degrees.
+
+        """
         return_string = ""
         return_string += f"Slot #: {self.ring_loc}\n"
         for i, dihed_set in enumerate(self.dihedrals):
             return_string += f"\t Dihedrals {i}: "
             for dihed in dihed_set:
-                return_string += f"{RAD_TO_DEGREES(float(dihed)):.2f} "
+                return_string += f"{geometry_units['radians']['degrees'](float(dihed)):.2f} "
             return_string += "\n"
         return_string += f"\t Birthday: {self.birthday}\n"
         return_string += f"\t Fitness: {self.fitness}\n"
@@ -107,14 +118,20 @@ class Pmem:
         """Called at the start of iteration."""
         self.conf_num = 0
         return self
-    
+
     def __next__(self):
-        """Called for iteration over conformers."""
+        """Called for iteration over conformers.
+
+        Notes
+        -----
+        Dihedrals give here are in radians.
+
+        """
         if self.conf_num == self.num_geoms:
             raise StopIteration
         else:
             self.conf_num += 1
-            return self.dihedrals[self.conf_num-1]
+            return self.dihedrals[self.conf_num - 1]
 
     def all_pairs_gen(self):
         """Yield indices of two geometries/conformers.
@@ -124,8 +141,8 @@ class Pmem:
         This is a generator function.
 
         """
-        for i in range(self.num_geoms-1):
-            for j in range(i+1, self.num_geoms):
+        for i in range(self.num_geoms - 1):
+            for j in range(i + 1, self.num_geoms):
                 yield (i, j)
 
     @property
@@ -134,7 +151,7 @@ class Pmem:
         if self.num_geoms == 1:
             return 0
         # n choose k = n!/(k!(n-k)!)
-        return int(factorial(self.num_geoms)/(2*factorial(self.num_geoms-2)))
+        return int(factorial(self.num_geoms) / (2 * factorial(self.num_geoms - 2)))
 
     @property
     def ring_loc(self):
@@ -146,13 +163,13 @@ class Pmem:
 
     def get_geometry(self, conf_index):
         """Get a centred geometry for a given conformer index.
-        
+
         Parameters
         ----------
         conf_index : int
             The index of the conformer for which to get
             the geometry.
-        
+
         Notes
         -----
         First this function has to set the obmol object
@@ -168,7 +185,7 @@ class Pmem:
             The coordinates of the conformer, after centering
             using apply_centroid function from rmsd module.
         None (if error occurs)
-        
+
         """
         inputs = Inputs()
         if not hasattr(inputs, "obmol") or inputs.obmol is None:
@@ -202,6 +219,7 @@ class Pmem:
             # give an energy of None
             # note: qcelemental.exceptions.ValidationError
             # is the atoms too close error
+            print(e)
             print("Warning: psi4 did not converge.")
             self.energies[conf_index] = None
         return new_coords
@@ -219,12 +237,11 @@ class Pmem:
         were non-convergent, the rmsd is None.
         This function should be called such that
         the ring can determine a pmem's fitness.
-        
+
         """
         # make sure everything is empty before setting up fitness
         assert self.energies == [None for _ in range(self.num_geoms)]
-        assert self.rmsds == [[i,j,None] for i,j in self.all_pairs_gen()]
-        inputs = Inputs()
+        assert self.rmsds == [[i, j, None] for i, j in self.all_pairs_gen()]
 
         # if there is only one geometry, fitness should only be based on
         # the energy (since no RMSD can be calculated)
@@ -234,7 +251,7 @@ class Pmem:
 
         # keep track of which geometries we have already calculated centroid for
         # 0 different from None is needed in case geometry fails
-        coords = [0 for _ in range(self.num_geoms)] # retain coords for this function only
+        coords = [0 for _ in range(self.num_geoms)]  # retain coords for this function only
 
         # get rmsd for all pairs of conformers and energies for all geoms
         for i, (ind1, ind2, _) in enumerate(self.rmsds):
@@ -293,7 +310,7 @@ class Pmem:
             self.fitness = None
             return None
         if fit_form == 0:
-            fitness = -1*coef_energy*sum(valid_energies) + coef_rmsd*sum(valid_rmsds)
+            fitness = -1 * coef_energy * sum(valid_energies) + coef_rmsd * sum(valid_rmsds)
             self.fitness = fitness
             return fitness
         raise InputError("No such fitness formula.")

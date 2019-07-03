@@ -20,17 +20,20 @@ from kaplan.output import run_output
 from kaplan.energy import run_energy_calc
 from kaplan.tools import make_2d, plot_2d
 
+
 def run_kaplan(job_inputs, ring=None, save=True, new_dir=True):
     """Run the Kaplan programme.
 
     Parameters
     ----------
-    job_inputs : dict or str
+    job_inputs : dict or str or kaplan.inputs.Inputs object
         Contains inputs required to run Kaplan.
         If dict, key/value pairs are used to generate
         the inputs object. If str, then this should
         be the path and file name of the pickled inputs
         object to read as input (i.e. inputs.pickle).
+        If inputs object, the object's _check_inputs
+        method is called prior to execution.
     ring : str
         Path and file name for the pickled ring object
         (i.e. ring.pickle).
@@ -46,7 +49,6 @@ def run_kaplan(job_inputs, ring=None, save=True, new_dir=True):
         False, then the original directory will be
         kept (if inputs pickle is given as input).
 
-    
     Raises
     ------
     AssertionError
@@ -60,6 +62,9 @@ def run_kaplan(job_inputs, ring=None, save=True, new_dir=True):
     if isinstance(job_inputs, str):
         assert os.path.isfile(job_inputs)
         inputs = read_input(job_inputs, new_dir)
+    elif isinstance(job_inputs, Inputs):
+        inputs = job_inputs
+        inputs._check_input()
     else:
         inputs = Inputs()
         inputs.update_inputs(job_inputs)
@@ -71,7 +76,7 @@ def run_kaplan(job_inputs, ring=None, save=True, new_dir=True):
     # check that initial geometry converges
     # note error is not handled here, so any errors
     # will stop program execution
-    result = run_energy_calc(inputs.coords)
+    run_energy_calc(inputs.coords)
 
     # biggest_bday is initial mating event number
     # it is set to the age of the oldest exsiting pmem
@@ -95,11 +100,11 @@ def run_kaplan(job_inputs, ring=None, save=True, new_dir=True):
         temp_name = os.path.basename(os.path.splitext(temp_name)[0])
 
     # run the mevs
-    for mev in range(biggest_bday, biggest_bday+inputs.num_mevs):
+    for mev in range(biggest_bday, biggest_bday + inputs.num_mevs):
         try:
             print(f"Mating event: {mev}")
             run_tournament(ring, mev)
-            
+
             # extinction events
             if inputs.asteroid:
                 percent_chance = random()
@@ -118,13 +123,12 @@ def run_kaplan(job_inputs, ring=None, save=True, new_dir=True):
                 if inputs.deluge >= percent_chance:
                     deluge(ring, ring.occupied, inputs.normalise)
 
-            # write a temporary file every 10 mating events
-            if mev%10 == 0:
-                with open(os.path.join(inputs.output_dir, f"temp_{temp_name}.pickle"), "wb") as f:
-                    pickle.dump(ring, f)
+            # keep data every 25 mevs
+            if mev % 25 == 0:
+                run_output(ring, mev, save)
 
         except RingEmptyError:
             ring.fill(inputs.init_popsize, mev)
 
     # run output
-    run_output(ring, save)
+    run_output(ring, "last", save)

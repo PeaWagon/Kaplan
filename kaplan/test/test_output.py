@@ -1,42 +1,27 @@
 
-from kaplan.output import energy_barplot, energy_rmsd_scatter, dihedrals_heatmap
+from kaplan.output import run_output
 from kaplan.pmem import Pmem
 from kaplan.inputs import Inputs, read_input
 from kaplan.ring import Ring
+from kaplan.tournament import run_tournament
 
-def test_energy_rmsd_scatter():
+from numpy.testing import assert_raises
+
+
+def test_run_output():
     inputs = Inputs()
     inputs.update_inputs({
-        "struct_input": "propane"
+        "struct_input": "cysteine",
+        "num_mevs": 5,
+        "prog": "openbabel",
+        "num_geoms": 1,
+        "num_slots": 10,
+        "init_popsize": 5,
     })
-    print(inputs.num_dihed)
-    p1 = Pmem(0, 0, 5, 3)
-    p1.set_fitness()
-    p2 = Pmem(0, 0, 5, 3)
-    p3 = Pmem(0, 0, 5, 3)
-    result = energy_barplot(p1)
-    print(result)
-
-def test_energy_barplot():
-    pass
-
-
-def test_dihedrals_heatmap():
-    inputs = Inputs()
-    inputs.update_inputs({
-        "struct_input": "cyclohexane",
-        "num_slots": 50,
-        "init_popsize": 50,
-        "no_ring_dihed": False,
-    })
-    r = Ring(50, 50)
-    print(r)
-    heatmap = dihedrals_heatmap(r)
-    print(heatmap)
-    print(inputs.min_diheds)
-
-test_dihedrals_heatmap()
-#test_read_output()
-
-#test_energy_barplot()
-#test_energy_rmsd_scatter()
+    ring = Ring(10, 5)
+    print(ring)
+    for i in range(inputs.num_mevs):
+        run_output(ring, i, True)
+        run_tournament(ring, i)
+    assert_raises(AssertionError, run_output, ring, "final", True)
+    run_output(ring, "last", True)

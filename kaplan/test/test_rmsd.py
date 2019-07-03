@@ -5,7 +5,7 @@ import numpy as np
 
 from vetee.job import Job, JobError
 
-from kaplan.rmsd import calc_rmsd
+from kaplan.rmsd import calc_rmsd, apply_centroid
 from kaplan.tools import TEST_DIR
 
 
@@ -22,9 +22,11 @@ def test_calc_rmsd():
         mol3.setup_from_xyz()
     except JobError:
         pass
-    
+
     mol1_coords = mol1.xyz_coords
     mol3_coords = mol3.xyz_coords
+    apply_centroid(mol1_coords)
+    apply_centroid(mol3_coords)
     assert calc_rmsd(mol1_coords, mol3_coords) == 1.0
     # test translated/rotated hydrogen
     mol1tr = Job("xyz", os.path.join(TEST_DIR, "H2-1A-transrot.xyz"), "gaussian")
@@ -33,6 +35,7 @@ def test_calc_rmsd():
     except JobError:
         pass
     mol1tr_coords = mol1tr.xyz_coords
+    apply_centroid(mol1tr_coords)
     assert calc_rmsd(mol1_coords, mol1tr_coords) == 0.0
     # test same molecule twice
     assert calc_rmsd(mol1_coords, mol1_coords) == 0.0

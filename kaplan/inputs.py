@@ -18,12 +18,14 @@ will be shifted to the energy module.
 
 import os
 import numpy as np
+import pickle
 
 from vetee.coordinates import write_xyz
+from vetee.tools import periodic_table
 
 from kaplan.geometry import update_obmol, create_obmol,\
-                            remove_ring_dihed, get_min_dihed, get_rings,\
-                            get_struct_info, get_atomic_nums
+    remove_ring_dihed, get_min_dihed, get_rings,\
+    get_struct_info, get_atomic_nums
 
 from saddle.internal import Internal
 
@@ -33,7 +35,6 @@ class InputError(Exception):
 
 
 class DefaultInputs:
-
 
     # programs available in kaplan
     _avail_progs = {"psi4", "openbabel"}
@@ -46,7 +47,7 @@ class DefaultInputs:
 
     _options = {
         "output_dir": "pwd",    # where to store the output
-        
+
         # mol inputs
         "prog": "psi4",         # program to use to run energy calculations
         "basis": "sto-3g",      # basis set to use in quantum calculations
@@ -59,8 +60,8 @@ class DefaultInputs:
         "charge": None,         # total molecular charge
         "multip": None,         # molecule multiplicity
         "no_ring_dihed": True,  # remove ring dihedral angles
-        
-        # ga inputs
+
+        # ea inputs
         "num_mevs": 100,
         "num_slots": 50,
         "init_popsize": 10,
@@ -97,7 +98,7 @@ class DefaultInputs:
         # np.array((num_atoms,3), float) representing xyz coordinates
         # of the original input; preserved to ensure obmol retains
         # the same connections throughout optimisation
-        "coords": None,         
+        "coords": None,
         # How many dihedrals can be used to represent
         # the molecule (assuming one dihedral per
         # rotatable bond); dihedrals encased by rings
@@ -114,27 +115,24 @@ class DefaultInputs:
         "extra": {},
     }
 
-
     def __init__(self):
         self.__dict__ = self._options
 
 
 class Inputs(DefaultInputs):
 
-
     def __init__(self):
         super().__init__()
 
-
     def _reset_to_defaults(self):
         """Resets the borg to its original state.
-        
+
         Notes
         -----
         This function is meant for testing purposes
         only. It should not be called during program
         execution.
-        
+
         """
         self.output_dir = "pwd"
         self.prog = "psi4"
@@ -213,13 +211,13 @@ class Inputs(DefaultInputs):
                 # val has to be reassigned otherwise
                 # a ValueError occurs when int(None) is performed
                 if arg == "num_swaps":
-                    self.num_swaps = self.num_geoms//2
+                    self.num_swaps = self.num_geoms // 2
                     val = self.num_swaps
                 elif arg == "num_cross":
-                    self.num_cross = self.num_geoms//2
+                    self.num_cross = self.num_geoms // 2
                     val = self.num_cross
                 elif arg == "num_muts":
-                    self.num_muts = (self.num_dihed*self.num_geoms)//5
+                    self.num_muts = (self.num_dihed * self.num_geoms) // 5
                     val = self.num_muts
                 else:
                     raise InputError(f"Missing required input argument: {arg}")
@@ -241,7 +239,9 @@ class Inputs(DefaultInputs):
                 try:
                     assert isinstance(val, bool)
                 except ValueError:
-                    raise InputError(f"Value should be True or False and not a string: {arg} = {val}")
+                    raise InputError(
+                        f"Value should be True or False and not a string: {arg} = {val}"
+                    )
 
         # only programs currently available are psi4 and openbabel
         # if a program is added, add it to _avail_progs list in
@@ -259,18 +259,12 @@ class Inputs(DefaultInputs):
         assert self.num_geoms > 0
         assert 0 <= self.num_swaps <= self.num_geoms
         assert 0 <= self.num_cross <= self.num_geoms
-        assert 0 <= self.num_muts <= self.num_dihed*self.num_geoms
-        assert 2 <= self.mating_rad <= (self.num_slots-1)//2
+        assert 0 <= self.num_muts <= self.num_dihed * self.num_geoms
+        assert 2 <= self.mating_rad <= (self.num_slots - 1) // 2
         assert self.coef_energy >= 0
         assert self.coef_rmsd >= 0
 
-
     def _update_geometry(self):
-        if self.struct_type is None:
-            self.struct_type = "name"
-        if self.struct_type not in self._avail_structs:
-            raise InputError(f"Invalid structure type: {self.struct_type}")
-        
         # create vetee job object and read in coordinates
         job = get_struct_info(self.struct_input, self.struct_type)
         # if any of the following were given, compare to inputs
@@ -279,10 +273,16 @@ class Inputs(DefaultInputs):
             if job.charge is None:
                 raise InputError("Unable to determine molecule charge.")
             self.charge = job.charge
+        elif not isinstance(self.charge, int):
+            raise InputError("Charge must be an integer.")
+
         if self.multip is None:
             if job.multip is None:
                 raise InputError("Unable to determine molecule multiplicity.")
-            self.multip = job.multip  
+            self.multip = job.multip
+        elif not isinstance(self.multip, int) or not self.multip >= 1:
+            raise InputError("Multiplicity must be an integer value greater than 0.")
+
         if job.charge != self.charge and job.charge is not None:
             print(f"Warning: default charge ({job.charge}) not equal \
                     \nto input charge ({self.charge}).")
@@ -319,11 +319,11 @@ class Inputs(DefaultInputs):
         ofile = os.path.join(self.output_dir, "input_coords.xyz")
         write_xyz({"_coords": job.coords}, ofile)
         self.coords = job.xyz_coords
-        
+
         # now determine minimum dihedrals by atom index
         self.min_diheds = get_min_dihed(ofile, self.charge, self.multip)
         self.obmol = create_obmol(ofile, self.charge, self.multip)
-        
+
         # remove ring dihedrals where all four atoms are in a ring
         if self.no_ring_dihed:
             rings = get_rings(self.obmol)
@@ -335,7 +335,6 @@ class Inputs(DefaultInputs):
 
         # set atomic numbers
         self.atomic_nums = get_atomic_nums(self.obmol)
-
 
     def _set_output_dir(self):
         """Determine the name of the output directory.
@@ -361,7 +360,7 @@ class Inputs(DefaultInputs):
         ------
         FileNotFoundError
             The user gave a location that does not exist.
-        
+
         Notes
         -----
         The output is placed in kaplan_output under a job
@@ -390,7 +389,9 @@ class Inputs(DefaultInputs):
         # make an identifier for the molecule
         name = self.struct_input
         if self.struct_type in ("xyz", "com"):
-            name = os.path.basename(name)
+            # strip the path and extension from the struct_input
+            name = os.path.basename(os.path.splitext(name)[0])
+
         # get rid of characters that should not be in file names
         # get rid of white space
         name = name.strip("!@#$%^&*()<>?/").replace(" ", "")
@@ -421,8 +422,6 @@ class Inputs(DefaultInputs):
             new_dir = f"job_0_{name}"
         self.output_dir = os.path.join(self.output_dir, new_dir)
         os.mkdir(self.output_dir)
-
-
 
     def update_inputs(self, input_dict):
         """Update the inputs from their default values.
@@ -459,7 +458,8 @@ class Inputs(DefaultInputs):
             # make sure lowercase is used
             # unless it's for structure (i.e.
             # SMILES strings are case sensitive)
-            if arg != "struct_input":
+            # or a path designation
+            if arg not in ("struct_input", "output_dir"):
                 try:
                     val = val.lower()
                 # value was integer or float
@@ -470,6 +470,13 @@ class Inputs(DefaultInputs):
 
         # only required input
         assert self.struct_input is not None
+
+        # make sure struct_type is valid otherwise
+        # weird output directories are made
+        if self.struct_type is None:
+            self.struct_type = "name"
+        if self.struct_type not in self._avail_structs:
+            raise InputError(f"Invalid structure type: {self.struct_type}")
 
         # generate output directory
         self._set_output_dir()
@@ -484,7 +491,7 @@ class Inputs(DefaultInputs):
 
 def read_input(input_file, new_output_dir=True):
     """Open a previously-written inputs pickle file.
-    
+
     Parameters
     ----------
     input_file : str
@@ -499,7 +506,7 @@ def read_input(input_file, new_output_dir=True):
     -------
     inputs object complete with obmol object and (possibly)
     update to output_dir.
-    
+
     """
     inputs = Inputs()
     with open(input_file, "rb") as f:

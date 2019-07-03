@@ -19,21 +19,44 @@ import os
 from saddle.internal import Internal
 from saddle.coordinate_types import DihedralAngle
 
-#from kaplan.inputs import Inputs
+
+# values for dihedral angles in radians
+# dihedrals should be positive values only
+# so that mean can be calculated without
+# having to change the dihedrals
+# i.e. 3pi/4 and -pi/4 average should be
+# 10pi/4 not pi/4 since -pi/4 is really
+# 7pi/4
+MIN_VALUE = 0
+MAX_VALUE = 2 * np.pi
 
 # 1 "angstrom" = 1.8897261339213 "atomic unit (length)"
-#AU = 1.8897261339213
+# AU = 1.8897261339213
 # https://github.com/psi4/psi4/blob/fbb2ff444490bf6b43cb6e027637d8fd857adcee/psi4/include/psi4/physconst.h
 # convert angstroms to atomic units (or bohr from psi4)
-ANG_TO_AU = lambda x : x/0.52917721067
-# values for dihedral angles in radians
-MIN_VALUE = -2*np.pi
-MAX_VALUE = 2*np.pi
-# convert radians to degrees for __str__ method
-RAD_TO_DEGREES = lambda x : x*180/np.pi
+geometry_units = {
+    "angstroms": {
+        "atomic units": lambda x: x / 0.52917721067,
+        "angstroms": lambda x: x,
+    },
+    "atomic units": {
+        "angstroms": lambda x: x * 0.52917721067,
+        "atomic_units": lambda x: x,
+    },
+    "radians": {
+        "degrees": lambda x: x * 180 / np.pi,
+        "radians": lambda x: x,
+    },
+    "degrees": {
+        "radians": lambda x: x * np.pi / 180,
+        "degrees": lambda x: x,
+    },
+}
+
 
 class GeometryError(Exception):
     """Raised when geometry problem occurs."""
+
 
 def get_struct_info(struct_input, struct_type="name", prog="psi4"):
     """Get structure information from an input query using Vetee.
@@ -48,12 +71,12 @@ def get_struct_info(struct_input, struct_type="name", prog="psi4"):
         to name.
     prog : str
         Setup structural information according to program.
-    
+
     Returns
     -------
     struct_info : vetee.job.Job object instance
         Specifies all information needed to write a molecule.
-    
+
     """
     AVAIL_STRUCTS = (
         "xyz", "com", "smiles", "inchi", "inchikey",
@@ -61,9 +84,8 @@ def get_struct_info(struct_input, struct_type="name", prog="psi4"):
     )
     struct_type = struct_type.lower()
     assert struct_type in AVAIL_STRUCTS
-    if struct_type in ("com", "xyz"):
-        assert os.path.isfile(struct_input)
-    
+    if struct_type in ("com", "xyz") and not os.path.isfile(struct_input):
+        raise FileNotFoundError(f"No such input file: {struct_input}")
     struct_info = vetee.job.Job(struct_type, struct_input, prog)
     try:
         # kaplan=True to avoid not-implemented error
@@ -76,7 +98,7 @@ def get_struct_info(struct_input, struct_type="name", prog="psi4"):
 
 def create_obmol(xyz_file, charge, multip):
     """Use openbabel to create an OBMol object from xyz file.
-    
+
     Parameters
     ----------
     xyz_file : str
@@ -91,12 +113,12 @@ def create_obmol(xyz_file, charge, multip):
     ------
     AssertionError
         xyz_file does not exist or is not a file.
-    
+
     Returns
     -------
     obmol : openbabel.OBMol object
         Containing information from xyz file.
-    
+
     """
     assert os.path.isfile(xyz_file)
     mol = pybel.readfile("xyz", xyz_file).__next__()
@@ -114,7 +136,7 @@ def create_obmol(xyz_file, charge, multip):
 
 def update_obmol(obmol, dihedrals, new_dihed):
     """Update an OBMol's torison angles.
-    
+
     Parameters
     ----------
     obmol : openbabel.OBMol object
@@ -125,7 +147,7 @@ def update_obmol(obmol, dihedrals, new_dihed):
     new_dihed : list(float) or np.array(num_dihed)
         New dihedrals to apply in radians.
         Should match index in dihedrals.
-    
+
     Returns
     -------
     coords : np.array((num_atoms,3), float)
@@ -140,10 +162,10 @@ def update_obmol(obmol, dihedrals, new_dihed):
     # obmol.BeginModify()
     for i, newt in enumerate(new_dihed):
         # get atom uses Idx which is atom index + 1
-        atom1 = obmol.GetAtom(dihedrals[i][0]+1)
-        atom2 = obmol.GetAtom(dihedrals[i][1]+1)
-        atom3 = obmol.GetAtom(dihedrals[i][2]+1)
-        atom4 = obmol.GetAtom(dihedrals[i][3]+1)
+        atom1 = obmol.GetAtom(dihedrals[i][0] + 1)
+        atom2 = obmol.GetAtom(dihedrals[i][1] + 1)
+        atom3 = obmol.GetAtom(dihedrals[i][2] + 1)
+        atom4 = obmol.GetAtom(dihedrals[i][3] + 1)
         # set torsion requires atom object instances
         # and input is in radians not degrees
         obmol.SetTorsion(atom1, atom2, atom3, atom4, newt)
@@ -191,7 +213,7 @@ def get_rings(obmol):
     ----------
     obmol : openbabel.OBMol object
         The molecule to search for rings.
-    
+
     Returns
     -------
     rings : list(tuple(int, bool, str, list(int)))
@@ -206,8 +228,8 @@ def get_rings(obmol):
 
     """
     rings = []
-    for i, r in enumerate(openbabel.OBMolRingIter(obmol)):
-        atoms = [x-1 for x in r._path] # convert Idx to index
+    for r in openbabel.OBMolRingIter(obmol):
+        atoms = [x - 1 for x in r._path]  # convert Idx to index
         rings.append((r.Size(), r.IsAromatic(), r.GetType(), atoms))
     return rings
 
@@ -231,7 +253,7 @@ def construct_fours(ring):
         [1] True = is aromatic, False = not aromatic
         [2] name of ring type (ex: benzene)
         [3] atom indices in connected order around ring
-    
+
     Raises
     ------
     AssertionError
@@ -242,14 +264,14 @@ def construct_fours(ring):
     fours : list(tuple(int,int,int,int))
         All sets of 4 connected atoms in the ring (incl.
         clockwise and counter-clockwise directions).
-    
+
     """
     ring_size = ring[0]
     assert ring_size > 3
     loop = ring[3] + ring[3][:3]
     fours = []
     for i in range(ring_size):
-        piece = loop[i:i+4]
+        piece = loop[i:i + 4]
         piece2 = piece[::-1]
         fours.append(tuple(piece))
         fours.append(tuple(piece2))
@@ -258,7 +280,7 @@ def construct_fours(ring):
 
 def remove_ring_dihed(rings, diheds):
     """Remove dihedral angles that are only in a ring.
-    
+
     Parameters
     ----------
     rings : list(int, bool, str, list(int))
@@ -266,14 +288,14 @@ def remove_ring_dihed(rings, diheds):
     diheds : list(tuple(int,int,int,int))
         Each element is a tuple representing the 4 atom
         indices of the dihedral angle.
-    
+
     Returns
     -------
     diheds : list(tuple(int,int,int,int))
         Updated set of dihedral angles, except with
         the angles that encompass only atoms in a ring
         removed.
-    
+
     """
     to_remove = []
     for ring in rings:
@@ -288,11 +310,9 @@ def remove_ring_dihed(rings, diheds):
     return diheds
 
 
-
-
 def get_min_dihed(xyz_file, charge, multip):
     """Get minimal dihedrals from file using GOpt.
-    
+
     Parameters
     ----------
     xyz_file : str
@@ -307,13 +327,13 @@ def get_min_dihed(xyz_file, charge, multip):
     ------
     AssertionError
         xyz_file does not exist or is not a file.
-    
+
     Returns
     -------
     min_dihed : list(tuple(int,int,int,int))
         Tuple containing a tuple of 4 atom indices. The
         dihedral a-b-c-d as a tuple is (a,b,c,d).
-    
+
     """
     assert os.path.isfile(xyz_file)
     mol = Internal.from_file(xyz_file, charge, multip)
@@ -323,9 +343,9 @@ def get_min_dihed(xyz_file, charge, multip):
         if isinstance(intern_coord, DihedralAngle):
             atoms = intern_coord.atoms
             # GOpt atoms are np.int64 (not sure openbabel will like that)
-            min_diheds.append(
-                 (int(atoms[0]), int(atoms[1]),
-                  int(atoms[2]), int(atoms[3])))
-            #     float(intern_coord.value)) # value for dihedral angle
-            
+            min_diheds.append((
+                int(atoms[0]), int(atoms[1]),
+                int(atoms[2]), int(atoms[3])))
+            #   float(intern_coord.value)) # value for dihedral angle
+
     return min_diheds

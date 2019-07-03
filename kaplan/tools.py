@@ -29,7 +29,7 @@ __all__ = [
     "TEST_DIR",
     "units_by_prog",
     "constants",
-    "units",
+    "energy_units",
     "get_bonds_list",
     "make_2d",
     "plot_2d",
@@ -55,76 +55,77 @@ units_by_prog = {
 # http://www.psicode.org/psi4manual/1.1/autodoc_physconst.html?highlight=bohr
 # https://www.convertunits.com/from/hartree/to/joule
 constants = {
-    "avogadro's number": 6.02214179e23, # units mol-1
+    "avogadro's number": 6.02214179e23,  # units mol-1
 }
 
-# usage example for units:
-#result = units["Ha"]["kJmol-1"](1)   
-units = {
-    "Ha": {                                      # hartrees
+# usage example for energy_units:
+# result = energy_units["Ha"]["kJmol-1"](1)
+energy_units = {
+    "Ha": {                                         # hartrees
         "Ha": lambda x: x,
-        "kJmol-1": lambda x: x*2625.500,         # kilojoules/mole
-        "J": lambda x: x*4.359744E-18,           # joules
-        "eV": lambda x: x*27.21138,              # electron-volts
-        "kcal": lambda x: x*1.0415567394524e-21, # kilocalories
-        "kcalmol-1": lambda x: x*627.5095,       # kilocalories/mole
-        "cm-1": lambda x: x*219474.6,            # wavenumbers
-        "MHz": lambda x: x*6.579684e9,           # megahertz
+        "kJmol-1": lambda x: x * 2625.500,          # kilojoules/mole
+        "J": lambda x: x * 4.359744E-18,            # joules
+        "eV": lambda x: x * 27.21138,               # electron-volts
+        "kcal": lambda x: x * 1.0415567394524e-21,  # kilocalories
+        "kcalmol-1": lambda x: x * 627.5095,        # kilocalories/mole
+        "cm-1": lambda x: x * 219474.6,             # wavenumbers
+        "MHz": lambda x: x * 6.579684e9,            # megahertz
     },
     "kJmol-1": {
         "kJmol-1": lambda x: x,
-        "Ha": lambda x: x/2625.500,
-        "kcalmol-1": lambda x: x/4.1858,
+        "Ha": lambda x: x / 2625.500,
+        "kcalmol-1": lambda x: x / 4.1858,
     },
     "J": {
         "J": lambda x: x,
-        "Ha": lambda x: x/4.359744E-18,
+        "Ha": lambda x: x / 4.359744E-18,
     },
     "eV": {
         "eV": lambda x: x,
-        "Ha": lambda x: x/27.21138,
+        "Ha": lambda x: x / 27.21138,
     },
     "kcal": {
         "kcal": lambda x: x,
-        "Ha": lambda x: x/1.0415567394524e-21,
+        "Ha": lambda x: x / 1.0415567394524e-21,
     },
     "kcalmol-1": {
         "kcalmol-1": lambda x: x,
-        "Ha": lambda x: x/627.5095,
-        "kJmol-1": lambda x: x*4.1858,
+        "Ha": lambda x: x / 627.5095,
+        "kJmol-1": lambda x: x * 4.1858,
     },
     "cm-1": {
         "cm-1": lambda x: x,
-        "Ha": lambda x: x/219474.6,
+        "Ha": lambda x: x / 219474.6,
     },
     "MHz": {
         "MHz": lambda x: x,
-        "Ha": lambda x: x/6.579684e9,
+        "Ha": lambda x: x / 6.579684e9,
     },
 }
 
+
 def get_bonds_list(obmol):
     """Get a list of bonds from an openbabel molecule.
-    
+
     Parameters
     ----------
     obmol : openbabel.OBMol object
-    
+
     Returns
     -------
     bonds_list : list()
         Each element is a tuple of 3 integers:
         atom1 index, atom2 index, and bond order.
-    
+
     """
     # this is how we iterate over the bonds in the
     # molecule and find out which atoms are connected
     # to one another
     bonds_list = []
     for obbond in openbabel.OBMolBondIter(obmol):
-        #bond_len = obbond.GetLength()
-        atom1 = obbond.GetBeginAtom().GetIdx()-1
-        atom2 = obbond.GetEndAtom().GetIdx()-1
+        # bond_len = obbond.GetLength()
+        atom1 = obbond.GetBeginAtom().GetIdx() - 1
+        atom2 = obbond.GetEndAtom().GetIdx() - 1
         bond_order = obbond.GetBondOrder()
         bonds_list.append((atom1, atom2, bond_order))
     return bonds_list
@@ -159,7 +160,7 @@ def make_2d():
 
 def plot_2d(xyzfile=None):
     """Make a plot of coordinates in 2-dimensions given an xyz file.
-    
+
     Parameters
     ----------
     xyzfile : str or None
@@ -186,7 +187,7 @@ def plot_2d(xyzfile=None):
     Returns
     -------
     None
-    
+
     """
     # read in input data
     inputs = Inputs()
@@ -198,18 +199,18 @@ def plot_2d(xyzfile=None):
     labels = [f"{i},{data['_coords'][i][0]}" for i in range(data["_num_atoms"])]
 
     # generate basic scatterplot with atom labels
-    fig, ax = plt.subplots()
+    _, ax = plt.subplots()
     plt.scatter(xs, ys, c="r")
     for i, x in enumerate(xs):
         label = labels[i]
         plt.annotate(
-            label, # this is the text
-            (x,ys[i]), # this is the point to label
-            textcoords="offset points", # how to position the text
-            xytext=(0,10), # distance from text to points (x,y)
-            ha="center" # horizontal alignment can be left, right or center
+            label,  # this is the text
+            (x, ys[i]),  # this is the point to label
+            textcoords="offset points",  # how to position the text
+            xytext=(0, 10),  # distance from text to points (x,y)
+            ha="center"  # horizontal alignment can be left, right or center
         )
-    
+
     # add lines where openbabel has determined there should be bonds
     obmol = create_obmol(xyzfile, inputs.charge, inputs.multip)
     bonds = get_bonds_list(obmol)
@@ -225,7 +226,7 @@ def plot_2d(xyzfile=None):
 
 def generate_data(name, num_iter, **kwargs):
     """Generate a dataset from a molecule name.
-    
+
     Parameters
     ----------
     name : str
@@ -246,7 +247,7 @@ def generate_data(name, num_iter, **kwargs):
     Returns
     -------
     None
-    
+
     """
     inputs = Inputs()
     input_dict = {
@@ -259,7 +260,7 @@ def generate_data(name, num_iter, **kwargs):
     outfile_name = "dihedrals_energies.csv"
     with open(os.path.join(inputs.output_dir, outfile_name), "w") as f:
         fcsv = csv.writer(f)
-        header = ["dihed"+i for i in range(inputs.num_dihed)] + ["energy"]
+        header = ["dihed" + i for i in range(inputs.num_dihed)] + ["energy"]
         fcsv.writerow(header)
         for i in num_iter:
             p = Pmem(None, 0, inputs.num_geoms, inputs.num_dihed)
@@ -268,20 +269,19 @@ def generate_data(name, num_iter, **kwargs):
                 row = [d for d in dihedrals] + p.energies[i]
                 fcsv.writerow(row)
 
-
-
 # profiling tools
+
 
 def profile_function(func_name, output_file, *args, **kwargs):
     """Run a profile on a function, writing output to output_file.
-    
+
     Notes
     -----
     The output_file is not readable (I believe it is a pstats object).
     To read the output in plain text, call the analyse_profile function
     in this module, where the first argument (profile) is the
     name of the output_file.
-    
+
     """
     pr = cProfile.Profile()
     pr.enable()
@@ -308,7 +308,7 @@ def analyse_profile(profile, output_file, sortby="cumulative"):
     sortby : str
         How the profile should be ordered. Defaults to
         cumulative.
-    
+
     Returns
     -------
     None
@@ -319,10 +319,9 @@ def analyse_profile(profile, output_file, sortby="cumulative"):
         ps.strip_dirs().sort_stats(sortby).print_stats()
 
 
-
 def energy_barplot(pmem, inunits="Ha", outunits="kJmol-1", scale=True):
     """Create a barplot of energies using matplotlib.
-    
+
     Parameters
     ----------
     pmem : kaplan.pmem.Pmem object
@@ -334,11 +333,11 @@ def energy_barplot(pmem, inunits="Ha", outunits="kJmol-1", scale=True):
     scale : bool
         Scale the y-axis to the energy values in the range
         95% of minimum energy to 105% of maximum energy.
-    
+
     Returns
     -------
     None
-    
+
     """
     energies = []
     labels = []
@@ -349,16 +348,16 @@ def energy_barplot(pmem, inunits="Ha", outunits="kJmol-1", scale=True):
             labels.append(f"{i}")
             # convert energy units, otherwise raise error
             try:
-                energies.append(units[inunits][outunits](energy))
+                energies.append(energy_units[inunits][outunits](energy))
             except KeyError:
                 raise ValueError(f"Unavailable unit conversion:\n{inunits} to {outunits}")
     # if no energies are present, raise error
     if energies == []:
         raise InputError("Pmem does not have any valid energies.")
-    
+
     # make plot
     inputs = Inputs()
-    x = range((inputs.num_geoms-(inputs.num_geoms-len(energies))))
+    x = range((inputs.num_geoms - (inputs.num_geoms - len(energies))))
     plt.bar(height=energies, x=x, tick_label=labels)
     plt.xlabel("Conformer Number")
     plt.ylabel(f"Energy ({outunits})")
@@ -368,19 +367,19 @@ def energy_barplot(pmem, inunits="Ha", outunits="kJmol-1", scale=True):
         min_scale = min(energies)
         max_scale = max(energies)
         if min_scale < 0:
-            min_scale = 1.00001*min_scale
+            min_scale = 1.00001 * min_scale
         elif min_scale == 0:
-            min_scale = -(max_scale-min_scale)*0.05
+            min_scale = -(max_scale - min_scale) * 0.05
         else:
-            min_scale = 0.99999*min_scale
+            min_scale = 0.99999 * min_scale
         if max_scale < 0:
-            max_scale = 0.99999*max_scale
+            max_scale = 0.99999 * max_scale
         else:
-            max_scale = 1.00001*max_scale
+            max_scale = 1.00001 * max_scale
         axes = plt.gca()
         axes.set_ylim([min_scale, max_scale])
         axes.ticklabel_format(axis="y", style="sci", useOffset=False, useMathText=True)
-        
+
     plt.tight_layout()
     outfile = os.path.join(inputs.output_dir, f"pmem{pmem.ring_loc}_energies.png")
     plt.savefig(outfile, dpi=300)
@@ -389,7 +388,7 @@ def energy_barplot(pmem, inunits="Ha", outunits="kJmol-1", scale=True):
 
 def energy_rmsd_scatter(pmem, inunits="Ha", outunits="kJmol-1"):
     """Create a scatterplot of energies and rmsd values for each conformer pair using matplotlib.
-    
+
     Parameters
     ----------
     pmem : kaplan.pmem.Pmem object
@@ -398,18 +397,18 @@ def energy_rmsd_scatter(pmem, inunits="Ha", outunits="kJmol-1"):
         The input units for the energy.
     outunits : str
         The output units for energy to display on the plot.
-    
+
     Returns
     -------
     None
-    
+
     """
     if pmem.num_geoms == 1:
         raise InputError("Need at least two geoms per pmem to make this plot.")
     # convert energy units, otherwise raise error
     try:
-        assert inunits in units
-        assert outunits in units[inunits]
+        assert inunits in energy_units
+        assert outunits in energy_units[inunits]
     except AssertionError:
         raise ValueError(f"Unavailable unit conversion:\n{inunits} to {outunits}")
     try:
@@ -421,9 +420,9 @@ def energy_rmsd_scatter(pmem, inunits="Ha", outunits="kJmol-1"):
     labels = []
 
     for conf1, conf2, rmsd in pmem.rmsds:
-        e1 = units[inunits][outunits](pmem.energies[conf1])
-        e2 = units[inunits][outunits](pmem.energies[conf2])
-        delta_es.append(abs(e1-e2))
+        e1 = energy_units[inunits][outunits](pmem.energies[conf1])
+        e2 = energy_units[inunits][outunits](pmem.energies[conf2])
+        delta_es.append(abs(e1 - e2))
         rmsds.append(rmsd)
         labels.append(f"{conf1},{conf2}")
 
@@ -431,22 +430,24 @@ def energy_rmsd_scatter(pmem, inunits="Ha", outunits="kJmol-1"):
     # need at least 0.2 per pair
     # want a minimum of around 8 width
     if pmem.num_geoms > 8:
-        fig, ax1 = plt.subplots(figsize=(pmem.num_pairs*0.2, 6))
+        fig, ax1 = plt.subplots(figsize=(pmem.num_pairs * 0.2, 6))
     else:
         fig, ax1 = plt.subplots()
     ax2 = ax1.twinx()
     inputs = Inputs()
     ax1.set_xlabel("Conformer Pair", fontsize=20)
     ax1.set_ylabel("RMSD", fontsize=20)
-    ax2.set_ylabel(r"$\Delta E_C$ "+f"{inunits}", fontsize=20)
+    ax2.set_ylabel(r"$\Delta E_C$ " + f"{inunits}", fontsize=20)
     ax1.plot(labels, rmsds, 'g^', label=labels, markersize=10)
     for tick in ax1.get_xticklabels():
         tick.set_rotation(90)
     ax2.plot(labels, delta_es, 'ro', markersize=10)
     ax1.set_title(f"{inputs.struct_input}, Pmem{pmem.ring_loc}", fontsize=24)
-    fig.legend([Line2D([0], [0], marker="^", color="g"),
-                Line2D([0], [0], marker="o", color="r")],
-            ["RMSD", r"$\Delta E_C$"], loc="center")
+    fig.legend(
+        [Line2D([0], [0], marker="^", color="g"),
+         Line2D([0], [0], marker="o", color="r")],
+        ["RMSD", r"$\Delta E_C$"], loc="center"
+    )
     outfile = os.path.join(inputs.output_dir, f"pmem{pmem.ring_loc}-delta-es-rmsds.png")
     plt.tight_layout()
     fig.savefig(outfile, dpi=300)
@@ -483,28 +484,32 @@ def dihedrals_heatmap(ring):
 
     """
     inputs = Inputs()
-    dihedrals_matrix = np.zeros((inputs.num_dihed, ring.num_filled*inputs.num_geoms))
+    dihedrals_matrix = np.zeros((inputs.num_dihed, ring.num_filled * inputs.num_geoms))
     dihedrals_mask = np.zeros(dihedrals_matrix.shape, int)
     for i in range(inputs.num_dihed):
         for j, slot in enumerate(ring.occupied):
             for k in range(inputs.num_geoms):
                 # ignore dihedrals where energy was not calculable
                 if ring[slot].energies[k] is not None:
-                    dihedrals_matrix[i][j+k] = ring[slot].dihedrals[k][i]
-                    dihedrals_mask[i][j+k] = 1
-    
+                    dihedrals_matrix[i][j + k] = ring[slot].dihedrals[k][i]
+                    dihedrals_mask[i][j + k] = 1
+
     masked_dihedrals = np.ma.MaskedArray(dihedrals_matrix, mask=dihedrals_mask)
     r_sqr_matrix = np.identity(inputs.num_dihed, float)
+
     for i in range(inputs.num_dihed):
-        for j in range(i+1, inputs.num_dihed):
+        for j in range(i + 1, inputs.num_dihed):
             # results is a tuple of:
             # slope, intercept, r_value, p_value, std_err
             results = linregress(masked_dihedrals[i], masked_dihedrals[j])
-            r_sqr_matrix[i][j] = results[2]**2
-    
+            r_sqr = results[2] ** 2
+            # upper right matrix
+            r_sqr_matrix[i][j] = r_sqr
+            # lower left matrix
+            r_sqr_matrix[j][i] = r_sqr
+
     make_heatmap(r_sqr_matrix)
-    print(inputs.output_dir)
-    
+
     return r_sqr_matrix
 
 
@@ -515,7 +520,7 @@ def make_heatmap(data):
     ----------
     data : np.array((N,N),float)
         The data to plot on the heatmap.
-    
+
     Notes
     -----
     Saves a figure to the output directory called
@@ -540,16 +545,16 @@ def make_heatmap(data):
     num_colour_samples = 9
 
     mat = plt.matshow(data, cmap=cm.get_cmap(cmap_name, num_colour_samples),
-                      interpolation="nearest")
+                      interpolation="nearest", vmin=0, vmax=1)
 
     plt.colorbar(mat, fraction=0.046, pad=0.04)
 
     # set minor axes in between the labels
     ax = plt.gca()
-    ax.set_xticks([x-0.5 for x in range(1,size)],minor=True)
-    ax.set_yticks([y-0.5 for y in range(1,size)],minor=True)
-    #plot grid on minor axes
-    plt.grid(which="minor",ls="-",lw=1)
+    ax.set_xticks([x - 0.5 for x in range(1, size)], minor=True)
+    ax.set_yticks([y - 0.5 for y in range(1, size)], minor=True)
+    # plot grid on minor axes
+    plt.grid(which="minor", ls="-", lw=1)
     # add axis labels
     ax.set_xlabel("Dihedral B")
     ax.xaxis.set_label_position("top")
@@ -558,11 +563,12 @@ def make_heatmap(data):
     plt.tick_params(which="minor", top=False, left=False)
     plt.tick_params(which="both", bottom=False)
 
-    #set x and y ticks and labels
-    #row_labels = range(size)
-    #col_labels = range(size)
-    #plt.xticks(range(size), col_labels)
-    #plt.yticks(range(size), row_labels)
-    
+    # set x and y ticks and labels
+    # row_labels = range(size)
+    # col_labels = range(size)
+    # plt.xticks(range(size), col_labels)
+    # plt.yticks(range(size), row_labels)
+
     plt.savefig(os.path.join(inputs.output_dir, "heatmap.png"),
                 bbox_inches="tight", dpi=300)
+    plt.clf()

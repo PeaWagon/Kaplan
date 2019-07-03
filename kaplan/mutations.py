@@ -21,8 +21,7 @@ from numpy import concatenate
 from copy import deepcopy
 
 # values for dihedral angles in radians
-from kaplan.geometry import MAX_VALUE, MIN_VALUE
-
+from kaplan.geometry import MIN_VALUE, MAX_VALUE
 
 
 def generate_children(parent1, parent2, num_muts, num_swaps, num_cross):
@@ -41,13 +40,13 @@ def generate_children(parent1, parent2, num_muts, num_swaps, num_cross):
     num_cross : int
         maximum number of crossovers to perform.
         Single-point crossover is implemented
-    
+
     Notes
     -----
     The size of parent1 and parent2 should be the same.
     num_cross and num_swaps should not exceed the length
     of parent1.
-    
+
     Returns
     -------
     two new sets of dihedral angles with which
@@ -60,8 +59,8 @@ def generate_children(parent1, parent2, num_muts, num_swaps, num_cross):
     assert num_conf == len(parent2)
     assert num_swaps <= num_conf
     assert num_cross <= num_conf
-    assert num_muts <= num_conf*num_dihed
-    
+    assert num_muts <= num_conf * num_dihed
+
     child1 = deepcopy(parent1)
     child2 = deepcopy(parent2)
     # choose how many swaps to do
@@ -83,7 +82,7 @@ def generate_children(parent1, parent2, num_muts, num_swaps, num_cross):
             # without replacement
             pmem1_indices.remove(conf1)
             pmem2_indices.remove(conf2)
-        
+
     if num_cross:
         pmem1_indices = [i for i in range(num_conf)]
         pmem2_indices = [i for i in range(num_conf)]
@@ -98,19 +97,19 @@ def generate_children(parent1, parent2, num_muts, num_swaps, num_cross):
 
     if num_muts1:
         # comb is all the possible locations that can be mutated in the child pmem
-        comb = [(i,j) for i in range(num_conf) for j in range(num_dihed)]
+        comb = [(i, j) for i in range(num_conf) for j in range(num_dihed)]
         # select a random location num_muts times
         mutate_locations = sample(comb, num_muts1)
         for loc in mutate_locations:
             # apply mutate operator to child1
             child1 = mutate(child1, loc)
-    
+
     if num_muts2:
-        comb = [(i,j) for i in range(num_conf) for j in range(num_dihed)]
+        comb = [(i, j) for i in range(num_conf) for j in range(num_dihed)]
         mutate_locations = sample(comb, num_muts2)
         for loc in mutate_locations:
             child2 = mutate(child2, loc)
-    
+
     return child1, child2
 
 
@@ -136,7 +135,7 @@ def single_parent_mutation(parent, num_muts):
     num_muts = randint(0, num_muts)
     if num_muts:
         # comb is all the possible locations that can be mutated in the child pmem
-        comb = [(i,j) for i in range(num_conf) for j in range(num_dihed)]
+        comb = [(i, j) for i in range(num_conf) for j in range(num_dihed)]
         # select a random location num_muts times
         mutate_locations = sample(comb, num_muts)
         for loc in mutate_locations:
@@ -192,7 +191,7 @@ def swap(child1, child2, conf1, conf2):
     Each list of list represents
     sets of dihedral angles.
 
-    """  
+    """
     child1_value = deepcopy(child1[conf1])
     child1[conf1] = child2[conf2]
     child2[conf2] = child1_value
@@ -232,7 +231,7 @@ def crossover(child1, child2, conf1, conf2):
     cut index: 3
     chosen1: 2
     chosen2: 1
-    new1: [ 9 10 11 12] 
+    new1: [ 9 10 11 12]
     new2: [17 18 19 20]
     child1: [[ 1  2  3  4]
              [ 5  6  7  8]
@@ -240,7 +239,7 @@ def crossover(child1, child2, conf1, conf2):
     child2: [[13 14 15 16]
              [17 18 19 12]
              [21 22 23 24]]
-    
+
     Returns
     -------
     2 x np.array(shape=(num_geoms, num_dihed), dtype=float)
