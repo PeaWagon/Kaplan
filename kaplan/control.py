@@ -21,7 +21,7 @@ from kaplan.energy import run_energy_calc
 from kaplan.tools import make_2d, plot_2d
 
 
-def run_kaplan(job_inputs, ring=None, save=True, new_dir=True):
+def run_kaplan(job_inputs, ring=None, save=True, new_dir=True, save_every=25):
     """Run the Kaplan programme.
 
     Parameters
@@ -48,6 +48,10 @@ def run_kaplan(job_inputs, ring=None, save=True, new_dir=True):
         an old inputs and/or ring object is used. If
         False, then the original directory will be
         kept (if inputs pickle is given as input).
+    save_every : int
+        After x number of mating events, the stats_file.txt
+        will be updated and a temporary ring object will
+        be written to output_dir (if save is True).
 
     Raises
     ------
@@ -58,6 +62,9 @@ def run_kaplan(job_inputs, ring=None, save=True, new_dir=True):
         original number of slots for the ring.
 
     """
+    # make sure no divide by zero errors
+    assert save_every > 0
+
     # read in and verify inputs
     if isinstance(job_inputs, str):
         assert os.path.isfile(job_inputs)
@@ -109,22 +116,26 @@ def run_kaplan(job_inputs, ring=None, save=True, new_dir=True):
             if inputs.asteroid:
                 percent_chance = random()
                 if inputs.asteroid >= percent_chance:
+                    print("Applying asteroid")
                     asteroid(ring, ring.occupied)
             if inputs.plague:
                 percent_chance = random()
                 if inputs.plague >= percent_chance:
+                    print("Applying plague")
                     plague(ring, inputs.normalise)
             if inputs.agathic:
                 percent_chance = random()
                 if inputs.agathic >= percent_chance:
+                    print("Applying agathic")
                     agathic(ring)
             if inputs.deluge:
                 percent_chance = random()
                 if inputs.deluge >= percent_chance:
+                    print("Applying deluge")
                     deluge(ring, ring.occupied, inputs.normalise)
 
             # keep data every 25 mevs
-            if mev % 25 == 0:
+            if mev % save_every == 0:
                 run_output(ring, mev, save)
 
         except RingEmptyError:

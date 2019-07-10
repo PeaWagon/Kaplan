@@ -118,6 +118,12 @@ class DefaultInputs:
     def __init__(self):
         self.__dict__ = self._options
 
+    def __str__(self):
+        return_str = ""
+        for attr in self.__dict__:
+            return_str += f"{attr}: {getattr(self, attr)}\n"
+        return return_str
+
 
 class Inputs(DefaultInputs):
 
@@ -546,3 +552,51 @@ def read_input(input_file, new_output_dir=True):
     inputs.obmol = obmol_obj
     inputs._check_input()
     return inputs
+
+
+def get_latest_job(parent_dir):
+    """Get the directory and job number for the last job in parent_dir.
+
+    Parameters
+    ----------
+    parent_dir : str
+        What is passed to inputs as output_dir. If this
+        str does not end in kaplan_output, then said
+        substring will be added.
+
+    Returns
+    -------
+    tuple(str, int), where str is the directory name for the latest
+    job and int is the last (corresponding) job number.
+
+    """
+    if not os.path.isdir(parent_dir):
+        raise InputError(f"No such parent directory: {parent_dir}")
+
+    if not parent_dir.endswith("kaplan_output"):
+        parent_dir = os.path.join(parent_dir, "kaplan_output")
+
+    # iterate over existing jobs to determine
+    # dir_num for oldest job
+    dir_contents = os.scandir(parent_dir)
+    # keep track of how many jobs have been run
+    max_job_num = -1
+    max_job_name = None
+    for val in dir_contents:
+        val_list = val.name.split("_")
+        if val_list[0] == "job" and len(val_list) == 3:
+            try:
+                job_num = int(val_list[1])
+                if job_num > max_job_num:
+                    max_job_num = job_num
+                    max_job_name = val
+            except ValueError:
+                pass
+
+    # kaplan_output exists but contains no job directories
+    if max_job_name is None:
+        raise InputError(f"No jobs in: {parent_dir}")
+
+    # construct final output directory for last job
+    return_dir = os.path.join(parent_dir, max_job_name)
+    return (return_dir, max_job_num)

@@ -10,13 +10,18 @@ between tests.
 
 
 import os
+import pickle
+import shutil
+
+from copy import deepcopy
 
 import vetee
 
 from numpy.testing import assert_raises
 
-from kaplan.inputs import Inputs, InputError
+from kaplan.inputs import Inputs, InputError, read_input, get_latest_job
 from kaplan.tools import TEST_DIR
+from kaplan.control import run_kaplan
 
 
 def test_inputs():
@@ -177,8 +182,57 @@ def test_inputs_update_inputs():
 
 
 def test_read_input():
-    # note: tested manually; will have to generate some
-    # output first before this can be tested (output that
-    # goes somewhere in the kaplan directory as to not
-    # be putting my directories on the github)
-    pass
+    out_dir = os.path.join(os.path.expanduser("~"), "test_read_input")
+
+    # remove the test directory if it already exists
+    if os.path.isdir(out_dir):
+        shutil.rmtree(out_dir, ignore_errors=True)
+    os.mkdir(out_dir)
+
+    # generate some output
+    input_dir = {
+        "struct_input": "propane",
+        "output_dir": out_dir,
+        "num_mevs": 5,
+        "prog": "openbabel",
+        "num_slots": 10,
+        "init_popsize": 5,
+    }
+    run_kaplan(input_dir)
+    # now generate a new run using the same inputs
+    # make one change and start a new job
+    inputs_pickle = read_input(
+        os.path.join(out_dir, "kaplan_output/job_0_propane/inputs.pickle")
+    )
+    # make trivial change
+    inputs_pickle.num_mevs = 10
+    run_kaplan(inputs_pickle)
+
+    # unpickle the new output dir
+    job1_inputs = os.path.join(out_dir, "kaplan_output/job_1_propane/inputs.pickle")
+    assert os.path.isfile(job1_inputs)
+    with open(job1_inputs, "rb") as f:
+        inputs1 = pickle.load(f)
+
+    # make sure inputs are the same as those read from inputs.pickle
+    for attr in inputs_pickle.__dict__:
+        if attr == "num_mevs":
+            # make sure change was made
+            assert getattr(inputs_pickle, attr) == 10
+            assert getattr(inputs1, attr) == 10
+        value2 = getattr(inputs_pickle, attr)
+        value3 = getattr(inputs1, attr)
+        try:
+            assert value2 == value3
+        except ValueError:
+            assert (value2 == value3).all()
+
+
+def test_get_latest_job():
+    # note if the read_input test changes, change this test too
+    test_read_input()
+    test_dir = os.path.join(os.path.expanduser("~"), "test_read_input")
+    result = get_latest_job(test_dir)
+    assert len(result) == 2
+    assert result[0] == os.path.join(test_dir, "kaplan_output/job_1_propane")
+    assert result[1] == 1

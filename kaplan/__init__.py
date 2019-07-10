@@ -20,16 +20,17 @@ from kaplan.geometry import MIN_VALUE, MAX_VALUE, geometry_units,\
     get_coords, set_coords, get_rings, get_atomic_nums,\
     construct_fours, remove_ring_dihed, get_min_dihed
 from kaplan.inputs import InputError, DefaultInputs, Inputs,\
-    read_input
+    read_input, get_latest_job
 from kaplan.mutations import generate_children,\
     single_parent_mutation, mutate, swap, crossover
 from kaplan.output import __version__, run_output
 from kaplan.pmem import Pmem
 from kaplan.ring import RingEmptyError, RingOverflowError, Ring
 from kaplan.rmsd import calc_rmsd, apply_centroid
-from kaplan.tools import TEST_DIR, units_by_prog, constants,\
-    energy_units, get_bonds_list, make_2d, plot_2d, generate_data,\
-    profile_function, analyse_profile, energy_barplot,\
-    energy_rmsd_scatter, dihedrals_heatmap, make_heatmap
+from kaplan.tools import amino_acids, TEST_DIR, units_by_prog,\
+    constants, energy_units, get_bonds_list, make_2d, plot_2d,\
+    generate_data, profile_function, analyse_profile,\
+    energy_barplot, energy_rmsd_scatter, dihedrals_heatmap,\
+    make_heatmap
 from kaplan.tournament import run_tournament, select_pmems, sortby,\
     select_parents, quicksort, partition, swap

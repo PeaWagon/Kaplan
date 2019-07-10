@@ -26,6 +26,7 @@ import io
 
 
 __all__ = [
+    "amino_acids",
     "TEST_DIR",
     "units_by_prog",
     "constants",
@@ -42,6 +43,14 @@ __all__ = [
     "make_heatmap",
 ]
 
+
+amino_acids = [
+    "asparagine", "glutamine", "aspartate", "glycine",
+    "tryptophan", "cysteine", "threonine", "alanine",
+    "isoleucine", "leucine", "tyrosine", "glutamate",
+    "proline", "histidine", "lysine", "serine",
+    "arginine", "valine", "methionine", "phenylalanine",
+]
 
 # this is where the test files are located
 TEST_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "test/testfiles")
@@ -383,7 +392,7 @@ def energy_barplot(pmem, inunits="Ha", outunits="kJmol-1", scale=True):
     plt.tight_layout()
     outfile = os.path.join(inputs.output_dir, f"pmem{pmem.ring_loc}_energies.png")
     plt.savefig(outfile, dpi=300)
-    plt.clf()
+    plt.close()
 
 
 def energy_rmsd_scatter(pmem, inunits="Ha", outunits="kJmol-1"):
@@ -451,7 +460,7 @@ def energy_rmsd_scatter(pmem, inunits="Ha", outunits="kJmol-1"):
     outfile = os.path.join(inputs.output_dir, f"pmem{pmem.ring_loc}-delta-es-rmsds.png")
     plt.tight_layout()
     fig.savefig(outfile, dpi=300)
-    plt.clf()
+    plt.close()
 
 
 def dihedrals_heatmap(ring):
@@ -571,4 +580,4 @@ def make_heatmap(data):
 
     plt.savefig(os.path.join(inputs.output_dir, "heatmap.png"),
                 bbox_inches="tight", dpi=300)
-    plt.clf()
+    plt.close()

@@ -8,7 +8,8 @@ from kaplan.test.test_geometry import test_get_min_dihed,\
     test_create_obmol, test_get_rings, test_construct_fours,\
     test_update_obmol, test_atom_indices, test_get_struct_info
 from kaplan.test.test_inputs import test_inputs,\
-    test_inputs_update_inputs
+    test_inputs_update_inputs, test_read_input,\
+    test_get_latest_job
 from kaplan.test.test_mutations import test_generate_children
 from kaplan.test.test_output import test_run_output
 from kaplan.test.test_pmem import test_pmem, profile_pmem,\
