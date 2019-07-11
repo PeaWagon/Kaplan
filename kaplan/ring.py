@@ -17,6 +17,20 @@ or None (when empty). The ring attribute num_filled
 indicates how many slots are occupied at any given
 time.
 
+The mean, median, and standard deviation can be
+calculated for fitness, energy, and RMSD. If these
+values cannot be calculated, the default behaviour is
+to accept the StatisticsError (from statistics module)
+and return None. The main case where these cannot
+be calculated is the event where only one pmem
+is in the ring. Also errors can occur if energies
+cannot be calculated for all geometries in the ring.
+
+You need at least 2 data points for stdev calculation.
+The StatisticsError can occur if the output module
+is called right after an extinction event (i.e. only
+one pmem left).
+
 """
 
 from random import choice
@@ -308,28 +322,20 @@ class Ring:
         # fewer entries for either energies or rmsds
         # mean requires 1 data point
         # stdev requires 2 data points
-        try:
-            mean_energy = -self.mean_energy
-            stdev_energy = self.stdev_energy
-        # division by zero
-        except ZeroDivisionError:
-            # there are no valid energies in the ring
+        mean_energy = self.mean_energy
+        stdev_energy = self.stdev_energy
+        if mean_energy is None:
             mean_energy = 0
-            stdev_energy = 1
-        # variance requires at least two data points
-        except StatisticsError:
+        else:
+            mean_energy *= -1
+        if stdev_energy is None:
             stdev_energy = 1
 
-        try:
-            mean_rmsd = self.mean_rmsd
-            stdev_rmsd = self.stdev_rmsd
-        # division by zero
-        except ZeroDivisionError:
-            # there are no valid rmsds in the ring
+        mean_rmsd = self.mean_rmsd
+        stdev_rmsd = self.stdev_rmsd
+        if mean_rmsd is None:
             mean_rmsd = 0
-            stdev_rmsd = 1
-        # variance requires at least two data points
-        except StatisticsError:
+        if stdev_rmsd is None:
             stdev_rmsd = 1
 
         # normalise the energies and rmsds
@@ -452,7 +458,12 @@ class Ring:
 
     @property
     def mean_fitness(self):
-        return mean([self[i].fitness for i in self.occupied if self[i].fitness is not None])
+        fit_vals = [self[i].fitness for i in self.occupied if self[i].fitness is not None]
+        try:
+            mean_fitness = mean(fit_vals)
+        except StatisticsError:
+            return None
+        return mean_fitness
 
     @property
     def mean_energy(self):
@@ -464,6 +475,8 @@ class Ring:
                 if energy is not None:
                     total += energy
                     count += 1
+        if count == 0:
+            return None
         return total / count
 
     @property
@@ -476,11 +489,18 @@ class Ring:
                 if rmsd[2] is not None:
                     total += rmsd[2]
                     count += 1
+        if count == 0:
+            return None
         return total / count
 
     @property
     def median_fitness(self):
-        return median([self[i].fitness for i in self.occupied if self[i].fitness is not None])
+        fit_vals = [self[i].fitness for i in self.occupied if self[i].fitness is not None]
+        try:
+            med_fitness = median(fit_vals)
+        except StatisticsError:
+            return None
+        return med_fitness
 
     @property
     def median_energy(self):
@@ -490,7 +510,11 @@ class Ring:
                 # None means energy could not be calculated
                 if energy is not None:
                     energy_vals.append(energy)
-        return median(energy_vals)
+        try:
+            med_energy = median(energy_vals)
+        except StatisticsError:
+            return None
+        return med_energy
 
     @property
     def median_rmsd(self):
@@ -500,11 +524,20 @@ class Ring:
                 # None means one or two invalid geometries
                 if rmsd[2] is not None:
                     rmsd_vals.append(rmsd[2])
-        return median(rmsd_vals)
+        try:
+            med_rmsd = median(rmsd_vals)
+        except StatisticsError:
+            return None
+        return med_rmsd
 
     @property
     def stdev_fitness(self):
-        return stdev([self[i].fitness for i in self.occupied if self[i].fitness is not None])
+        fit_vals = [self[i].fitness for i in self.occupied if self[i].fitness is not None]
+        try:
+            stdev_fitness = stdev(fit_vals)
+        except StatisticsError:
+            return None
+        return stdev_fitness
 
     @property
     def stdev_energy(self):
@@ -514,7 +547,11 @@ class Ring:
                 # None means energy could not be calculated
                 if energy is not None:
                     energy_vals.append(energy)
-        return stdev(energy_vals)
+        try:
+            stdev_energy = stdev(energy_vals)
+        except StatisticsError:
+            return None
+        return stdev_energy
 
     @property
     def stdev_rmsd(self):
@@ -524,4 +561,8 @@ class Ring:
                 # None means one or two invalid geometries
                 if rmsd[2] is not None:
                     rmsd_vals.append(rmsd[2])
-        return stdev(rmsd_vals)
+        try:
+            stdev_rmsds = stdev(rmsd_vals)
+        except StatisticsError:
+            return None
+        return stdev_rmsds
