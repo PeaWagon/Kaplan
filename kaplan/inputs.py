@@ -502,11 +502,29 @@ def read_input(input_file, new_output_dir=True):
     ----------
     input_file : str
         Explicit path and filename for inputs.pickle.
-    new_output_dir : bool
+    new_output_dir : bool, str
         If True (default), then a new job directory will
         be generated for the inputs. If False, then the
         original directory (read from inputs object) will
-        be used.
+        be used. If new_output_dir is a str, then this will
+        be the new directory for the inputs object (also
+        the input_coords.xyz file will be written there).
+
+    Notes
+    -----
+    If new_output_dir is not a boolean (True or False), then
+    it should point to a Kaplan parent directory (example:
+    /home/user/kaplan_output) or a directory that exists
+    (example: /home/user). Do not put job_x_name in the
+    output directory, because a new kaplan_output directory
+    will then be added to said job_x_name directory (or an
+    error will be raised in the event that said job directory
+    does not exist).
+
+    Raises
+    ------
+    AssertionError
+        The new_output_dir given does not exist.
 
     Returns
     -------
@@ -514,6 +532,8 @@ def read_input(input_file, new_output_dir=True):
     update to output_dir.
 
     """
+    if isinstance(new_output_dir, str):
+        assert os.path.isdir(new_output_dir)
     inputs = Inputs()
     with open(input_file, "rb") as f:
         old_inputs = pickle.load(f)
@@ -525,15 +545,26 @@ def read_input(input_file, new_output_dir=True):
     # make an xyz file for openbabel to read
     orig_xyzfile = os.path.join(inputs.output_dir, "input_coords.xyz")
 
-    if new_output_dir:
+    # when set to True, still need old inputs dir as reference
+    if new_output_dir is True:
         # get rid of job_#_str directory
         # if the output_dir ends with a slash, then only the
         # slash is removed with dirname (could
         # nest kaplan_output by accident)
         if inputs.output_dir.endswith("/"):
             inputs.output_dir = inputs.output_dir[:-1]
+        # if the old output directory is being used, it will still have job_x_name
         inputs.output_dir = os.path.dirname(inputs.output_dir)
         inputs._set_output_dir()
+
+    elif isinstance(new_output_dir, str):
+        inputs.output_dir = new_output_dir
+        inputs._set_output_dir()
+
+    else:
+        print("Warning: no new input_coords.xyz will be created.")
+        print("The inputs object will still have the old directory as output_dir.")
+        print(f"Any output for the current job will be written to:\n{inputs.output_dir}")
 
     if os.path.isfile(orig_xyzfile):
         obmol_obj = create_obmol(orig_xyzfile, inputs.charge, inputs.multip)
