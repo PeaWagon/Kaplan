@@ -99,7 +99,7 @@ are indicated in parentheses ().
 * **num_slots (50)**: number of ring slots total
 * **init_popsize (10)**: number of starting filled slots in the ring
 * **num_geoms (5)**: number of conformers to find
-* **num_muts (num_dihed * num_geoms // 5)**: the maximum number of mutations to apply to one solution instance
+* **num_muts (num_diheds * num_geoms // 5)**: the maximum number of mutations to apply to one solution instance
 * **num_swaps (num_geoms // 2)**: the maximum number of swaps to perform between
 two sets of geometries
 * **num_cross (num_geoms // 2)**: the maximum number of crossovers

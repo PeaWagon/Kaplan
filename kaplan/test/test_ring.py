@@ -260,7 +260,7 @@ def test_ring_iteration():
 
     print(ring)
 
-    pmem5 = Pmem(5, 1, inputs.num_geoms, inputs.num_dihed)
+    pmem5 = Pmem(5, 1, inputs.num_geoms, inputs.num_diheds)
     ring[5] = pmem5
     for dihedrals in ring[5]:
         # print(dihedrals)

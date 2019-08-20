@@ -138,7 +138,7 @@ class Ring:
         -----
         Makes sure the pmem matches the current
         inputs when added to the ring, such as
-        num_dihed, slot_num, and num_geoms.
+        num_diheds, slot_num, and num_geoms.
 
         """
         if not isinstance(key, int):
@@ -158,7 +158,7 @@ class Ring:
         # check pmem has correct inputs
         inputs = Inputs()
         assert inputs.num_geoms == value.num_geoms
-        assert inputs.num_dihed == value.num_dihed
+        assert inputs.num_diheds == value.num_diheds
         # if not overwriting pmem slot, need to increment num_filled
         if self.pmems[key] is None:
             self.num_filled += 1
@@ -213,7 +213,7 @@ class Ring:
 
         Parameters
         ----------
-        child : np.array(shape=(num_geoms, num_dihed),
+        child : np.array(shape=(num_geoms, num_diheds),
                          dtype=float)
         potential_slot : int
             The slot to place the child.
@@ -228,9 +228,9 @@ class Ring:
         None
 
         """
-        num_geoms, num_dihed = child.shape
+        num_geoms, num_diheds = child.shape
         # create new pmem object using dihedral angles
-        new_pmem = Pmem(None, current_mev, num_geoms, num_dihed, dihedrals=child)
+        new_pmem = Pmem(None, current_mev, num_geoms, num_diheds, dihedrals=child)
         # set the energetic and distance metrics needed for fitness calculation
         new_pmem.set_energy_rmsd()
         # note: the new pmem's energetic/rmsd values are not considered in the
@@ -402,7 +402,7 @@ class Ring:
         if self.num_filled == 0:
             for i in range(0, num_pmems):
                 self[i] = Pmem(i, current_mev, inputs.num_geoms,
-                               inputs.num_dihed)
+                               inputs.num_diheds)
                 self[i].set_energy_rmsd()
                 if not inputs.normalise:
                     self[i].set_fitness(inputs.fit_form, inputs.coef_energy, inputs.coef_rmsd)
@@ -424,7 +424,7 @@ class Ring:
                 break
             if self[i] is None:
                 self[i] = Pmem(i, current_mev, inputs.num_geoms,
-                               inputs.num_dihed)
+                               inputs.num_diheds)
                 self[i].set_energy_rmsd()
                 if not inputs.normalise:
                     self[i].set_fitness(inputs.fit_form, inputs.coef_energy, inputs.coef_rmsd)

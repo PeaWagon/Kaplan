@@ -18,10 +18,11 @@ from kaplan.tournament import run_tournament
 from kaplan.extinction import asteroid, agathic, deluge, plague
 from kaplan.output import run_output
 from kaplan.energy import run_energy_calc
-from kaplan.tools import make_2d, plot_2d
+from kaplan.tools import make_2d, plot_2d, plot_3d
 
 
-def run_kaplan(job_inputs, ring=None, save=True, new_dir=True, save_every=25):
+def run_kaplan(job_inputs, ring=None, save=True, new_dir=True,
+               save_every=25, recalc_fit=True):
     """Run the Kaplan programme.
 
     Parameters
@@ -52,6 +53,27 @@ def run_kaplan(job_inputs, ring=None, save=True, new_dir=True, save_every=25):
         After x number of mating events, the stats_file.txt
         will be updated and a temporary ring object will
         be written to output_dir (if save is True).
+    recalc_fit : bool
+        This input parameter only applies if a ring object
+        is input (i.e. ring is not None). If True (which
+        is the default), each pmem in the ring has
+        its fitness recalculated. This also will update
+        the conformer energies for each pmem. The RMSD
+        should not change, regardless of input. The cases
+        in which this update is necessary are those where
+        the input parameters change related to fitness.
+        If False, the pmem fitness values will not be
+        re-evaluated.
+
+    Notes
+    -----
+    recalc_fit should be set to True if re-running a ring
+    object after changing one or more of the following
+    inputs:
+    * prog/method/basis
+    * coef_energy/coef_rmsd
+    * fit_form
+    * normalise
 
     Raises
     ------
@@ -71,6 +93,8 @@ def run_kaplan(job_inputs, ring=None, save=True, new_dir=True, save_every=25):
         inputs = read_input(job_inputs, new_dir)
     elif isinstance(job_inputs, Inputs):
         inputs = job_inputs
+        if new_dir:
+            inputs = read_input(inputs, new_dir)
         inputs._check_input()
     else:
         inputs = Inputs()
@@ -80,13 +104,16 @@ def run_kaplan(job_inputs, ring=None, save=True, new_dir=True, save_every=25):
     make_2d()
     plot_2d()
 
+    # make a 3d image :D
+    plot_3d()
+
     # check that initial geometry converges
     # note error is not handled here, so any errors
     # will stop program execution
     run_energy_calc(inputs.coords)
 
     # biggest_bday is initial mating event number
-    # it is set to the age of the oldest exsiting pmem
+    # it is set to the age of the oldest exsiting pmem, plus one
     biggest_bday = 0
     if ring:
         assert os.path.isfile(ring)
@@ -96,15 +123,14 @@ def run_kaplan(job_inputs, ring=None, save=True, new_dir=True, save_every=25):
         for pmem in ring:
             if pmem.birthday > biggest_bday:
                 biggest_bday = pmem.birthday
+            if recalc_fit:
+                pmem.recalc_energies()
+                ring.set_fitness(pmem)
+        biggest_bday += 1
     else:
         # make a ring; constructor fills
         # ring with an initial population
         ring = Ring(inputs.num_slots, inputs.init_popsize)
-
-    temp_name = inputs.struct_input
-    # strip the path and extension from the struct_input
-    if inputs.struct_type in ("xyz", "com"):
-        temp_name = os.path.basename(os.path.splitext(temp_name)[0])
 
     # run the mevs
     for mev in range(biggest_bday, biggest_bday + inputs.num_mevs):

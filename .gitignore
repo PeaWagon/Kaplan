@@ -12,6 +12,7 @@
 ReferenceMaterial/*.pdf
 .DS_Store
 kaplan.egg-info/*
+kaplan/.vscode/*
 kaplan/__pycache__/
 kaplan/test/__pycache__/
 kaplan/test/kaplan.egg-info/

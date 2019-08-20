@@ -7,7 +7,7 @@ if __name__ == "__main__":
 
     setup(
         name="kaplan",
-        version="1.0a.0",
+        version="1.1a.0",
         description="Conformer searching package.",
         long_description=long_desc,
         long_description_content_type="text/markdown",

@@ -13,6 +13,19 @@ if the basis set and/or method are available
 for the given program). These responsibilities
 will be shifted to the energy module.
 
+Parameters
+----------
+exclude_from_rmsd : list(int)
+    Defaults to None, which means do not exclude
+    any atomic numbers from the RMSD calculation.
+    If not None, should be given as a list of
+    integers, where each integer represents
+    an atomic number to exclude from the RMSD
+    calculation. For example:
+    exclude = [1,8]
+    would calculate the RMSD based on atoms
+    that are not hydrogen or oxygen atoms.
+
 """
 
 
@@ -20,14 +33,27 @@ import os
 import numpy as np
 import pickle
 
-from vetee.coordinates import write_xyz
+from vetee.coordinates import write_xyz, CoordinatesError, pubchem_inchi_smiles, read_pubchem
 from vetee.tools import periodic_table
+from vetee.job import Job
 
 from kaplan.geometry import update_obmol, create_obmol,\
-    remove_ring_dihed, get_min_dihed, get_rings,\
-    get_struct_info, get_atomic_nums
+    remove_ring_dihed, get_diheds, get_rings,\
+    get_struct_info, get_atomic_nums, create_obmol_from_string,\
+    get_coords, set_coords, construct_internal
 
 from saddle.internal import Internal
+
+# these values are used in energy calculations when no
+# options are provided
+# if a new program is added, add defaults for it
+# how much RAM to use for psi4 calculations
+# should be less than what your computer has available
+hardware_inputs = {
+    "psi4": {"RAM": "4 GB"},
+    "openbabel": {},
+    "other": {},
+}
 
 
 class InputError(Exception):
@@ -60,6 +86,18 @@ class DefaultInputs:
         "charge": None,         # total molecular charge
         "multip": None,         # molecule multiplicity
         "no_ring_dihed": True,  # remove ring dihedral angles
+        "min_dihed": True,      # select a minimum number of dihedral angles
+        "exclude_from_rmsd": None,  # atomic numbers to exclude from RMSD calculations
+                                    # if this value is not None, it should be list(int)
+        "use_gopt": False,          # if True, uses GOpt/saddle to apply dihedral angles
+                                    # and reconfigure the resulting geometry
+                                    # if False, uses Openbabel to reconstruct the
+                                    # geometry
+                                    # GOpt/saddle takes significantly longer to construct
+                                    # the geometry, but may work better for molecules that
+                                    # have constrained components (such as rings), as it is
+                                    # able to simultaneously apply dihedral angles (rather
+                                    # than one at a time, as with Openbabel)
 
         # ea inputs
         "num_mevs": 100,
@@ -69,7 +107,7 @@ class DefaultInputs:
         "num_geoms": 5,
         # default for num_swaps is equal to num_geoms//2 when not set
         "num_swaps": None,
-        # default for num_muts is equal to (num_dihed*num_geoms)//5 when not set
+        # default for num_muts is equal to (num_dihedss*num_geoms)//5 when not set
         "num_muts": None,
         # default for num_cross is equal to num_geoms//2 when not set
         "num_cross": None,
@@ -103,11 +141,11 @@ class DefaultInputs:
         # the molecule (assuming one dihedral per
         # rotatable bond); dihedrals encased by rings
         # can be removed (set no_ring_dihed to True)
-        "num_dihed": None,
+        "num_diheds": None,
         # list of tuples, where each tuple has 4 integers
-        # representing atom indices that make up a minimum
+        # representing atom indices that make up a
         # dihedral angle
-        "min_diheds": None,
+        "diheds": None,
         # extra is a dictionary that
         # contains keywords to use in the energy
         # calculations (such as convergence criteria)
@@ -149,6 +187,9 @@ class Inputs(DefaultInputs):
         self.charge = None
         self.multip = None
         self.no_ring_dihed = True
+        self.min_dihed = True
+        self.exclude_from_rmsd = None
+        self.use_gopt = False
         self.num_mevs = 100
         self.num_slots = 50
         self.init_popsize = 10
@@ -167,8 +208,8 @@ class Inputs(DefaultInputs):
         self.normalise = True
         self.atomic_nums = None
         self.coords = None
-        self.num_dihed = None
-        self.min_diheds = None
+        self.num_diheds = None
+        self.diheds = None
         self.extra = {}
 
     def _check_input(self):
@@ -201,13 +242,17 @@ class Inputs(DefaultInputs):
             "num_swaps",
             "num_muts",
             "num_cross",
-            "num_dihed",
+            "num_diheds",
         }
         expect_float = {
             "coef_energy", "coef_rmsd", "asteroid",
             "plague", "agathic", "deluge",
         }
-        expect_bool = {"no_ring_dihed", "normalise"}
+        expect_bool = {
+            "no_ring_dihed", "normalise", "min_dihed",
+            "use_gopt",
+        }
+        expect_list = {"exclude_from_rmsd"}
         # make sure all values have been set
         # and are set to the correct type
         for arg, val in self._options.items():
@@ -223,8 +268,10 @@ class Inputs(DefaultInputs):
                     self.num_cross = self.num_geoms // 2
                     val = self.num_cross
                 elif arg == "num_muts":
-                    self.num_muts = (self.num_dihed * self.num_geoms) // 5
+                    self.num_muts = (self.num_diheds * self.num_geoms) // 5
                     val = self.num_muts
+                elif arg == "exclude_from_rmsd":
+                    pass
                 else:
                     raise InputError(f"Missing required input argument: {arg}")
             # int(float) doesn't throw an error, but int("float") does
@@ -244,10 +291,20 @@ class Inputs(DefaultInputs):
             elif arg in expect_bool:
                 try:
                     assert isinstance(val, bool)
-                except ValueError:
+                except AssertionError:
                     raise InputError(
                         f"Value should be True or False and not a string: {arg} = {val}"
                     )
+            elif arg in expect_list:
+                try:
+                    assert isinstance(val, list)
+                except AssertionError:
+                    if arg == "exclude_from_rmsd" and val is None:
+                        pass
+                    else:
+                        raise InputError(
+                            f"Value should be a list: {arg} = {val}"
+                        )
 
         # only programs currently available are psi4 and openbabel
         # if a program is added, add it to _avail_progs list in
@@ -265,14 +322,71 @@ class Inputs(DefaultInputs):
         assert self.num_geoms > 0
         assert 0 <= self.num_swaps <= self.num_geoms
         assert 0 <= self.num_cross <= self.num_geoms
-        assert 0 <= self.num_muts <= self.num_dihed * self.num_geoms
+        assert 0 <= self.num_muts <= self.num_diheds * self.num_geoms
         assert 2 <= self.mating_rad <= (self.num_slots - 1) // 2
         assert self.coef_energy >= 0
         assert self.coef_rmsd >= 0
+        if self.exclude_from_rmsd is not None:
+            for atom in self.exclude_from_rmsd:  # pylint: disable=not-an-iterable
+                assert 1 <= atom <= 118
+                assert isinstance(atom, int)
 
     def _update_geometry(self):
+        """Update the OBMol object and the coordinates.
+
+        Notes
+        -----
+        This method will now have two different approaches,
+        one for smiles and one for everything else. Sometimes,
+        Pubchem does not have the smiles string that is being
+        input, but it is possible to create an OBMol object
+        by reading the smiles string instead.
+
+        This method adds the "pubchem_success" key to the
+        self.extra dictionary. The value is True if the
+        Pubchem query worked with the given input, and False
+        otherwise. False also implies that Openbabel was used
+        to generate the structure and not Pubchem.
+
+        """
         # create vetee job object and read in coordinates
-        job = get_struct_info(self.struct_input, self.struct_type)
+        try:
+            job = get_struct_info(self.struct_input, self.struct_type)
+            # check if molecule is flat
+            # if flat, make it with Openbabel
+            flat = all(np.allclose(atom[3], 0.0, atol=0.001) for atom in job.coords)
+            if flat:
+                print("Warning: flat molecule detected.")
+                if self.struct_type not in ("com", "xyz"):
+                    print("Changing input type to inchi.")
+                    data = pubchem_inchi_smiles(self.struct_type, self.struct_input)
+                    self.struct_input = data["_inchi"]
+                    self.struct_type = "inchi"
+                    raise CoordinatesError
+            self.extra["pubchem_success"] = True
+        # vetee.coordinates.CoordinatesError occurs when
+        # Pubchem database does not have what is given in the inputs
+        except CoordinatesError as e:
+            # can try to make OBMol from smiles/inchi, if given as input
+            if self.struct_type not in ("smiles", "inchi"):
+                raise e
+            self.extra["pubchem_success"] = False
+            print("Warning: Pubchem data ignored.")
+            print("Generating OBMol and coordinates using Openbabel.")
+            # make a new job object (from vetee)
+            job = Job(self.struct_type, self.struct_input, "psi4")
+
+            # try to read the smiles string with openbabel
+            self.obmol = create_obmol_from_string(self.struct_type, self.struct_input)
+            job.charge = self.obmol.GetTotalCharge()
+            job.multip = self.obmol.GetTotalSpinMultiplicity()
+            job._coords = []
+            obmol_coords = get_coords(self.obmol)
+            self.atomic_nums = get_atomic_nums(self.obmol)
+            obmol_atoms = [periodic_table(a) for a in self.atomic_nums]
+            for i, atom in enumerate(obmol_coords):
+                job._coords.append([obmol_atoms[i], atom[0], atom[1], atom[2]])
+
         # if any of the following were given, compare to inputs
         # vetee obtained
         if self.charge is None:
@@ -327,20 +441,30 @@ class Inputs(DefaultInputs):
         self.coords = job.xyz_coords
 
         # now determine minimum dihedrals by atom index
-        self.min_diheds = get_min_dihed(ofile, self.charge, self.multip)
-        self.obmol = create_obmol(ofile, self.charge, self.multip)
+        print("Selecting dihedral angles.")
+        self.diheds = get_diheds(ofile, self.charge, self.multip, select_min=self.min_dihed)
+
+        # if constrained mol, use saddle to optimise the geometry
+        if self.use_gopt:
+            self.extra["internal"] = construct_internal(
+                ofile, self.charge, self.multip, select_min=self.min_dihed
+            )
+
+        # if pubchem succeeded in reading smiles /inchi string then
+        # the obmol should already have been created
+        if self.extra["pubchem_success"]:
+            self.obmol = create_obmol(ofile, self.charge, self.multip)
+            # set atomic numbers
+            self.atomic_nums = get_atomic_nums(self.obmol)
 
         # remove ring dihedrals where all four atoms are in a ring
         if self.no_ring_dihed:
             rings = get_rings(self.obmol)
-            self.min_diheds = remove_ring_dihed(rings, self.min_diheds)
-        self.num_dihed = len(self.min_diheds)
+            self.diheds = remove_ring_dihed(rings, self.diheds)
+        self.num_diheds = len(self.diheds)
         # check that number of dihedral angles is not 0
-        if self.num_dihed == 0:
+        if self.num_diheds == 0:
             raise InputError("No dihedral angles could be generated for the input molecule.")
-
-        # set atomic numbers
-        self.atomic_nums = get_atomic_nums(self.obmol)
 
     def _set_output_dir(self):
         """Determine the name of the output directory.
@@ -388,19 +512,13 @@ class Inputs(DefaultInputs):
             self.output_dir = os.path.join(os.path.expanduser("~"), "kaplan_output")
         # don't make more subdirectories
         elif self.output_dir.endswith("kaplan_output"):
-            pass
+            self.output_dir = os.path.abspath(self.output_dir)
         else:
             self.output_dir = os.path.join(os.path.abspath(self.output_dir), "kaplan_output")
 
         # make an identifier for the molecule
-        name = self.struct_input
-        if self.struct_type in ("xyz", "com"):
-            # strip the path and extension from the struct_input
-            name = os.path.basename(os.path.splitext(name)[0])
-
-        # get rid of characters that should not be in file names
-        # get rid of white space
-        name = name.strip("!@#$%^&*()<>?/").replace(" ", "")
+        # note name is a property, not an attribute
+        name = self.name
 
         # first check that there is a place to put the
         # output files
@@ -416,7 +534,7 @@ class Inputs(DefaultInputs):
         dir_nums = []
         for val in dir_contents:
             val = val.name.split("_")
-            if val[0] == "job" and len(val) == 3:
+            if val[0] == "job" and len(val) >= 3:
                 try:
                     dir_nums.append(int(val[1]))
                 except ValueError:
@@ -428,6 +546,48 @@ class Inputs(DefaultInputs):
             new_dir = f"job_0_{name}"
         self.output_dir = os.path.join(self.output_dir, new_dir)
         os.mkdir(self.output_dir)
+
+    def write_inputs(self, fname="inputs.txt", overwrite=False):
+        """Write the inputs object contents to a plain text file.
+
+        Parameters
+        ----------
+        fname : str
+            The name of the file to write the inputs to.
+            Defaults to inputs.txt.
+        overwrite : bool
+            Defaults to False, which means an InputError
+            will be raised if an attempt to overwrite
+            an existing file is made. False means the file
+            will be written regardless of whether an
+            identical file name exists in the output
+            directory.
+
+        Raises
+        ------
+        FileExistsError
+            The file already exists in the given directory.
+        AssertionError
+            The output_dir directory does not exist.
+
+        Notes
+        -----
+        If the self.output_dir is not yet assigned,
+        fname will be written to the current working
+        directory.
+
+        """
+        assert os.path.isdir(self.output_dir)
+        outname = os.path.join(self.output_dir, fname)
+        try:
+            # x means exclusive creation, failing if file exists
+            with open(outname, "x") as f:
+                f.write(self.__str__())
+        except FileExistsError as e:
+            if not overwrite:
+                raise e
+        with open(outname, "w") as f:
+            f.write(self.__str__())
 
     def update_inputs(self, input_dict):
         """Update the inputs from their default values.
@@ -494,14 +654,57 @@ class Inputs(DefaultInputs):
         # check that the inputs are valid
         self._check_input()
 
+        # write the contents to inputs.txt in the output_dir directory
+        self.write_inputs()
 
-def read_input(input_file, new_output_dir=True):
-    """Open a previously-written inputs pickle file.
+        print("Done with inputs setup.")
+
+    @property
+    def name(self):
+        """Returns a name for easy titles in plots and making a job directory."""
+
+        bad_chars = [" ", "~", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")"]
+
+        # if the struct_input is an integer or float, it should be converted
+        # to a string so that string-based methods work without error
+        name = str(self.struct_input)
+
+        # deal with files
+        if self.struct_type in ("com", "xyz"):
+            # strip the path and extension from the struct_input
+            name = os.path.basename(os.path.splitext(name)[0])
+            # get rid of white space
+            # get rid of characters that should not be in file names
+            for bad_char in bad_chars:
+                name = name.replace(bad_char, "")
+
+        # get name for inchi or smiles since these will often have
+        # special characters that cannot be used in directory names
+        elif self.struct_type in ("smiles", "inchi"):
+            try:
+                data = read_pubchem(self.struct_type, self.struct_input)
+                data = data["_synonyms"]
+                if data == []:
+                    raise CoordinatesError("No names available for input molecule.")
+                name = data[0]
+                for bad_char in bad_chars:
+                    name = name.replace(bad_char, "")
+            except CoordinatesError:
+                name = "unknown_mol"
+
+        return name
+
+
+def read_input(job_inputs, new_output_dir=True):
+    """Open a previously-written inputs pickle file or prep inputs object.
 
     Parameters
     ----------
-    input_file : str
-        Explicit path and filename for inputs.pickle.
+    job_inputs : str or kaplan.inputs.Inputs object
+        If a str, then it's an explicit path and
+        filename for inputs.pickle. If object,
+        it should have already been setup (except
+        obmol).
     new_output_dir : bool, str
         If True (default), then a new job directory will
         be generated for the inputs. If False, then the
@@ -521,6 +724,13 @@ def read_input(input_file, new_output_dir=True):
     error will be raised in the event that said job directory
     does not exist).
 
+    For jobs that are being restarted from a job that used
+    a smiles string or inchi/inchikey as input, there is no
+    guarantee that Openbabel generates the same atom
+    ordering for the same string read in multiple times.
+    Therefore it is recommended that users check that
+    the structures are equivalent.
+
     Raises
     ------
     AssertionError
@@ -535,8 +745,14 @@ def read_input(input_file, new_output_dir=True):
     if isinstance(new_output_dir, str):
         assert os.path.isdir(new_output_dir)
     inputs = Inputs()
-    with open(input_file, "rb") as f:
-        old_inputs = pickle.load(f)
+
+    if isinstance(job_inputs, str):
+        with open(job_inputs, "rb") as f:
+            old_inputs = pickle.load(f)
+    else:
+        # might have an issue if someone tries to pass DefaultInputs object
+        assert isinstance(job_inputs, Inputs)
+        old_inputs = job_inputs
     for var in old_inputs.__dict__:
         inputs.__dict__[var] = old_inputs.__dict__[var]
     # cannot pickle obmol object (since it's a swig object)
@@ -566,8 +782,24 @@ def read_input(input_file, new_output_dir=True):
         print("The inputs object will still have the old directory as output_dir.")
         print(f"Any output for the current job will be written to:\n{inputs.output_dir}")
 
+    # assume pubchem works if pubchem success key was never created
+    try:
+        pubchem_result = inputs.extra["pubchem_success"]
+    except KeyError:
+        pubchem_result = True
+
     if os.path.isfile(orig_xyzfile):
-        obmol_obj = create_obmol(orig_xyzfile, inputs.charge, inputs.multip)
+        if pubchem_result:
+            obmol_obj = create_obmol(orig_xyzfile, inputs.charge, inputs.multip)
+        else:
+            obmol_obj = create_obmol_from_string(inputs.struct_type, inputs.struct_input)
+            # make sure atomic numbers are in the same order
+            # if this assertion fails, best to make a new inputs object
+            # from scratch
+            assert inputs.atomic_nums == get_atomic_nums(obmol_obj)
+            # update the obmol_obj coordinates, since they are not the
+            # same every time
+            obmol_obj = set_coords(obmol_obj, inputs.coords)
         if new_output_dir:
             os.rename(orig_xyzfile, os.path.join(inputs.output_dir, "input_coords.xyz"))
 
@@ -577,7 +809,12 @@ def read_input(input_file, new_output_dir=True):
             full_coords.append([periodic_table(atom)] + list(coord))
         new_xyzfile = os.path.join(inputs.output_dir, "input_coords.xyz")
         write_xyz({"_coords": full_coords, "_comments": inputs.struct_input}, new_xyzfile)
-        obmol_obj = create_obmol(new_xyzfile, inputs.charge, inputs.multip)
+        if pubchem_result:
+            obmol_obj = create_obmol(new_xyzfile, inputs.charge, inputs.multip)
+        else:
+            obmol_obj = create_obmol_from_string(inputs.struct_type, inputs.struct_input)
+            assert inputs.atomic_nums == get_atomic_nums(obmol_obj)
+            obmol_obj = set_coords(obmol_obj, inputs.coords)
 
     # make sure the inputs are still valid
     inputs.obmol = obmol_obj

@@ -11,12 +11,13 @@ def test_apply_extinction():
     inputs = Inputs()
     inputs.num_slots = 100
     inputs.num_geoms = 0
+    inputs.num_diheds = 0
 
     # check that an error is raised if no pmems have fitness
     # values set
     ring1 = Ring(inputs.num_slots, 0)
     for i in range(inputs.num_slots):
-        pmem = Pmem(i, 0, 0, inputs.num_dihed)
+        pmem = Pmem(i, 0, 0, inputs.num_diheds)
         ring1[i] = pmem
     assert_raises(RingEmptyError, apply_extinction, ring1, "deluge", inputs.normalise)
 
@@ -30,14 +31,14 @@ def test_apply_extinction():
     # if slots are not in range of ring, raise an error
     ring3 = Ring(inputs.num_slots, 0)
     for i in range(inputs.num_slots):
-        pmem = Pmem(i, 0, 0, inputs.num_dihed)
+        pmem = Pmem(i, 0, 0, inputs.num_diheds)
         ring3[i] = pmem
         ring3[i]._ring_loc = -4 * (i + inputs.num_slots)
     assert_raises(InputError, apply_extinction, ring3, "asteroid", inputs.normalise)
 
     ring4 = Ring(inputs.num_slots, 0)
     for i in range(inputs.num_slots):
-        pmem = Pmem(i, 0, 0, inputs.num_dihed)
+        pmem = Pmem(i, 0, 0, inputs.num_diheds)
         ring4[i] = pmem
         ring4[i]._ring_loc = i + inputs.num_slots
     assert_raises(InputError, apply_extinction, ring4, "asteroid", inputs.normalise)
@@ -48,11 +49,11 @@ def test_plague():
     inputs.num_slots = 10
     inputs.num_geoms = 0
     inputs.normalise = False
-    inputs.num_dihed = 3
+    inputs.num_diheds = 3
 
     ring = Ring(inputs.num_slots, 0)
     for i in range(inputs.num_slots):
-        pmem = Pmem(i, 0, 0, inputs.num_dihed)
+        pmem = Pmem(i, 0, 0, inputs.num_diheds)
         ring[i] = pmem
         ring[i].fitness = randint(1, 100)
     for i in range(10):
@@ -63,7 +64,7 @@ def test_plague():
     inputs.num_slots = 5
     ring2 = Ring(inputs.num_slots, 0)
     for i in range(inputs.num_slots):
-        pmem = Pmem(i, 0, 0, inputs.num_dihed)
+        pmem = Pmem(i, 0, 0, inputs.num_diheds)
         ring2[i] = pmem
         ring2[i].fitness = 10
     for i in range(10):
@@ -76,10 +77,10 @@ def test_agathic():
     inputs.num_slots = 10
     inputs.num_geoms = 0
     inputs.normalise = False
-    inputs.num_dihed = 3
+    inputs.num_diheds = 3
     ring = Ring(inputs.num_slots, 0)
     for i in range(inputs.num_slots):
-        pmem = Pmem(i, i, 0, inputs.num_dihed)
+        pmem = Pmem(i, i, 0, inputs.num_diheds)
         ring[i] = pmem
     for i in range(10):
         agathic(ring)
@@ -89,7 +90,7 @@ def test_agathic():
     inputs.num_slots = 5
     ring2 = Ring(inputs.num_slots, 0)
     for i in range(inputs.num_slots):
-        pmem = Pmem(i, 0, 0, inputs.num_dihed)
+        pmem = Pmem(i, 0, 0, inputs.num_diheds)
         ring2[i] = pmem
     for i in range(10):
         plague(ring2, inputs.normalise)
@@ -98,7 +99,7 @@ def test_agathic():
     # test with some bdays being None
     ring3 = Ring(inputs.num_slots, 0)
     for i in range(inputs.num_slots):
-        pmem = Pmem(i, i, 0, inputs.num_dihed)
+        pmem = Pmem(i, i, 0, inputs.num_diheds)
         ring3[i] = pmem
     ring3[0]._birthday = None
     ring3[1]._birthday = None
@@ -112,14 +113,14 @@ def test_deluge():
     inputs.num_slots = 100
     inputs.num_geoms = 0
     inputs.normalise = False
-    inputs.num_dihed = 3
+    inputs.num_diheds = 3
 
     # test that deluge works on random fitness
     # values between 1 and 100
     # make sure that not all pmems got killed
     ring = Ring(inputs.num_slots, 0)
     for i in range(inputs.num_slots):
-        pmem = Pmem(i, 0, 0, inputs.num_dihed)
+        pmem = Pmem(i, 0, 0, inputs.num_diheds)
         ring[i] = pmem
         ring[i].fitness = randint(1, 100)
     for i in range(1000):
@@ -134,7 +135,7 @@ def test_deluge():
     # even when some fitness values are not initialised
     ring2 = Ring(inputs.num_slots, 0)
     for i in range(inputs.num_slots):
-        pmem = Pmem(i, 0, 0, inputs.num_dihed)
+        pmem = Pmem(i, 0, 0, inputs.num_diheds)
         ring2[i] = pmem
         if i < inputs.num_slots / 2:
             ring2[i].fitness = 95
@@ -148,7 +149,7 @@ def test_deluge():
     # the max fitness is zero
     ring5 = Ring(inputs.num_slots, 0)
     for i in range(inputs.num_slots):
-        pmem = Pmem(i, 0, 0, inputs.num_dihed)
+        pmem = Pmem(i, 0, 0, inputs.num_diheds)
         ring5[i] = pmem
         ring5[i].fitness = -i
     for i in range(1000):
@@ -160,7 +161,7 @@ def test_deluge():
     # fitness is negative
     ring6 = Ring(inputs.num_slots, 0)
     for i in range(inputs.num_slots):
-        pmem = Pmem(i, 0, 0, inputs.num_dihed)
+        pmem = Pmem(i, 0, 0, inputs.num_diheds)
         ring6[i] = pmem
         ring6[i].fitness = -i - 1
     for i in range(1000):
@@ -172,13 +173,13 @@ def test_deluge():
 def test_asteroid():
     inputs = Inputs()
     inputs.num_geoms = 0
-    inputs.num_dihed = 3
+    inputs.num_diheds = 3
 
     # smallest ring size is 5, so do testing on this thoroughly
     inputs.num_slots = 5
     ring3 = Ring(5, 0)
     for i in range(inputs.num_slots):
-        pmem = Pmem(i, 0, 0, inputs.num_dihed)
+        pmem = Pmem(i, 0, 0, inputs.num_diheds)
         ring3[i] = pmem
     for i in range(1000):
         asteroid(ring3, ring3.occupied)

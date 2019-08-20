@@ -15,7 +15,7 @@ def test_run_kaplan():
         "struct_type": "name",
         "charge": 0,
         "multip": 1,
-        "num_mevs": 20,
+        "num_mevs": 5,
         "init_popsize": 5,
         "num_slots": 20,
     }
@@ -26,7 +26,7 @@ def test_run_kaplan():
         "struct_type": "xyz",
         "charge": 0,
         "multip": 1,
-        "num_mevs": 20,
+        "num_mevs": 5,
         "init_popsize": 5,
         "num_slots": 20,
     }
@@ -37,7 +37,7 @@ def test_run_kaplan():
         "struct_type": "name",
         "charge": 0,
         "multip": 1,
-        "num_mevs": 20,
+        "num_mevs": 5,
         "init_popsize": 5,
         "num_slots": 20,
     }
@@ -45,7 +45,7 @@ def test_run_kaplan():
 
     test4 = {
         "struct_input": "proline",
-        "num_mevs": 20,
+        "num_mevs": 5,
         "init_popsize": 5,
         "num_slots": 20,
     }

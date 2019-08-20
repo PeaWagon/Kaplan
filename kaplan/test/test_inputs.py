@@ -22,6 +22,7 @@ from numpy.testing import assert_raises
 from kaplan.inputs import Inputs, InputError, read_input, get_latest_job
 from kaplan.tools import TEST_DIR
 from kaplan.control import run_kaplan
+from kaplan.geometry import GeometryError
 
 
 def test_inputs():
@@ -39,7 +40,16 @@ def test_inputs():
 
 def test_inputs_update_inputs():
     """Test the update_inputs method of the Inputs class."""
+
+    out_dir = os.path.join(TEST_DIR, "test_update_inputs")
+
+    # remove the test directory if it already exists
+    if os.path.isdir(out_dir):
+        shutil.rmtree(out_dir, ignore_errors=True)
+    os.mkdir(out_dir)
+
     test = Inputs()
+    test._reset_to_defaults()
     # check that defaults have been re-established
     # from previous test
     assert test.method is None
@@ -49,7 +59,8 @@ def test_inputs_update_inputs():
         "struct_type": "xyz",
         "charge": 0,
         "multip": 1,
-        "method": "mp2"
+        "method": "mp2",
+        "output_dir": out_dir,
     }
     # make sure no errors happen with inputs
     test.update_inputs(test_dict)
@@ -113,7 +124,7 @@ def test_inputs_update_inputs():
     test_dict["charge"] = 1
     test_dict["struct_type"] = "smiles"
     test_dict["struct_input"] = "very-bad-smiles-string"
-    assert_raises(vetee.coordinates.CoordinatesError, test.update_inputs, test_dict)
+    assert_raises(GeometryError, test.update_inputs, test_dict)
 
     # test bad multiplicity
     test_dict["struct_input"] = "C=CCC=C"
@@ -180,9 +191,17 @@ def test_inputs_update_inputs():
     assert_raises(InputError, test.update_inputs, test_dict)
     del test_dict["t_size"]
 
+    # test inchi string with slashes
+    test_dict["struct_input"] = "InChI=1S/C11H22/c1-4-11(2,3)10-8-6-5-7-9-10/h10H,4-9H2,1-3H3"
+    test_dict["struct_type"] = "inchi"
+    test.update_inputs(test_dict)
+
+    # cleanup
+    shutil.rmtree(out_dir, ignore_errors=True)
+
 
 def test_read_input():
-    out_dir = os.path.join(os.path.expanduser("~"), "test_read_input")
+    out_dir = os.path.join(TEST_DIR, "test_read_input")
 
     # remove the test directory if it already exists
     if os.path.isdir(out_dir):
@@ -202,7 +221,8 @@ def test_read_input():
     # now generate a new run using the same inputs
     # make one change and start a new job
     inputs_pickle = read_input(
-        os.path.join(out_dir, "kaplan_output/job_0_propane/inputs.pickle")
+        os.path.join(out_dir, "kaplan_output/job_0_propane/inputs.pickle"),
+        False
     )
     # make trivial change
     inputs_pickle.num_mevs = 10
@@ -227,12 +247,11 @@ def test_read_input():
         except ValueError:
             assert (value2 == value3).all()
 
-
-def test_get_latest_job():
-    # note if the read_input test changes, change this test too
-    test_read_input()
-    test_dir = os.path.join(os.path.expanduser("~"), "test_read_input")
-    result = get_latest_job(test_dir)
+    # test get_latest_job
+    result = get_latest_job(out_dir)
     assert len(result) == 2
-    assert result[0] == os.path.join(test_dir, "kaplan_output/job_1_propane")
+    assert result[0] == os.path.join(out_dir, "kaplan_output/job_1_propane")
     assert result[1] == 1
+
+    # remove the test directory as cleanup
+    shutil.rmtree(out_dir, ignore_errors=True)

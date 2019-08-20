@@ -41,7 +41,7 @@ def test_pmem_get_geometry():
         "struct_input": "asparagine",
         "num_geoms": 5,
     })
-    p1 = Pmem(0, 0, inputs.num_geoms, inputs.num_dihed)
+    p1 = Pmem(0, 0, inputs.num_geoms, inputs.num_diheds)
     p2 = deepcopy(p1)
     for i, _ in enumerate(p1):
         p1.set_energy_get_coords(i)

@@ -2,6 +2,8 @@
 # includes analysis tools for kaplan data
 
 from vetee.coordinates import read_xyz
+from vetee.tools import periodic_table
+
 from kaplan.inputs import Inputs, InputError
 from kaplan.pmem import Pmem
 from kaplan.geometry import create_obmol
@@ -17,6 +19,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib.lines import Line2D
+from mpl_toolkits.mplot3d import Axes3D
 from scipy.stats import linregress
 
 # profiling
@@ -34,6 +37,7 @@ __all__ = [
     "get_bonds_list",
     "make_2d",
     "plot_2d",
+    "plot_3d",
     "generate_data",
     "profile_function",
     "analyse_profile",
@@ -52,6 +56,14 @@ amino_acids = [
     "arginine", "valine", "methionine", "phenylalanine",
 ]
 
+amino_acid_letter_codes = [
+    "N", "Q", "D", "G",
+    "W", "C", "T", "A",
+    "I", "L", "Y", "E",
+    "P", "H", "K", "S",
+    "R", "V", "M", "F",
+]
+
 # this is where the test files are located
 TEST_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "test/testfiles")
 
@@ -59,6 +71,34 @@ TEST_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "test/testf
 units_by_prog = {
     "psi4": "Ha",
     "openbabel": "kcalmol-1",
+}
+
+# atom colours by atomic number
+# at some point, implement jmol colours:
+# http://jmol.sourceforge.net/jscolors/#Atoms%20('CPK'%20colors,%20default%20element%20colors)
+# used in plot_3d
+atom_colours = {
+    1: "white",
+    6: "black",
+    7: "blue",
+    8: "red",
+    15: "purple",
+    16: "yellow",
+    "other": "green",
+}
+
+# atom radii by atomic number in picometres (x10^-12)
+# from https://en.wikipedia.org/wiki/Atomic_radii_of_the_elements_%28data_page%29
+# at some point, fill in rest of data (from empirical column)
+# used in plot_3d
+atom_radii = {
+    1: 25,
+    6: 70,
+    7: 65,
+    8: 60,
+    15: 100,
+    16: 100,
+    "other": 65,
 }
 
 # http://www.psicode.org/psi4manual/1.1/autodoc_physconst.html?highlight=bohr
@@ -233,6 +273,120 @@ def plot_2d(xyzfile=None):
     plt.close()
 
 
+def plot_3d(xyzfile=None):
+    """Make a plot of coordinates in 3-dimensions given an xyz file.
+
+    Parameters
+    ----------
+    xyzfile : str or None
+        Defaults to None, in which case the output_dir is searched
+        for input_coords.xyz. If a string is provided, then this
+        function attemtps to read in the string as an input file
+        and path.
+
+    Notes
+    -----
+    Writes plot3d.png to the output_dir. Each coordinate
+    is labelled with the atom number and the type of atom (example: H).
+    The purpose of this plot is to allow the user to crudely identify
+    the dihedral angles of their input molecule. This function does
+    not account for atom overlap, and so labels may become obscured.
+
+    Inputs that must be set:
+    * charge
+    * multip
+    * output_dir
+    These values must correspond to the input file (if given).
+
+    Returns
+    -------
+    None
+
+    """
+    # read in input data
+    # set name of input file if necessary
+    # set title text
+    inputs = Inputs()
+    if xyzfile is None:
+        title = f"{inputs.name}, input_coords"
+        xyzfile = os.path.join(inputs.output_dir, "input_coords.xyz")
+        outname = os.path.join(inputs.output_dir, "plot3d.png")
+    else:
+        name = os.path.splitext(os.path.basename(xyzfile))[0]
+        title = f"{inputs.name}, {name}"
+        outname = os.path.join(inputs.output_dir, f"{name}.png")
+
+    data = read_xyz(xyzfile)
+    xs = [data["_coords"][i][1] for i in range(data["_num_atoms"])]
+    ys = [data["_coords"][i][2] for i in range(data["_num_atoms"])]
+    zs = [data["_coords"][i][3] for i in range(data["_num_atoms"])]
+    labels = [f"  {data['_coords'][i][0]},{i}" for i in range(data["_num_atoms"])]
+    atomic_nums = [periodic_table(data["_coords"][i][0])
+                   for i in range(data["_num_atoms"])]
+
+    colours = [atom_colours[i] if i in atom_colours
+               else atom_colours["other"] for i in atomic_nums]
+
+    # atoms are too small if relative to a H with diameter=1
+    atom_scaling_factor = 3
+    # these are the marker sizes
+    # marker sizes are given in area
+    sizes = [(atom_scaling_factor * atom_radii[i] / atom_radii[1])**2 if i in atom_radii
+             else atom_radii["other"] for i in atomic_nums]
+
+    # generate basic scatterplot with atom labels
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(
+        xs, ys, zs, color=colours, marker='o',
+        edgecolors='black', s=sizes
+    )
+    for i, x in enumerate(xs):
+        ax.text(
+            x,
+            ys[i],
+            zs[i],
+            labels[i],
+            size=10,
+            color='black'
+        )
+
+    # add lines where openbabel has determined there should be bonds
+    obmol = create_obmol(xyzfile, inputs.charge, inputs.multip)
+    bonds = get_bonds_list(obmol)
+    for bond in bonds:
+        ax.plot(
+            [xs[bond[0]], xs[bond[1]]],
+            [ys[bond[0]], ys[bond[1]]],
+            [zs[bond[0]], zs[bond[1]]],
+            c="grey"
+        )
+
+    # if axes are tiny, increase size of axes limits
+    # i.e. notice what happens to a flat molecule like
+    # benzene if these are not included
+    max_x = max(xs)
+    min_x = min(xs)
+    max_y = max(ys)
+    min_y = min(ys)
+    max_z = max(zs)
+    min_z = min(zs)
+    if max_x - min_x < 0.001:
+        ax.set_xlim(min_x - 1, max_x + 1)
+    if max_y - min_y < 0.001:
+        ax.set_ylim(min_y - 1, max_y + 1)
+    if max_z - min_z < 0.001:
+        ax.set_zlim(min_z - 1, max_z + 1)
+
+    # title plot and save
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
+    ax.set_zlabel('z')
+    plt.title(title)
+    plt.savefig(outname, dpi=300)
+    plt.close()
+
+
 def generate_data(name, num_iter, **kwargs):
     """Generate a dataset from a molecule name.
 
@@ -269,10 +423,10 @@ def generate_data(name, num_iter, **kwargs):
     outfile_name = "dihedrals_energies.csv"
     with open(os.path.join(inputs.output_dir, outfile_name), "w") as f:
         fcsv = csv.writer(f)
-        header = ["dihed" + i for i in range(inputs.num_dihed)] + ["energy"]
+        header = ["dihed" + i for i in range(inputs.num_diheds)] + ["energy"]
         fcsv.writerow(header)
         for i in num_iter:
-            p = Pmem(None, 0, inputs.num_geoms, inputs.num_dihed)
+            p = Pmem(None, 0, inputs.num_geoms, inputs.num_diheds)
             for i, dihedrals in enumerate(p):
                 p.set_energy_get_coords(i)
                 row = [d for d in dihedrals] + p.energies[i]
@@ -370,7 +524,7 @@ def energy_barplot(pmem, inunits="Ha", outunits="kJmol-1", scale=True):
     plt.bar(height=energies, x=x, tick_label=labels)
     plt.xlabel("Conformer Number")
     plt.ylabel(f"Energy ({outunits})")
-    plt.title(f"Conformer Energies\n{inputs.struct_input}, Pmem{pmem.ring_loc}")
+    plt.title(f"Conformer Energies\n{inputs.name}, Pmem{pmem.ring_loc}")
 
     if scale:
         min_scale = min(energies)
@@ -395,7 +549,7 @@ def energy_barplot(pmem, inunits="Ha", outunits="kJmol-1", scale=True):
     plt.close()
 
 
-def energy_rmsd_scatter(pmem, inunits="Ha", outunits="kJmol-1"):
+def energy_rmsd_scatter(pmem, inunits="Ha", outunits="kcalmol-1"):
     """Create a scatterplot of energies and rmsd values for each conformer pair using matplotlib.
 
     Parameters
@@ -446,12 +600,14 @@ def energy_rmsd_scatter(pmem, inunits="Ha", outunits="kJmol-1"):
     inputs = Inputs()
     ax1.set_xlabel("Conformer Pair", fontsize=20)
     ax1.set_ylabel("RMSD", fontsize=20)
-    ax2.set_ylabel(r"$\Delta E_C$ " + f"{inunits}", fontsize=20)
+    ax2.set_ylabel(r"$\Delta E_C$ " + f"{outunits}", fontsize=20)
     ax1.plot(labels, rmsds, 'g^', label=labels, markersize=10)
     for tick in ax1.get_xticklabels():
         tick.set_rotation(90)
     ax2.plot(labels, delta_es, 'ro', markersize=10)
-    ax1.set_title(f"{inputs.struct_input}, Pmem{pmem.ring_loc}", fontsize=24)
+
+    # remove path to file if using xyz/com using inputs.name property
+    ax1.set_title(f"{inputs.name}, Pmem{pmem.ring_loc}", fontsize=24)
     fig.legend(
         [Line2D([0], [0], marker="^", color="g"),
          Line2D([0], [0], marker="o", color="r")],
@@ -485,17 +641,17 @@ def dihedrals_heatmap(ring):
 
     Returns
     -------
-    r_sqr_matrix : np.array((inputs.num_dihed, inputs.num_dihed), float)
+    r_sqr_matrix : np.array((inputs.num_diheds, inputs.num_diheds), float)
         The R^2 value for each pair of dihedral angles, as taken
         from doing a linear regression between all valid values
         for dihedral angle A and dihedral angle B, where
-        0 <= A,B < inputs.num_dihed.
+        0 <= A,B < inputs.num_diheds.
 
     """
     inputs = Inputs()
-    dihedrals_matrix = np.zeros((inputs.num_dihed, ring.num_filled * inputs.num_geoms))
+    dihedrals_matrix = np.zeros((inputs.num_diheds, ring.num_filled * inputs.num_geoms))
     dihedrals_mask = np.zeros(dihedrals_matrix.shape, int)
-    for i in range(inputs.num_dihed):
+    for i in range(inputs.num_diheds):
         for j, slot in enumerate(ring.occupied):
             for k in range(inputs.num_geoms):
                 # ignore dihedrals where energy was not calculable
@@ -504,10 +660,10 @@ def dihedrals_heatmap(ring):
                     dihedrals_mask[i][j + k] = 1
 
     masked_dihedrals = np.ma.MaskedArray(dihedrals_matrix, mask=dihedrals_mask)
-    r_sqr_matrix = np.identity(inputs.num_dihed, float)
+    r_sqr_matrix = np.identity(inputs.num_diheds, float)
 
-    for i in range(inputs.num_dihed):
-        for j in range(i + 1, inputs.num_dihed):
+    for i in range(inputs.num_diheds):
+        for j in range(i + 1, inputs.num_diheds):
             # results is a tuple of:
             # slope, intercept, r_value, p_value, std_err
             results = linregress(masked_dihedrals[i], masked_dihedrals[j])
@@ -581,3 +737,20 @@ def make_heatmap(data):
     plt.savefig(os.path.join(inputs.output_dir, "heatmap.png"),
                 bbox_inches="tight", dpi=300)
     plt.close()
+
+
+def all_pairs_gen(num_geoms):
+    """Yield indices of two geometries/conformers.
+
+    Note
+    ----
+    This is a generator function. It was taken
+    from the Pmem class since it is useful
+    for iterating over the pairs of indices.
+    It returns tuples of index pairs, where
+    each index pair is independent of ordering.
+
+    """
+    for i in range(num_geoms - 1):
+        for j in range(i + 1, num_geoms):
+            yield (i, j)

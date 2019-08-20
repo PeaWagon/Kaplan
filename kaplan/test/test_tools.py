@@ -97,13 +97,13 @@ def test_energy_barplot():
         "num_geoms": 10,
         "normalise": False,
     })
-    pmem = Pmem(0, 0, 10, inputs.num_dihed)
+    pmem = Pmem(0, 0, 10, inputs.num_diheds)
     pmem.set_energy_rmsd()
     pmem.set_fitness(inputs.fit_form, inputs.coef_energy, inputs.coef_rmsd)
     energy_barplot(pmem)
 
     # test error is raised when pmem has no energies
-    pmem2 = Pmem(4, 0, 10, inputs.num_dihed)
+    pmem2 = Pmem(4, 0, 10, inputs.num_diheds)
     assert_raises(InputError, energy_barplot, pmem2)
     pmem2.set_energy_rmsd()
     pmem2.set_fitness(inputs.fit_form, inputs.coef_energy, inputs.coef_rmsd)
@@ -121,12 +121,12 @@ def test_energy_barplot():
     # (2) neg to neg (tested above)
     # (3) pos to pos
     # also here test that image is correctly overwritten
-    pmem3 = Pmem(4, 0, 10, inputs.num_dihed)
+    pmem3 = Pmem(4, 0, 10, inputs.num_diheds)
     for i in range(10):
         pmem3.energies[i] = -i + 5
     # also test here what happens when in and out units are the same
     energy_barplot(pmem3, outunits="Ha")
-    pmem4 = Pmem(6, 0, 10, inputs.num_dihed)
+    pmem4 = Pmem(6, 0, 10, inputs.num_diheds)
     for i in range(10):
         pmem4.energies[i] = i
     energy_barplot(pmem4)
@@ -139,12 +139,13 @@ def test_energy_rmsd_scatter():
         "struct_input": "propane",
         "num_geoms": 10,
         "normalise": False,
+        "prog": "openbabel",
     })
     # test sizes 1-15 to make sure scaling factor allows all values
     # to be shown; 1 should not work since you need 2 values to show delta/rmsd
-    assert_raises(InputError, energy_rmsd_scatter, Pmem(0, 0, 1, inputs.num_dihed))
+    assert_raises(InputError, energy_rmsd_scatter, Pmem(0, 0, 1, inputs.num_diheds))
     for i in range(2, 16):
-        pmem = Pmem(i, 0, i, inputs.num_dihed)
+        pmem = Pmem(i, 0, i, inputs.num_diheds)
         pmem.set_energy_rmsd()
         energy_rmsd_scatter(pmem)
 
@@ -161,4 +162,4 @@ def test_dihedrals_heatmap():
     print(r)
     heatmap = dihedrals_heatmap(r)
     print(heatmap)
-    print(inputs.min_diheds)
+    print(inputs.diheds)

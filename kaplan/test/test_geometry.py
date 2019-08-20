@@ -4,34 +4,36 @@ import os
 import openbabel
 import numpy as np
 
+from math import pi
+
 from numpy.testing import assert_raises
 from vetee.coordinates import CoordinatesError
 from vetee.tools import periodic_table
 
-from kaplan.geometry import get_min_dihed, create_obmol, get_rings,\
+from kaplan.geometry import get_diheds, create_obmol, get_rings,\
     update_obmol, remove_ring_dihed, construct_fours, MIN_VALUE, MAX_VALUE,\
-    get_struct_info
+    get_struct_info, geometry_units, get_coords
 from kaplan.inputs import Inputs
 from kaplan.tools import TEST_DIR
 
 
-def test_get_min_dihed():
+def test_get_diheds():
     test1 = os.path.join(TEST_DIR, "2-pentanol.xyz")
-    min_dihed = get_min_dihed(test1, 0, 1)
-    assert len(min_dihed) == 5
+    diheds = get_diheds(test1, 0, 1)
+    assert len(diheds) == 5
     for i in range(5):
         assert any([
-            (17, 0, 2, 4) == min_dihed[i],
-            (3, 1, 2, 4) == min_dihed[i],
-            (2, 1, 3, 5) == min_dihed[i],
-            (1, 2, 4, 13) == min_dihed[i],
-            (1, 3, 5, 16) == min_dihed[i],
+            (17, 0, 2, 4) == diheds[i],
+            (3, 1, 2, 4) == diheds[i],
+            (2, 1, 3, 5) == diheds[i],
+            (1, 2, 4, 13) == diheds[i],
+            (1, 3, 5, 16) == diheds[i],
         ])
-        assert isinstance(min_dihed[i], tuple)
-        assert isinstance(min_dihed[i][0], int)
-        assert isinstance(min_dihed[i][1], int)
-        assert isinstance(min_dihed[i][2], int)
-        assert isinstance(min_dihed[i][3], int)
+        assert isinstance(diheds[i], tuple)
+        assert isinstance(diheds[i][0], int)
+        assert isinstance(diheds[i][1], int)
+        assert isinstance(diheds[i][2], int)
+        assert isinstance(diheds[i][3], int)
 
 
 def test_create_obmol():
@@ -100,7 +102,7 @@ def test_construct_fours():
 def test_update_obmol():
     test1 = os.path.join(TEST_DIR, "2-pentanol.xyz")
     obmol = create_obmol(test1, 0, 1)
-    dihedrals = get_min_dihed(test1, 0, 1)
+    dihedrals = get_diheds(test1, 0, 1)
     rings = get_rings(obmol)
     assert rings == []
     dihedrals = remove_ring_dihed(rings, dihedrals)
@@ -117,7 +119,7 @@ def test_update_obmol():
 
     test2 = os.path.join(TEST_DIR, "caffeine.xyz")
     obmol = create_obmol(test2, 0, 1)
-    dihedrals = get_min_dihed(test2, 0, 1)
+    dihedrals = get_diheds(test2, 0, 1)
     rings = get_rings(obmol)
     dihedrals = remove_ring_dihed(rings, dihedrals)
     assert (10, 5, 7, 6) not in dihedrals
@@ -130,12 +132,125 @@ def test_update_obmol():
     """
     test2 = os.path.join(TEST_DIR, "oxazole.xyz")
     obmol = create_obmol(test2)
-    dihedrals = get_min_dihed(test2, 0, 1)
+    dihedrals = get_diheds(test2, 0, 1)
     print(dihedrals)
     rings = get_rings(obmol)
     dihedrals = remove_ring_dihed(rings, dihedrals)
     print(dihedrals)
     """
+
+    """Test to see if update_obmol actually changes the dihedral angle.
+
+    Results
+    -------
+    The update_obmol does update the Openbabel molecule coordinates
+    and torsion values. However, it was discovered that torsion
+    angles are absolute (not relative to the rest of the geometry,
+    as was intially thought). This result means that it is not
+    necessary to reset the obmol coordinates each time to the
+    starting geometry - this step is nice because it makes
+    sure the geometries are centred about the initial structure
+    (and the floating point error is reduced, since each application
+    of a torsion angle would incur some error).
+
+    """
+    infile = os.path.join(TEST_DIR, "butane.xyz")
+
+    inputs = Inputs()
+    inputs.update_inputs({
+        "struct_input": infile,
+        "struct_type": "xyz",
+        "charge": 0,
+        "multip": 1,
+        "prog": "openbabel",
+        "output_dir": TEST_DIR,
+    })
+
+    new_angle = 0.0
+    torsion_original = inputs.obmol.GetTorsion(3, 1, 2, 4)
+    t_orig2 = inputs.obmol.GetTorsion(2, 1, 3, 11)
+    t_orig3 = inputs.obmol.GetTorsion(1, 2, 4, 14)
+    # print(torsion_original, t_orig2, t_orig3)
+    assert np.allclose(
+        [torsion_original, t_orig2, t_orig3],
+        [geometry_units["radians"]["degrees"](3.1215158160645746),
+         geometry_units["radians"]["degrees"](3.1405551846521624),
+         geometry_units["radians"]["degrees"](1.0507839153871283)]
+    )
+
+    d = inputs.obmol.GetAtom(4)
+    result = d.GetVector()
+    assert np.allclose([result.GetX(), result.GetY(), result.GetZ()], inputs.coords[3])
+    # print(result.GetX(), result.GetY(), result.GetZ())
+
+    torsions = [new_angle, 3.1405551846521624, 1.0507839153871283]
+    new_coords = update_obmol(inputs.obmol, inputs.diheds, torsions)
+    obmol_coords = get_coords(inputs.obmol)
+    # GetTorsion returns degrees, SetTorsion takes radians
+    # most Openbabel functions work with IdX, which is index + 1
+    updated_torsion = inputs.obmol.GetTorsion(3, 1, 2, 4)
+    t_new2 = inputs.obmol.GetTorsion(2, 1, 3, 11)
+    t_new3 = inputs.obmol.GetTorsion(1, 2, 4, 14)
+
+    # (2, 0, 1, 3), 178.8496819438351 3.1215158160645746
+    # (1, 0, 2, 10), 179.94055740849785 3.1405551846521624
+    # (0, 1, 3, 13), 60.205483531914254 1.0507839153871283
+
+    # print(updated_torsion, t_new2, t_new3)
+    assert np.allclose(new_coords, obmol_coords)
+    assert np.allclose(
+        [updated_torsion, t_new2, t_new3],
+        geometry_units["radians"]["degrees"](np.array(torsions))
+    )
+
+    d = inputs.obmol.GetAtom(4)
+    result = d.GetVector()
+    assert not np.allclose([result.GetX(), result.GetY(), result.GetZ()], inputs.coords[3])
+    # print(result.GetX(), result.GetY(), result.GetZ())
+    # print("\n")
+
+    new_angle = pi / 2
+    updated_torsion = inputs.obmol.GetTorsion(3, 1, 2, 4)
+    t_new2 = inputs.obmol.GetTorsion(2, 1, 3, 11)
+    t_new3 = inputs.obmol.GetTorsion(1, 2, 4, 14)
+    # print(updated_torsion, t_new2, t_new3)
+    torsions = [new_angle, 3.1405551846521624, 1.0507839153871283]
+    new_coords = update_obmol(inputs.obmol, inputs.diheds, torsions)
+    obmol_coords = get_coords(inputs.obmol)
+    updated_torsion = inputs.obmol.GetTorsion(3, 1, 2, 4)
+    t_new2 = inputs.obmol.GetTorsion(2, 1, 3, 11)
+    t_new3 = inputs.obmol.GetTorsion(1, 2, 4, 14)
+    assert np.allclose(
+        [updated_torsion, t_new2, t_new3],
+        geometry_units["radians"]["degrees"](np.array(torsions))
+    )
+    # print(updated_torsion, t_new2, t_new3)
+    assert np.allclose(new_coords, obmol_coords)
+
+    d = inputs.obmol.GetAtom(4)
+    result = d.GetVector()
+    assert not np.allclose([result.GetX(), result.GetY(), result.GetZ()], inputs.coords[3])
+    # print(result.GetX(), result.GetY(), result.GetZ())
+    # print("\n")
+
+    # print(new_coords, "\n")
+    # print(obmol_coords)
+    torsion_original = inputs.obmol.GetTorsion(3, 1, 2, 4)
+    t_orig2 = inputs.obmol.GetTorsion(2, 1, 3, 11)
+    t_orig3 = inputs.obmol.GetTorsion(1, 2, 4, 14)
+    # print(torsion_original, t_orig2, t_orig3)
+    torsions = [0.0, pi, pi / 3]
+    new_coords = update_obmol(inputs.obmol, inputs.diheds, torsions)
+    obmol_coords = get_coords(inputs.obmol)
+    updated_torsion = inputs.obmol.GetTorsion(3, 1, 2, 4)
+    t_new2 = inputs.obmol.GetTorsion(2, 1, 3, 11)
+    t_new3 = inputs.obmol.GetTorsion(1, 2, 4, 14)
+    assert np.allclose(
+        [updated_torsion, t_new2, t_new3],
+        geometry_units["radians"]["degrees"](np.array(torsions))
+    )
+    # print(updated_torsion, t_new2, t_new3)
+    assert np.allclose(new_coords, obmol_coords)
 
 
 def test_atom_indices():

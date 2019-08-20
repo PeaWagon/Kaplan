@@ -10,14 +10,15 @@ from kaplan.rmsd import calc_rmsd, apply_centroid
 from kaplan.energy import run_energy_calc, MethodError, BasisSetError
 # values for dihedral angles in radians
 # convert radians to degrees for __str__ method
-from kaplan.geometry import MIN_VALUE, MAX_VALUE, geometry_units, update_obmol, set_coords
+from kaplan.geometry import MIN_VALUE, MAX_VALUE, geometry_units,\
+    update_obmol, set_coords, get_new_coordinates
 from kaplan.inputs import Inputs, InputError
 
 
 class Pmem:
     """Population member of the ring."""
 
-    def __init__(self, ring_loc, current_mev, num_geoms, num_dihed, dihedrals=None):
+    def __init__(self, ring_loc, current_mev, num_geoms, num_diheds, dihedrals=None):
         """Constructor for pmem object.
 
         Parameters
@@ -30,9 +31,9 @@ class Pmem:
             The mating event at which the pmem was constructed.
         num_geoms : int
             How many conformers to search for.
-        num_dihed : int
+        num_diheds : int
             The number of dihedral angles to optimise.
-        dihedrals : np.array(shape=(num_geoms, num_dihed),
+        dihedrals : np.array(shape=(num_geoms, num_diheds),
                              dtype=float)
             The dihedrals for the pmem. Defaults to None.
 
@@ -40,7 +41,7 @@ class Pmem:
         ------
         AssertionError
             The dihedrals parameter does not have the correct
-            shape (should be (num_geoms, num_dihed)).
+            shape (should be (num_geoms, num_diheds)).
 
         Attributes
         ----------
@@ -74,19 +75,19 @@ class Pmem:
         """
         self._ring_loc = ring_loc
         self.num_geoms = num_geoms
-        self.num_dihed = num_dihed
+        self.num_diheds = num_diheds
         if dihedrals is None:
             # generate random dihedral angles (degrees)
             # each row is a set of dihedral angles for one conformer
             try:
                 self.dihedrals = np.random.uniform(
-                    MIN_VALUE, MAX_VALUE, size=(self.num_geoms, self.num_dihed)
+                    MIN_VALUE, MAX_VALUE, size=(self.num_geoms, self.num_diheds)
                 )
             # TypeError: 'NoneType' object cannot be interpreted as an integer
             except TypeError:
-                raise InputError("Mising required inputs: num_geoms or num_dihed")
+                raise InputError("Mising required inputs: num_geoms or num_diheds")
         else:
-            assert dihedrals.shape == (self.num_geoms, self.num_dihed)
+            assert dihedrals.shape == (self.num_geoms, self.num_diheds)
             self.dihedrals = dihedrals
         self.energies = [None for _ in range(self.num_geoms)]
         self.rmsds = [[i, j, None] for i, j in self.all_pairs_gen()]
@@ -132,6 +133,19 @@ class Pmem:
         else:
             self.conf_num += 1
             return self.dihedrals[self.conf_num - 1]
+
+    def recalc_energies(self):
+        """Recalculate a pmem's energy values.
+
+        Notes
+        -----
+        This method is required after certain inputs change,
+        such as program used for energy calculation, if
+        energies and fitness values are to be compared.
+
+        """
+        for i in range(self.num_geoms):
+            self.set_energy_get_coords(i)
 
     def all_pairs_gen(self):
         """Yield indices of two geometries/conformers.
@@ -188,12 +202,28 @@ class Pmem:
 
         """
         inputs = Inputs()
+
+        # check if geometry optmisation is to be done using openbabel or saddle/GOpt
+        if inputs.use_gopt:
+            if "internal" not in inputs.extra:
+                raise InputError(
+                    "internal object required in inputs.extra dictionary."
+                )
+            # if GOpt doesn't converge, new_coords will be None
+            new_coords = get_new_coordinates(
+                inputs.extra["internal"], inputs.diheds, self.dihedrals[conf_index]
+            )
+            if new_coords is None:
+                return new_coords
+            return apply_centroid(new_coords)
+
         if not hasattr(inputs, "obmol") or inputs.obmol is None:
             raise InputError("No input geometry has been set.")
+
         # reset obmol geometry to original coordinates
         set_coords(inputs.obmol, inputs.coords)
         try:
-            result = update_obmol(inputs.obmol, inputs.min_diheds, self.dihedrals[conf_index])
+            result = update_obmol(inputs.obmol, inputs.diheds, self.dihedrals[conf_index])
         except AttributeError:
             raise InputError(f"Missing inputs. Unable to calculate geometry\
                                \nfor pmem {self.ring_loc}, conformer {conf_index}.")
@@ -253,6 +283,9 @@ class Pmem:
         # 0 different from None is needed in case geometry fails
         coords = [0 for _ in range(self.num_geoms)]  # retain coords for this function only
 
+        inputs = Inputs()
+        exclude_atoms = inputs.exclude_from_rmsd
+
         # get rmsd for all pairs of conformers and energies for all geoms
         for i, (ind1, ind2, _) in enumerate(self.rmsds):
             if coords[ind1] is 0:
@@ -263,7 +296,11 @@ class Pmem:
             # if either of the geometries could not be constructed,
             # keep the rmsd as None
             if coords[ind1] is not None and coords[ind2] is not None:
-                self.rmsds[i][2] = calc_rmsd(coords[ind1], coords[ind2])
+                if exclude_atoms is None:
+                    self.rmsds[i][2] = calc_rmsd(coords[ind1], coords[ind2])
+                else:
+                    self.rmsds[i][2] = calc_rmsd(coords[ind1], coords[ind2],
+                                                 inputs.atomic_nums, exclude_atoms)
 
     def set_fitness(self, fit_form, coef_energy, coef_rmsd):
         """Calculate the absolute fitness of a pmem.

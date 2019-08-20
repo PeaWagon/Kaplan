@@ -9,19 +9,8 @@ from numpy import allclose
 
 from vetee.tools import periodic_table
 
-from kaplan.inputs import Inputs
+from kaplan.inputs import Inputs, hardware_inputs
 from kaplan.geometry import set_coords, get_coords
-
-# these values are used in energy calculations when no
-# options are provided
-# if a new program is added, add defaults for it
-# how much RAM to use for psi4 calculations
-# should be less than what your computer has available
-DEFAULT_INPUTS = {
-    "psi4": {"RAM": "4 GB"},
-    "openbabel": {},
-    "other": {},
-}
 
 
 class BasisSetError(Exception):
@@ -50,8 +39,8 @@ def run_energy_calc(coords):
 
     Notes
     -----
-    This function uses the DEFAULT_INPUTS dictionary
-    located at the top of this file. Other input
+    This function uses the hardware_inputs dictionary
+    located at the top of the inputs file. Other input
     arguments can be added to the inputs extra
     dictionary (i.e. inputs.extra["myarg"] = "myval").
     If an argument is added to the extra dictionary
@@ -71,7 +60,7 @@ def run_energy_calc(coords):
     for arg, val in inputs.extra.items():
         extras[arg] = val
 
-    defaults = DEFAULT_INPUTS[inputs.prog]
+    defaults = hardware_inputs[inputs.prog]
     for key in defaults:
         if key not in extras:
             extras[key] = defaults[key]
@@ -83,6 +72,9 @@ def run_energy_calc(coords):
         return energy
     elif inputs.prog == "openbabel":
         # check obmol has current geometry
+        # this will be called if use_gopt is True because
+        # openbabel is not being used to calculate the new geometry (instead
+        # that job is for saddle/GOpt)
         if not allclose(coords, get_coords(inputs.obmol)):
             set_coords(inputs.obmol, coords)
         energy = obabel_energy(inputs.method, inputs.obmol)

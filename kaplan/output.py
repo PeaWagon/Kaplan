@@ -103,7 +103,7 @@ def run_output(ring, current_mev, save):
             fout.write(f"Dihedrals: {ring[best_pmem].dihedrals[conf]}\n")
             fout.write(f"Energy: {ring[best_pmem].energies[conf]}\n")
             fout.write("--------------------------------------------------------\n")
-        fout.write(f"RMSDs:\n")
+        fout.write(f"RMSDs (excluding {inputs.exclude_from_rmsd}):\n")
         for rmsd in ring[best_pmem].rmsds:
             fout.write(f"Conf{rmsd[0]} & Conf{rmsd[1]} => {rmsd[2]}\n")
         fout.write("\n")
@@ -112,31 +112,49 @@ def run_output(ring, current_mev, save):
     if current_mev == "last":
         for i, _ in enumerate(ring[best_pmem]):
             coords = ring[best_pmem].get_geometry(i)
+            if coords is None:
+                print("Warning: could not generate an output file.")
+                print(f"No valid coordinates for conformer {i}.")
+                continue
             coords_with_atoms = []
             for j, atom in enumerate(coords):
                 # need to convert from numpy's int64 to regular python int
                 label = periodic_table(int(inputs.atomic_nums[j]))
                 coords_with_atoms.append([label, atom[0], atom[1], atom[2]])
-            if inputs.struct_type not in ("com", "xyz"):
-                comments = f"{inputs.struct_input} | "
-            else:
-                comments = ""
+            comments = f"{inputs.name} | "
             comments += f"conformer {i} | energy {ring[best_pmem].energies[i]}"
+            outfile = os.path.join(inputs.output_dir, f"conf{i}.xyz")
             write_xyz(
                 {"_coords": coords_with_atoms, "_comments": comments},
-                os.path.join(inputs.output_dir, f"conf{i}.xyz")
+                outfile
             )
+            # make a 3d image of each conformer
+            kt.plot_3d(outfile)
         # make energy plot for best pmem
-        kt.energy_barplot(ring[best_pmem], inunits=units)
+        try:
+            kt.energy_barplot(ring[best_pmem], inunits=units)
+        # ValueError: Image size of 73500x1800 pixels is too large.
+        # It must be less than 2^16 in each direction.
+        except ValueError:
+            print("Warning: too many conformers in pmem.")
+            print("Figure exceeded max allowed size.")
+            print("Cannot make output plot.")
         # if more than one geom per pmem, make energy delta/rmsd plot
         if inputs.num_geoms > 1:
             try:
                 kt.energy_rmsd_scatter(ring[best_pmem], inunits=units)
             # pmem has no energies
             except InputError:
-                print("Warning. Best pmem has no valid energy values. Cannot make output plot.")
+                print("Warning. Best pmem has no valid energy values.")
+                print("Cannot make output plot.")
+            # ValueError: Image size of 73500x1800 pixels is too large.
+            # It must be less than 2^16 in each direction.
+            except ValueError:
+                print("Warning: too many conformers in pmem.")
+                print("Figure exceeded max allowed size.")
+                print("Cannot make output plot.")
         # if at least 2 dihedrals, make a dihedral heatmap
-        if inputs.num_dihed > 1:
+        if inputs.num_diheds > 1:
             kt.dihedrals_heatmap(ring)
 
     # pickel if requested
