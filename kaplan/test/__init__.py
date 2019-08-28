@@ -1,4 +1,4 @@
-"""Test functions available in Kaplan."""
+"""Test functions available in Kaplan.
 
 from kaplan.test.test_control import test_run_kaplan
 from kaplan.test.test_energy import test_run_energy_calc
@@ -6,7 +6,8 @@ from kaplan.test.test_extinction import test_apply_extinction,\
     test_plague, test_agathic, test_deluge, test_asteroid
 from kaplan.test.test_geometry import test_get_diheds,\
     test_create_obmol, test_get_rings, test_construct_fours,\
-    test_update_obmol, test_atom_indices, test_get_struct_info
+    test_update_obmol, test_atom_indices, test_get_struct_info,\
+    test_get_coords
 from kaplan.test.test_inputs import test_inputs,\
     test_inputs_update_inputs, test_read_input
 from kaplan.test.test_mutations import test_generate_children
@@ -22,3 +23,10 @@ from kaplan.test.test_tools import test_profile_function,\
     test_plot2d, test_make2d, test_energy_barplot,\
     test_energy_rmsd_scatter, test_dihedrals_heatmap
 from kaplan.test.test_tournament import test_run_tournament
+from kaplan.test.test_optimise import test_obabel_geometry_opt
+
+TO RUN:
+from main repository directory
+nosetests -v kaplan.test.test_file:test_specific_function
+
+"""

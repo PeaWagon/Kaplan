@@ -1,12 +1,18 @@
-"""This module is responsible for dealing with converting
-geometries from z-matrix format to xyz format. It relies
-on the external library, Vetee, to do most of the conversions,
-along with the python wrapper for openbabel, pybel.
+"""
 
-New changes to how dihedrals are used are being made.
+This module provides various ways to interact
+with the Openbabel molecule object, such as
+construction from file or string, iteration
+over rings, collection of angles or torsions,
+and getting and setting of coordinates.
 
-Now this program will use saddle (GOpt) to generate
-dihedral angles.
+It also contains a very short list of geometry
+units for easy conversion. This module interfaces
+with Vetee in order to get information from the
+Pubchem database. It also interfaces with GOpt to
+get internal angle information (i.e. minimum
+dihedrals list). It is independent of the
+other Kaplan modules, including inputs.
 
 """
 
@@ -22,16 +28,6 @@ from saddle.internal import Internal
 from saddle.coordinate_types import DihedralAngle
 from saddle.errors import NotConvergeError
 
-
-# values for dihedral angles in radians
-# dihedrals should be positive values only
-# so that mean can be calculated without
-# having to change the dihedrals
-# i.e. 3pi/4 and -pi/4 average should be
-# 10pi/4 not pi/4 since -pi/4 is really
-# 7pi/4
-MIN_VALUE = 0
-MAX_VALUE = 2 * np.pi
 
 # 1 "angstrom" = 1.8897261339213 "atomic unit (length)"
 # AU = 1.8897261339213
@@ -124,6 +120,8 @@ def create_obmol_from_string(str_type, value):
     -----
     Openbabel cannot construct molecules from
     InchiKey (example: GSYKYIXVPVFJRF-UHFFFAOYSA-N).
+    Also it will produce garbage results for some
+    inchi strings taken from pubchem (example nonadecane).
 
     Returns
     -------
@@ -557,7 +555,7 @@ def get_new_coordinates(iobj, dihedrals, new_values):
     return mol.coordinates
 
 
-def write_coords(coords, atomic_nums, outfile):
+def write_coords(coords, atomic_nums, outfile, comments=None):
     """Write coordinates to an xyz file.
 
     Parameters
@@ -571,6 +569,10 @@ def write_coords(coords, atomic_nums, outfile):
         The name of the output file to write.
         If no directory is given, the current
         working directory is used.
+    comments : str
+        The comments to put in the xyz file.
+        If None (default) writes the name
+        of the file to the comments.
 
     Notes
     -----
@@ -582,7 +584,7 @@ def write_coords(coords, atomic_nums, outfile):
     Returns
     -------
     new_coords : list([char, float, float, float])
-        The coordinates that were wrote to the
+        The coordinates that were written to the
         outfile.
 
     """
@@ -596,7 +598,12 @@ def write_coords(coords, atomic_nums, outfile):
     num_atoms = len(coords)
     assert num_atoms == len(atomic_nums)
 
-    comments = os.path.basename(os.path.splitext(os.path.abspath(outfile))[0])
+    if comments is None:
+        comments = os.path.basename(
+            os.path.splitext(os.path.abspath(outfile))[0]
+        )
+    else:
+        comments = comments.replace("\n", " ")
     out_coords = []
     with open(outfile, "w") as f:
         f.write(f"{num_atoms}\n")
@@ -604,7 +611,8 @@ def write_coords(coords, atomic_nums, outfile):
         for i, atom in enumerate(coords):
             line = [vetee.tools.periodic_table(atomic_nums[i])] + list(atom)
             out_coords.append(line)
-            f.write(f"{' '.join(str(i) for i in line)}\n")
+            f.write(f"{line[0]:<3} {line[1]:>20} {line[2]:>20} {line[3]:>20}\n")
+
     return out_coords
 
 

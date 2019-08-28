@@ -9,6 +9,7 @@ from kaplan.pmem import Pmem
 from kaplan.ring import Ring
 from kaplan.tools import TEST_DIR, profile_function, analyse_profile,\
     plot_2d, make_2d, energy_barplot, energy_rmsd_scatter, dihedrals_heatmap
+from kaplan.fitness import set_absolute_fitness
 
 
 # see what amino acids look like since I will be using
@@ -98,15 +99,15 @@ def test_energy_barplot():
         "normalise": False,
     })
     pmem = Pmem(0, 0, 10, inputs.num_diheds)
-    pmem.set_energy_rmsd()
-    pmem.set_fitness(inputs.fit_form, inputs.coef_energy, inputs.coef_rmsd)
+    pmem.setup(major=False)
+    set_absolute_fitness(pmem, inputs.fit_form, inputs.coef_energy, inputs.coef_rmsd)
     energy_barplot(pmem)
 
     # test error is raised when pmem has no energies
     pmem2 = Pmem(4, 0, 10, inputs.num_diheds)
     assert_raises(InputError, energy_barplot, pmem2)
-    pmem2.set_energy_rmsd()
-    pmem2.set_fitness(inputs.fit_form, inputs.coef_energy, inputs.coef_rmsd)
+    pmem2.setup(major=False)
+    set_absolute_fitness(pmem2, inputs.fit_form, inputs.coef_energy, inputs.coef_rmsd)
     pmem2.energies[3] = None
     pmem2.energies[4] = None
     pmem2.energies[0] = None
@@ -146,7 +147,7 @@ def test_energy_rmsd_scatter():
     assert_raises(InputError, energy_rmsd_scatter, Pmem(0, 0, 1, inputs.num_diheds))
     for i in range(2, 16):
         pmem = Pmem(i, 0, i, inputs.num_diheds)
-        pmem.set_energy_rmsd()
+        pmem.setup(major=False)
         energy_rmsd_scatter(pmem)
 
 

@@ -33,14 +33,16 @@ import os
 import numpy as np
 import pickle
 
-from vetee.coordinates import write_xyz, CoordinatesError, pubchem_inchi_smiles, read_pubchem
+from pybel import forcefields
+
+from vetee.coordinates import CoordinatesError, pubchem_inchi_smiles, read_pubchem
 from vetee.tools import periodic_table
 from vetee.job import Job
 
 from kaplan.geometry import update_obmol, create_obmol,\
     remove_ring_dihed, get_diheds, get_rings,\
     get_struct_info, get_atomic_nums, create_obmol_from_string,\
-    get_coords, set_coords, construct_internal
+    get_coords, set_coords, construct_internal, write_coords
 
 from saddle.internal import Internal
 
@@ -71,11 +73,16 @@ class DefaultInputs:
     # available fitness function formats
     _avail_fit_form = [0]
 
+    # characters that should not appear in name
+    bad_chars = [" ", "~", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")"]
+
     _options = {
         "output_dir": "pwd",    # where to store the output
+        "name": None,           # used as a title for plots/directory names
+                                # should not include any of the characters in bad_chars
 
         # mol inputs
-        "prog": "psi4",         # program to use to run energy calculations
+        "prog": "openbabel",    # program to use to run energy calculations
         "basis": "sto-3g",      # basis set to use in quantum calculations
         # if the prog is openbabel, use mmff94 as default forcefield
         # if the prog is psi4, use hf
@@ -98,6 +105,40 @@ class DefaultInputs:
                                     # have constrained components (such as rings), as it is
                                     # able to simultaneously apply dihedral angles (rather
                                     # than one at a time, as with Openbabel)
+        "stop_at_conv": False,      # stop when the best pmem does not improve after
+                                    # a certain number of mating events; False means run for
+                                    # num_mevs, otherwise it should be an integer input specifying
+                                    # how often to check the best pmem for improvement
+
+        # the dihedral angles available that can be chosen for
+        # new pmems, this should be a numpy array of values in
+        # the range [-pi, pi)
+        # by default this array is generated using numpy's
+        # linspace function with 16 values
+        # for example, if num is 4, then
+        # the available dihedral angles (including those newly
+        # generated and those mutated) would be:
+        # -pi, -pi/2, 0, pi/2
+        "avail_diheds": np.linspace(-np.pi, np.pi, num=16, endpoint=False),
+
+        # geometry optimisation
+        # uses the conjugate gradient method
+        # major refers to initial and final geometries
+        # minor refers to intermediate geometries (i.e. during evolution)
+        # the only optimisation that can be turned off is the initial one
+        "opt_init_geom": True,    # optimise the initial geometry using Openbabel forcefield
+                                  # final/intermediate geometries will be optimised for all cases
+        "major_tolerance": 1e-6,  # tolerance is the maximum difference in energy that is permitted
+                                  # before the optimisation is considered to have converged
+                                  # the tolerance may be set to a negative value, which means
+                                  # that maxsteps will be completed (ignoring sampling)
+        "major_maxsteps": 2500,   # if the tolerance condition is never satisfied, maxsteps is
+                                  # how many iterations to complete in total
+        "major_sampling": 100,    # sampling is how often to check the energy for the tolerance
+                                  # in terms of number of conjugate gradient iterations
+        "minor_tolerance": 0.1,
+        "minor_maxsteps": 100,
+        "minor_sampling": 10,
 
         # ea inputs
         "num_mevs": 100,
@@ -107,10 +148,21 @@ class DefaultInputs:
         "num_geoms": 5,
         # default for num_swaps is equal to num_geoms//2 when not set
         "num_swaps": None,
-        # default for num_muts is equal to (num_dihedss*num_geoms)//5 when not set
+        # default for num_muts is equal to (num_diheds*num_geoms)//5 when not set
         "num_muts": None,
         # default for num_cross is equal to num_geoms//2 when not set
         "num_cross": None,
+        # crossover points is equal to num_diheds // 3 when not set
+        # crossover points is set to 1 if num_diheds == 2
+        # crossover is not completed if num_diheds == 1 (no cuts can
+        # be made)
+        # this parameter sets the maximum number of cuts to do
+        # when doing a crossover mutation
+        "max_cross_points": None,
+        # where to do crossover; should be a list of values in the range
+        # [1, num_diheds-1] inclusive
+        # if None, crossover is done at any point in the list of dihedral angles
+        "cross_points": None,
 
         # extinction operator inputs
         # each value is percent chance per mating event to apply operator
@@ -179,7 +231,8 @@ class Inputs(DefaultInputs):
 
         """
         self.output_dir = "pwd"
-        self.prog = "psi4"
+        self.name = None
+        self.prog = "openbabel"
         self.basis = "sto-3g"
         self.method = None
         self.struct_input = None
@@ -190,6 +243,17 @@ class Inputs(DefaultInputs):
         self.min_dihed = True
         self.exclude_from_rmsd = None
         self.use_gopt = False
+        self.stop_at_conv = False
+        self.avail_diheds = np.linspace(
+            -np.pi, np.pi, num=16, endpoint=False
+        )
+        self.opt_init_geom = True
+        self.major_tolerance = 1e-6
+        self.major_maxsteps = 2500
+        self.major_sampling = 100
+        self.minor_tolerance = 0.1
+        self.minor_maxsteps = 100
+        self.minor_sampling = 10
         self.num_mevs = 100
         self.num_slots = 50
         self.init_popsize = 10
@@ -198,6 +262,8 @@ class Inputs(DefaultInputs):
         self.num_swaps = None
         self.num_muts = None
         self.num_cross = None
+        self.max_cross_points = None
+        self.cross_points = None
         self.asteroid = 0.0
         self.plague = 0.0
         self.agathic = 0.0
@@ -242,17 +308,31 @@ class Inputs(DefaultInputs):
             "num_swaps",
             "num_muts",
             "num_cross",
+            "max_cross_points",
             "num_diheds",
+            "stop_at_conv",
+            "major_maxsteps",
+            "major_sampling",
+            "minor_maxsteps",
+            "minor_sampling",
         }
         expect_float = {
             "coef_energy", "coef_rmsd", "asteroid",
-            "plague", "agathic", "deluge",
+            "plague", "agathic", "deluge", "major_tolerance",
+            "minor_tolerance",
         }
         expect_bool = {
             "no_ring_dihed", "normalise", "min_dihed",
-            "use_gopt",
+            "use_gopt", "opt_init_geom",
         }
-        expect_list = {"exclude_from_rmsd"}
+        expect_list = {"exclude_from_rmsd", "cross_points"}
+        expect_str = {"name"}
+
+        # crossover does not make sense if there is only one dihedral angle
+        if self.num_diheds == 1:
+            self.num_cross = 0
+            self.max_cross_points = 0
+
         # make sure all values have been set
         # and are set to the correct type
         for arg, val in self._options.items():
@@ -267,11 +347,21 @@ class Inputs(DefaultInputs):
                 elif arg == "num_cross":
                     self.num_cross = self.num_geoms // 2
                     val = self.num_cross
+                elif arg == "max_cross_points":
+                    if self.num_diheds > 2:
+                        self.max_cross_points = self.num_diheds // 3
+                    else:
+                        self.max_cross_points = 1
+                    val = self.max_cross_points
                 elif arg == "num_muts":
                     self.num_muts = (self.num_diheds * self.num_geoms) // 5
                     val = self.num_muts
-                elif arg == "exclude_from_rmsd":
+                # these values are allowed to be None
+                elif arg == "exclude_from_rmsd" or arg == "cross_points":
                     pass
+                elif arg == "name":
+                    self.name = self.get_name()
+                    val = self.name
                 else:
                     raise InputError(f"Missing required input argument: {arg}")
             # int(float) doesn't throw an error, but int("float") does
@@ -301,11 +391,19 @@ class Inputs(DefaultInputs):
                 except AssertionError:
                     if arg == "exclude_from_rmsd" and val is None:
                         pass
+                    elif arg == "cross_points" and val is None:
+                        pass
                     else:
                         raise InputError(
                             f"Value should be a list: {arg} = {val}"
                         )
+            elif arg in expect_str:
+                setattr(self, arg, str(val))
 
+        assert isinstance(self.avail_diheds, np.ndarray)
+        for value in self.avail_diheds:
+            assert -np.pi <= value < np.pi
+        assert 1 < len(self.avail_diheds)
         # only programs currently available are psi4 and openbabel
         # if a program is added, add it to _avail_progs list in
         # DefaultInputs class
@@ -330,6 +428,37 @@ class Inputs(DefaultInputs):
             for atom in self.exclude_from_rmsd:  # pylint: disable=not-an-iterable
                 assert 1 <= atom <= 118
                 assert isinstance(atom, int)
+        assert 0 <= self.stop_at_conv
+        assert 0 < self.num_diheds
+
+        # check crossover-related items
+        # crossover should not be called if there is only one dihedral
+        if self.num_diheds == 1:
+            assert self.num_cross == 0
+        if 0 < self.num_cross:
+            assert 1 <= self.max_cross_points <= self.num_diheds - 1
+        if self.cross_points is not None:
+            for value in self.cross_points:  # pylint: disable=not-an-iterable
+                assert 1 <= value <= self.num_diheds - 1
+                assert isinstance(value, int)
+
+        # check the name for bad characters
+        for char in self.bad_chars:
+            try:
+                assert char not in self.name
+            except AssertionError:
+                print("Do not put spaces in the name, use - or _ instead.")
+                raise InputError(f"Bad character in name: '{char}'")
+        try:
+            if self.prog == "openbabel":
+                assert self.method in forcefields
+        except AssertionError:
+            print("If running a quantum evaluation, make sure prog = \"psi4\".")
+            raise InputError(f"Forcefield {self.method} not available in Openbabel.")
+        assert 0 < self.major_maxsteps
+        assert 0 < self.major_sampling
+        assert 0 < self.minor_maxsteps
+        assert 0 < self.minor_sampling
 
     def _update_geometry(self):
         """Update the OBMol object and the coordinates.
@@ -358,10 +487,10 @@ class Inputs(DefaultInputs):
             if flat:
                 print("Warning: flat molecule detected.")
                 if self.struct_type not in ("com", "xyz"):
-                    print("Changing input type to inchi.")
+                    print("Changing input type to SMILES string.")
                     data = pubchem_inchi_smiles(self.struct_type, self.struct_input)
-                    self.struct_input = data["_inchi"]
-                    self.struct_type = "inchi"
+                    self.struct_input = data["_smiles_iso"]
+                    self.struct_type = "smiles"
                     raise CoordinatesError
             self.extra["pubchem_success"] = True
         # vetee.coordinates.CoordinatesError occurs when
@@ -437,14 +566,14 @@ class Inputs(DefaultInputs):
         # write an xyz file to the current directory in order to generate
         # minimum dihedrals and openbabel object
         ofile = os.path.join(self.output_dir, "input_coords.xyz")
-        write_xyz({"_coords": job.coords}, ofile)
+        write_coords(job.xyz_coords, job.atomic_nums, ofile)
         self.coords = job.xyz_coords
 
         # now determine minimum dihedrals by atom index
         print("Selecting dihedral angles.")
         self.diheds = get_diheds(ofile, self.charge, self.multip, select_min=self.min_dihed)
 
-        # if constrained mol, use saddle to optimise the geometry
+        # use GOpt to construct geometries from sets of dihedral angles
         if self.use_gopt:
             self.extra["internal"] = construct_internal(
                 ofile, self.charge, self.multip, select_min=self.min_dihed
@@ -517,7 +646,8 @@ class Inputs(DefaultInputs):
             self.output_dir = os.path.join(os.path.abspath(self.output_dir), "kaplan_output")
 
         # make an identifier for the molecule
-        # note name is a property, not an attribute
+        if self.name is None:
+            self.name = self.get_name()
         name = self.name
 
         # first check that there is a place to put the
@@ -659,11 +789,8 @@ class Inputs(DefaultInputs):
 
         print("Done with inputs setup.")
 
-    @property
-    def name(self):
+    def get_name(self):
         """Returns a name for easy titles in plots and making a job directory."""
-
-        bad_chars = [" ", "~", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")"]
 
         # if the struct_input is an integer or float, it should be converted
         # to a string so that string-based methods work without error
@@ -675,8 +802,11 @@ class Inputs(DefaultInputs):
             name = os.path.basename(os.path.splitext(name)[0])
             # get rid of white space
             # get rid of characters that should not be in file names
-            for bad_char in bad_chars:
+            for bad_char in self.bad_chars:
                 name = name.replace(bad_char, "")
+
+        elif self.struct_type == "name":
+            name = name.replace(" ", "-")
 
         # get name for inchi or smiles since these will often have
         # special characters that cannot be used in directory names
@@ -687,7 +817,7 @@ class Inputs(DefaultInputs):
                 if data == []:
                     raise CoordinatesError("No names available for input molecule.")
                 name = data[0]
-                for bad_char in bad_chars:
+                for bad_char in self.bad_chars:
                     name = name.replace(bad_char, "")
             except CoordinatesError:
                 name = "unknown_mol"
@@ -804,11 +934,8 @@ def read_input(job_inputs, new_output_dir=True):
             os.rename(orig_xyzfile, os.path.join(inputs.output_dir, "input_coords.xyz"))
 
     else:
-        full_coords = []
-        for atom, coord in zip(inputs.atomic_nums, inputs.coords):
-            full_coords.append([periodic_table(atom)] + list(coord))
         new_xyzfile = os.path.join(inputs.output_dir, "input_coords.xyz")
-        write_xyz({"_coords": full_coords, "_comments": inputs.struct_input}, new_xyzfile)
+        write_coords(inputs.coords, inputs.atomic_nums, new_xyzfile)
         if pubchem_result:
             obmol_obj = create_obmol(new_xyzfile, inputs.charge, inputs.multip)
         else:

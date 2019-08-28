@@ -7,7 +7,7 @@ if __name__ == "__main__":
 
     setup(
         name="kaplan",
-        version="1.1a.0",
+        version="1.3a.0",
         description="Conformer searching package.",
         long_description=long_desc,
         long_description_content_type="text/markdown",
@@ -17,7 +17,7 @@ if __name__ == "__main__":
         package_dir={"kaplan": "kaplan"},
         # user will need to install these manually since
         # psi4, vetee, and GOpt are not available on pypi
-        #install_requires=[
+        # install_requires=[
         #    "numpy",
         #    "scipy",
         #    "openbabel",
@@ -27,7 +27,7 @@ if __name__ == "__main__":
         #    "vetee",
         #    "matplotlib",
         #    "pubchempy",
-        #],
+        # ],
         python_requires=">=3.7",
         packages=find_packages(),
         classifiers=[
@@ -38,6 +38,8 @@ if __name__ == "__main__":
             "Intended Audience :: Science/Research",
             "Topic :: Scientific/Engineering :: Chemistry",
         ],
-        keywords="conformer optimisation geometry chemistry evolutionary-algorithm extinction ring-optimisation",
+        keywords="conformer optimisation geometry chemistry \
+                  evolutionary-algorithm extinction \
+                  ring-optimisation",
 
     )

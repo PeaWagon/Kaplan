@@ -19,11 +19,11 @@ def test_apply_extinction():
     for i in range(inputs.num_slots):
         pmem = Pmem(i, 0, 0, inputs.num_diheds)
         ring1[i] = pmem
-    assert_raises(RingEmptyError, apply_extinction, ring1, "deluge", inputs.normalise)
+    assert_raises(RingEmptyError, apply_extinction, ring1, "deluge")
 
     # check that an error is raised for a ring with no pmems
     ring2 = Ring(inputs.num_slots, 0)
-    assert_raises(RingEmptyError, apply_extinction, ring2, "deluge", inputs.normalise)
+    assert_raises(RingEmptyError, apply_extinction, ring2, "deluge")
 
     inputs = Inputs()
     inputs.num_slots = 10
@@ -34,14 +34,14 @@ def test_apply_extinction():
         pmem = Pmem(i, 0, 0, inputs.num_diheds)
         ring3[i] = pmem
         ring3[i]._ring_loc = -4 * (i + inputs.num_slots)
-    assert_raises(InputError, apply_extinction, ring3, "asteroid", inputs.normalise)
+    assert_raises(InputError, apply_extinction, ring3, "asteroid")
 
     ring4 = Ring(inputs.num_slots, 0)
     for i in range(inputs.num_slots):
         pmem = Pmem(i, 0, 0, inputs.num_diheds)
         ring4[i] = pmem
         ring4[i]._ring_loc = i + inputs.num_slots
-    assert_raises(InputError, apply_extinction, ring4, "asteroid", inputs.normalise)
+    assert_raises(InputError, apply_extinction, ring4, "asteroid")
 
 
 def test_plague():
@@ -57,7 +57,7 @@ def test_plague():
         ring[i] = pmem
         ring[i].fitness = randint(1, 100)
     for i in range(10):
-        plague(ring, inputs.normalise)
+        plague(ring)
     assert ring.num_filled >= 1
 
     # test what happens when all pmems get the same fitness
@@ -68,7 +68,7 @@ def test_plague():
         ring2[i] = pmem
         ring2[i].fitness = 10
     for i in range(10):
-        plague(ring2, inputs.normalise)
+        plague(ring2)
     assert ring2.num_filled >= 1
 
 
@@ -93,7 +93,7 @@ def test_agathic():
         pmem = Pmem(i, 0, 0, inputs.num_diheds)
         ring2[i] = pmem
     for i in range(10):
-        plague(ring2, inputs.normalise)
+        plague(ring2)
     assert ring2.num_filled >= 1
 
     # test with some bdays being None
@@ -104,7 +104,7 @@ def test_agathic():
     ring3[0]._birthday = None
     ring3[1]._birthday = None
     for i in range(10):
-        plague(ring3, inputs.normalise)
+        plague(ring3)
     assert ring3.num_filled >= 1
 
 
@@ -124,7 +124,7 @@ def test_deluge():
         ring[i] = pmem
         ring[i].fitness = randint(1, 100)
     for i in range(1000):
-        deluge(ring, ring.occupied, inputs.normalise)
+        deluge(ring, ring.occupied)
     assert ring.num_filled > 0
     assert ring.occupied != []
     # very unlikely that any pmems with fitness lower than
@@ -142,7 +142,7 @@ def test_deluge():
     ring2[-1].fitness = 100
     assert ring2[-1].ring_loc == inputs.num_slots - 1
     for i in range(1000):
-        deluge(ring2, ring2.occupied, inputs.normalise)
+        deluge(ring2, ring2.occupied)
     assert ring2.num_filled == int(inputs.num_slots / 2) + 1
 
     # check that there is still a pmem left if
@@ -153,7 +153,7 @@ def test_deluge():
         ring5[i] = pmem
         ring5[i].fitness = -i
     for i in range(1000):
-        deluge(ring5, ring5.occupied, inputs.normalise)
+        deluge(ring5, ring5.occupied)
     assert ring5.num_filled == 1
     assert ring5[0].fitness == 0
 
@@ -165,7 +165,7 @@ def test_deluge():
         ring6[i] = pmem
         ring6[i].fitness = -i - 1
     for i in range(1000):
-        deluge(ring6, ring6.occupied, inputs.normalise)
+        deluge(ring6, ring6.occupied)
     assert ring6.num_filled == 1
     assert ring6[0].fitness == -1
 

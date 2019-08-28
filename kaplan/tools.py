@@ -30,8 +30,11 @@ import io
 
 __all__ = [
     "amino_acids",
+    "amino_acid_letter_codes",
     "TEST_DIR",
     "units_by_prog",
+    "atom_colours",
+    "atom_radii",
     "constants",
     "energy_units",
     "get_bonds_list",
@@ -45,6 +48,7 @@ __all__ = [
     "energy_rmsd_scatter",
     "dihedrals_heatmap",
     "make_heatmap",
+    "all_pairs_gen",
 ]
 
 
@@ -427,8 +431,8 @@ def generate_data(name, num_iter, **kwargs):
         fcsv.writerow(header)
         for i in num_iter:
             p = Pmem(None, 0, inputs.num_geoms, inputs.num_diheds)
+            p.setup(major=False)
             for i, dihedrals in enumerate(p):
-                p.set_energy_get_coords(i)
                 row = [d for d in dihedrals] + p.energies[i]
                 fcsv.writerow(row)
 
@@ -482,7 +486,7 @@ def analyse_profile(profile, output_file, sortby="cumulative"):
         ps.strip_dirs().sort_stats(sortby).print_stats()
 
 
-def energy_barplot(pmem, inunits="Ha", outunits="kJmol-1", scale=True):
+def energy_barplot(pmem, inunits="Ha", outunits="kcalmol-1", scale=False):
     """Create a barplot of energies using matplotlib.
 
     Parameters

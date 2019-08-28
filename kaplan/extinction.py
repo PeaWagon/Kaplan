@@ -9,11 +9,12 @@ reset the ring to a more exploratory state.
 from kaplan.ring import RingEmptyError
 from kaplan.inputs import InputError
 from kaplan.tournament import sortby
+from kaplan.fitness import update_all_fitness
 
 from random import uniform, randint
 
 
-def apply_extinction(ring, operator, normalise):
+def apply_extinction(ring, operator):
     """Apply an extinction event to a ring object.
 
     Parameters
@@ -24,12 +25,6 @@ def apply_extinction(ring, operator, normalise):
         Name of extinction operator to apply.
         Should be one of: asteroid, plague, agathic,
         or deluge.
-    normalise : bool
-        From inputs.normalise. If True, then operators
-        that are applied based on fitness (such as deluge
-        and plague) will re-evaluate all fitness values
-        prior to the extinction event. If False, then
-        the operators use the absolute fitness value.
 
     Raises
     ------
@@ -56,6 +51,9 @@ def apply_extinction(ring, operator, normalise):
     valid first (which makes it a safer and more
     computationally expensive function).
 
+    The ring should have its fitness values updated
+    prior to calling this function.
+
     Returns
     -------
     ring object after applying extinction operator.
@@ -76,9 +74,9 @@ def apply_extinction(ring, operator, normalise):
 
     # apply extinction operator
     if operator == "deluge":
-        deluge(ring, occupied_indices, normalise)
+        deluge(ring, occupied_indices)
     elif operator == "plague":
-        plague(ring, normalise)
+        plague(ring)
     elif operator == "asteroid":
         asteroid(ring, occupied_indices)
     elif operator == "agathic":
@@ -130,17 +128,17 @@ def asteroid(ring, occupied_indices):
                 return ring
 
 
-def plague(ring, normalise):
+def plague(ring):
     """Apply the plague extinction operator to the ring.
 
     Removes the fraction of the population with the lowest
     fitness, where the fraction is chosen as 10-90% of
     the current population size.
 
+    Assumes that the ring has already had its fitness
+    values set.
+
     """
-    if normalise:
-        for pmem in ring.occupied:
-            ring.set_fitness(ring[pmem])
     # essentially the same procedure to sort pmems
     # as in the tournament module
     index_fit_pairs = sortby(ring, "fitness")
@@ -183,7 +181,7 @@ def agathic(ring):
     return ring
 
 
-def deluge(ring, occupied_indices, normalise):
+def deluge(ring, occupied_indices):
     """Apply the deluge extinction operator to the ring.
 
     This operator first chooses a water-level, which is
@@ -196,11 +194,10 @@ def deluge(ring, occupied_indices, normalise):
     and the maximum fitness is 10, then any pmem with fitness
     less than 2 is removed from the population.
 
+    This assumes the population has updated fitness values,
+    and that the best pmem is correct.
+
     """
-    # first make sure existing pmems have an up-to-date fitness
-    if normalise:
-        for pmem in ring.occupied:
-            ring.set_fitness(ring[pmem])
     # make sure maximum fitness is calculable
     _, max_fit = ring.best_pmem
     if max_fit is None:

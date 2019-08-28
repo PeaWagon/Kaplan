@@ -31,6 +31,9 @@ The StatisticsError can occur if the output module
 is called right after an extinction event (i.e. only
 one pmem left).
 
+This module is not responsible for updating or setting
+the fitness values of any pmems.
+
 """
 
 from random import choice
@@ -208,153 +211,48 @@ class Ring:
 
         return possible_slots
 
-    def update(self, child, potential_slot, current_mev):
-        """Add child to ring based on parent location.
+    def update(self, child, potential_slot):
+        """Add child to ring based on potential_slot location.
 
         Parameters
         ----------
-        child : np.array(shape=(num_geoms, num_diheds),
-                         dtype=float)
+        child : kaplan.pmem.Pmem object
+            A pmem that wants to be in the ring. Should
+            have its fitness already set.
         potential_slot : int
-            The slot to place the child.
-        current_mev : int
-            The current mating event. This method
-            is called by the tournament. This value
-            is used to set the birthday of new pmems
-            (if the child is added to the ring).
+            The slot to place the child. If this slot
+            is occupied, its fitness should be set.
 
         Returns
         -------
-        None
+        success : bool
+            True if new pmem was added to the ring. False
+            if new pmem was not added to the ring.
 
         """
-        num_geoms, num_diheds = child.shape
-        # create new pmem object using dihedral angles
-        new_pmem = Pmem(None, current_mev, num_geoms, num_diheds, dihedrals=child)
-        # set the energetic and distance metrics needed for fitness calculation
-        new_pmem.set_energy_rmsd()
-        # note: the new pmem's energetic/rmsd values are not considered in the
-        # normalisation. only pmems in the ring are considered
-        # determine fitness value for the child
-        # if normalise is False, then absolute fitness is used
-        self.set_fitness(new_pmem)
+        # in the rare event that the child has no valid
+        # energies or RMSD values, its fitness will be None
+        if child.fitness is None:
+            print("Warning. Child fitness was None.")
+            if self[potential_slot] is None:
+                success = True
+            else:
+                success = False
+
         # check fitness vs current occupant (or empty slot)
-        if self[potential_slot] is None or self[potential_slot].fitness is None or \
-           self[potential_slot].fitness <= new_pmem.fitness:
-            # add it there
-            new_pmem._ring_loc = potential_slot
-            self[potential_slot] = new_pmem
+        elif self[potential_slot] is None or \
+                self[potential_slot].fitness is None or \
+                self[potential_slot].fitness <= child.fitness:
+            success = True
 
-    def set_fitness(self, pmem):
-        """Set the fitness for a given pmem.
-
-        Parameters
-        ----------
-        pmem : kaplan.pmem.Pmem object
-            The pmem whose fitness will be set.
-
-        Notes
-        -----
-        This method was moved from the pmem module
-        in order to accomodate for normalising
-        energies and rmsd values. The normalisation
-        is achieved by applying a z-score to each
-        energy and rmsd. Normalising these values
-        helps to make the coefficient inputs more
-        intuitive, as energies and rmsd values are
-        on a similar scale.
-
-        z-score is defined as:
-        z_score = (x-sample_mean)/sample_stdev
-
-        The fitness of a pmem will change over the
-        course of evolution (the sample mean and
-        sample standard deviation will change), but
-        its energy and rmsd values should remain
-        constant. Therefore, the fitness of a pmem
-        must be re-evaluated prior to:
-        (1) tournament selection,
-        (2) an extinction event (like plague
-        or deluge) that orders pmems by fitness, and
-        (3) the output-generation phase (when the
-        best pmem is chosen).
-
-        This method calculates the fitness of a
-        population member (pmem). The fitness is
-        broken into two main parts: energy and
-        rmsd. The energy is calculated using a
-        user-specified quantum chemical method
-        and basis set for each geometry in the pmem.
-        The rmsd is calculated as all the possible
-        pairs of rmsd between geometries.
-
-        fit_form : int
-            Represents the fitness formula to use.
-            The only value currently available is 0,
-            where fitness = CE*SE + Crmsd*Srmsd.
-
-        Returns
-        -------
-        fitness : float
-
-        """
-        inputs = Inputs()
-        if not inputs.normalise:
-            pmem.set_fitness(inputs.fit_form, inputs.coef_energy, inputs.coef_rmsd)
-            return pmem.fitness
-        # make sure energies is not empty
-        # rmsds can be empty in the case where there
-        # is only one geometry per pmem (sum of empty list
-        # is zero)
-        # since we are maximising fitness, each energy value
-        # should be negated (to favour low negative energies
-        # and disfavour high positive energies - in the case
-        # of forcefield calculations; quantum energies will
-        # always be at least zero)
-        valid_energies = [-e for e in pmem.energies if e is not None]
-        valid_rmsds = [rmsd[2] for rmsd in pmem.rmsds if rmsd[2] is not None]
-        # if all components for the fitness are None, return None
-        if valid_energies == [] and valid_rmsds == []:
-            pmem.fitness = None
-            return None
-
-        # account for statistics error in the case where there are 2 or
-        # fewer entries for either energies or rmsds
-        # mean requires 1 data point
-        # stdev requires 2 data points
-        mean_energy = self.mean_energy
-        stdev_energy = self.stdev_energy
-        if mean_energy is None:
-            mean_energy = 0
+        # fitness of new pmem is not as good as old pmem
         else:
-            mean_energy *= -1
-        if stdev_energy is None:
-            stdev_energy = 1
+            success = False
 
-        mean_rmsd = self.mean_rmsd
-        stdev_rmsd = self.stdev_rmsd
-        if mean_rmsd is None:
-            mean_rmsd = 0
-        if stdev_rmsd is None:
-            stdev_rmsd = 1
-
-        # normalise the energies and rmsds
-        norm_energies = [(e - mean_energy) / stdev_energy for e in valid_energies]
-        norm_rmsds = [(r - mean_rmsd) / stdev_rmsd for r in valid_rmsds]
-
-        # now consider that the number of rmsd values and the number of energy
-        # values are not the same
-        energy_sum = sum(norm_energies) / inputs.num_geoms
-        if inputs.num_geoms != 1:
-            rmsd_sum = sum(norm_rmsds) / pmem.num_pairs
-        else:
-            rmsd_sum = 0
-
-        if inputs.fit_form == 0:
-            fitness = inputs.coef_energy * energy_sum + inputs.coef_rmsd * rmsd_sum
-            pmem.fitness = fitness
-            return fitness
-        raise InputError("No such fitness formula.")
+        if success:
+            child._ring_loc = potential_slot
+            self[potential_slot] = child
+        return success
 
     def fill(self, num_pmems, current_mev):
         """Fill the ring with additional pmems.
@@ -396,20 +294,12 @@ class Ring:
             raise RingOverflowError("Cannot add more pmems than space available in the ring.")
 
         # if there are no pmems in the ring, add a contiguous segment
-        # and set fitness values
-        # if setting normalised fitness, fill the slots first
-        # then calculate fitness values
+        # don't calculate the fitness for any pmems
         if self.num_filled == 0:
-            for i in range(0, num_pmems):
+            for i in range(num_pmems):
                 self[i] = Pmem(i, current_mev, inputs.num_geoms,
                                inputs.num_diheds)
-                self[i].set_energy_rmsd()
-                if not inputs.normalise:
-                    self[i].set_fitness(inputs.fit_form, inputs.coef_energy, inputs.coef_rmsd)
-            if not inputs.normalise:
-                return None
-            for slot in range(0, num_pmems):
-                self.set_fitness(self[slot])
+                self[i].setup(major=False)
             return None
 
         # if there are some pmems in the ring
@@ -419,17 +309,11 @@ class Ring:
         total = self.num_filled + num_pmems
         for i in range(inputs.num_slots):
             if self.num_filled == total:
-                if not inputs.normalise:
-                    return None
                 break
             if self[i] is None:
                 self[i] = Pmem(i, current_mev, inputs.num_geoms,
                                inputs.num_diheds)
-                self[i].set_energy_rmsd()
-                if not inputs.normalise:
-                    self[i].set_fitness(inputs.fit_form, inputs.coef_energy, inputs.coef_rmsd)
-        for pmem in self.occupied:
-            self.set_fitness(self[pmem])
+                self[i].setup(major=False)
 
     @property
     def occupied(self):
@@ -442,8 +326,33 @@ class Ring:
         return slots
 
     @property
+    def energies(self):
+        """The set of energy values in the ring that are not None."""
+        energies = []
+        for pmem in self:
+            if pmem:
+                energies += [e for e in pmem.energies if e is not None]
+        return energies
+
+    @property
+    def rmsds(self):
+        """The set of RMSD values in the ring that are not None."""
+        rmsds = []
+        for pmem in self:
+            if pmem:
+                rmsds += [r[2] for r in pmem.rmsds if r[2] is not None]
+        return rmsds
+
+    @property
     def best_pmem(self):
-        """Return the slot number and fitness value for the pmem with the highest fitness."""
+        """Return the slot number and fitness value for the pmem with the highest fitness.
+
+        Notes
+        -----
+        Does not update fitness values. Call update_all_fitness
+        from the fitness module first.
+
+        """
         # need at least one pmem
         if not self.num_filled:
             raise RingEmptyError("No pmems in the ring.")
@@ -458,6 +367,7 @@ class Ring:
 
     @property
     def mean_fitness(self):
+        """Get the mean fitness of the ring."""
         fit_vals = [self[i].fitness for i in self.occupied if self[i].fitness is not None]
         try:
             mean_fitness = mean(fit_vals)
@@ -495,6 +405,7 @@ class Ring:
 
     @property
     def median_fitness(self):
+        """Get the median fitness of the ring."""
         fit_vals = [self[i].fitness for i in self.occupied if self[i].fitness is not None]
         try:
             med_fitness = median(fit_vals)
@@ -532,6 +443,7 @@ class Ring:
 
     @property
     def stdev_fitness(self):
+        """Get the standard deviation for fitness in the ring."""
         fit_vals = [self[i].fitness for i in self.occupied if self[i].fitness is not None]
         try:
             stdev_fitness = stdev(fit_vals)

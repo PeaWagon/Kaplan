@@ -62,6 +62,11 @@ def test_inputs_update_inputs():
         "method": "mp2",
         "output_dir": out_dir,
     }
+    # should get an error since mp2 is not a forcefield
+    # the default is to use openbabel
+    with assert_raises(InputError):
+        test.update_inputs(test_dict)
+    test_dict["prog"] = "psi4"
     # make sure no errors happen with inputs
     test.update_inputs(test_dict)
     # check method was updated
@@ -155,9 +160,9 @@ def test_inputs_update_inputs():
     assert_raises(AssertionError, test.update_inputs, test_dict)
     test_dict["num_swaps"] = 1
 
-    test_dict["num_muts"] = 45
+    test_dict["num_muts"] = 15
     test.update_inputs(test_dict)
-    test_dict["num_muts"] = 46
+    test_dict["num_muts"] = 16
     assert_raises(AssertionError, test.update_inputs, test_dict)
     test_dict["num_muts"] = 3
 

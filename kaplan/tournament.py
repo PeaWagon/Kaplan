@@ -6,7 +6,9 @@ from random import choice
 
 from kaplan.inputs import Inputs, InputError
 from kaplan.ring import RingEmptyError
+from kaplan.pmem import Pmem
 from kaplan.mutations import generate_children, single_parent_mutation
+from kaplan.fitness import set_fitness, new_pmem_fitness
 
 
 def run_tournament(ring, current_mev, test=False):
@@ -42,16 +44,15 @@ def run_tournament(ring, current_mev, test=False):
         print("Pmems in tournament:", selected_pmems)
         print("Parent 1:", parent1_loc)
 
-    # if normalise is selected, apply it to the tournament selection
     # the fitness of parent1 does not need to be updated at this time
     # it should only be updated if the parent1's slot is available
     # as a slot for child1 or child2 (right now, the minimum number
     # of slots for a tournament is 5 - the user can force this to
     # change, but it would probably break the program)
-    if inputs.normalise:
-        for slot in selected_pmems:
-            if ring[slot] is not None:
-                ring.set_fitness(ring[slot])
+
+    for slot in selected_pmems:
+        if ring[slot] is not None:
+            set_fitness(ring, slot)
     p1_dihed = ring[parent1_loc].dihedrals
 
     # select parents and worst slots by fitness
@@ -72,12 +73,42 @@ def run_tournament(ring, current_mev, test=False):
         child1, child2 = generate_children(
             p1_dihed, p2_dihed,
             inputs.num_muts, inputs.num_swaps,
-            inputs.num_cross
+            inputs.num_cross,
+            inputs.max_cross_points,
+            inputs.cross_points
         )
-    # put children in ring
-    ring.update(child1, worst[0], current_mev)
+
+    # create new pmem object using dihedral angles
+    child1_pmem = Pmem(
+        None, current_mev, inputs.num_geoms,
+        inputs.num_diheds, dihedrals=child1
+    )
+    # set the energetic and distance metrics needed for fitness calculation
+    child1_pmem.setup(major=False)
+    # see what fitness of new pmem would be if added to the current
+    # ring, then send to ring for update
+    # the pmem at worst[0] should not need its fitness updated
+    # since it was updated at the start of the tournament
+    new_pmem_fitness(ring, child1_pmem, worst[0])
+    success = ring.update(child1_pmem, worst[0])
     if child2 is not None:
-        ring.update(child2, worst[1], current_mev)
+        if success and inputs.normalise:
+            # update the worst[1], since the ring has changed
+            set_fitness(ring, worst[1])
+
+        # create new pmem object using dihedral angles
+        child2_pmem = Pmem(
+            None, current_mev, inputs.num_geoms,
+            inputs.num_diheds, dihedrals=child2
+        )
+        # set the energetic and distance metrics needed for fitness calculation
+        child2_pmem.setup(major=False)
+        # see what fitness of new pmem would be if added to the current
+        # ring, then send to ring for update
+        # the pmem at worst[0] should not need its fitness updated
+        # since it was updated at the start of the tournament
+        new_pmem_fitness(ring, child2_pmem, worst[1])
+        ring.update(child2_pmem, worst[1])
 
 
 def select_pmems(mating_rad, ring):
@@ -257,12 +288,12 @@ def partition(pairs, low, high):
     for j in range(low, high):
         if pairs[j][1] <= pivot[1]:
             i += 1
-            swap(pairs, i, j)
-    swap(pairs, i + 1, high)
+            swap_ij(pairs, i, j)
+    swap_ij(pairs, i + 1, high)
     return i + 1
 
 
-def swap(pairs, i, j):
+def swap_ij(pairs, i, j):
     """Given pairs, swap locations i and j in the list."""
     valuei = pairs[i]
     pairs[i] = pairs[j]

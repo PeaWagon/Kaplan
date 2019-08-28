@@ -2,6 +2,7 @@
 
 import os
 import openbabel
+import pybel
 import numpy as np
 
 from math import pi
@@ -11,10 +12,10 @@ from vetee.coordinates import CoordinatesError
 from vetee.tools import periodic_table
 
 from kaplan.geometry import get_diheds, create_obmol, get_rings,\
-    update_obmol, remove_ring_dihed, construct_fours, MIN_VALUE, MAX_VALUE,\
+    update_obmol, remove_ring_dihed, construct_fours,\
     get_struct_info, geometry_units, get_coords
 from kaplan.inputs import Inputs
-from kaplan.tools import TEST_DIR
+from kaplan.tools import TEST_DIR, amino_acids
 
 
 def test_get_diheds():
@@ -100,6 +101,7 @@ def test_construct_fours():
 
 
 def test_update_obmol():
+    inputs = Inputs()
     test1 = os.path.join(TEST_DIR, "2-pentanol.xyz")
     obmol = create_obmol(test1, 0, 1)
     dihedrals = get_diheds(test1, 0, 1)
@@ -110,8 +112,9 @@ def test_update_obmol():
     assert len(dihedrals) == 5
     for i in range(5):
         # create new sets of dihedrals
-        new_dihed = np.random.uniform(MIN_VALUE, MAX_VALUE,
-                                      size=len(dihedrals))
+        new_dihed = np.random.choice(
+            inputs.avail_diheds, size=len(dihedrals)
+        )
         new_coords = update_obmol(obmol, dihedrals, new_dihed)
         for i, coord in enumerate(new_coords):
             print(obmol.GetAtom(i + 1).GetAtomicNum(), coord[0], coord[1], coord[2])
@@ -298,3 +301,46 @@ def test_get_struct_info():
     assert result.multip == 1
     assert result.num_atoms == 5
     assert result.atomic_nums == [7, 1, 1, 1, 1]
+
+
+def test_get_coords():
+    # see if obatom.x() and obatom.GetX() return the same values
+    for aa in amino_acids:
+        sdf_file = os.path.join(TEST_DIR, f"{aa}.sdf")
+        assert os.path.isfile(sdf_file)
+        mol = pybel.readfile("sdf", sdf_file)
+        mol = mol.__next__()
+        obmol = mol.OBMol
+        coords_from_get = np.zeros((obmol.NumAtoms(), 3), float)
+        for i, atom in enumerate(openbabel.OBMolAtomIter(obmol)):
+            coords_from_get[i][0] = atom.GetX()
+            coords_from_get[i][1] = atom.GetY()
+            coords_from_get[i][2] = atom.GetZ()
+
+        # read in the file again just to be sure
+        mol2 = pybel.readfile("sdf", sdf_file)
+        mol2 = mol2.__next__()
+        obmol2 = mol2.OBMol
+        coords_from_func = get_coords(obmol2)
+
+        assert np.allclose(coords_from_get, coords_from_func)
+
+    # make sure the coordinates are the same when reading
+    # an sdf file
+    glycine_file_coords = np.array([
+        [-1.6487, 0.6571, -0.0104],
+        [-0.4837, -1.2934, -0.0005],
+        [1.9006, -0.0812, -0.0090],
+        [0.7341, 0.7867, 0.0079],
+        [-0.5023, -0.0691, 0.0120],
+        [0.7326, 1.4215, -0.8824],
+        [0.7464, 1.4088, 0.9069],
+        [1.8743, -0.6844, -0.8301],
+        [1.8887, -0.6969, 0.8031],
+        [-2.4447, 0.0839, -0.0260]
+    ])
+    mol3 = pybel.readfile("sdf", os.path.join(TEST_DIR, "glycine.sdf"))
+    mol3 = mol3.__next__()
+    obmol3 = mol3.OBMol
+    glycine_mol_coords = get_coords(obmol3)
+    assert np.allclose(glycine_file_coords, glycine_mol_coords)

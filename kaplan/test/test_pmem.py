@@ -1,5 +1,6 @@
 from kaplan.pmem import Pmem
 from kaplan.inputs import Inputs
+from kaplan.fitness import set_absolute_fitness
 from copy import deepcopy
 
 # profiling
@@ -15,10 +16,10 @@ def test_pmem():
     print(p)
     for conf in p:
         print(conf)
-    p.set_energy_rmsd()
+    p.setup(major=False)
     assert all(p.energies[i] is not None for i in range(len(p.energies)))
     assert all(p.rmsds[i][2] is not None for i in range(p.num_pairs))
-    p.set_fitness(inputs.fit_form, inputs.coef_energy, inputs.coef_rmsd)
+    set_absolute_fitness(p, inputs.fit_form, inputs.coef_energy, inputs.coef_rmsd)
     assert p.fitness is not None
     print(p)
 
@@ -43,8 +44,7 @@ def test_pmem_get_geometry():
     })
     p1 = Pmem(0, 0, inputs.num_geoms, inputs.num_diheds)
     p2 = deepcopy(p1)
-    for i, _ in enumerate(p1):
-        p1.set_energy_get_coords(i)
-    p2.set_energy_rmsd()
+    p1.setup(major=False)
+    p2.setup(major=False)
     for energy1, energy2 in zip(p1.energies, p2.energies):
         assert energy1 == energy2
