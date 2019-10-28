@@ -9,7 +9,6 @@ reset the ring to a more exploratory state.
 from kaplan.ring import RingEmptyError
 from kaplan.inputs import InputError
 from kaplan.tournament import sortby
-from kaplan.fitness import update_all_fitness
 
 from random import uniform, randint
 

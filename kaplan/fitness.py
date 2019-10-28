@@ -382,19 +382,39 @@ def set_absolute_fitness(pmem, fit_form, coef_energy, coef_rmsd):
     fitness : float
 
     """
+    # if all components for the fitness are None, return None
+    if all(e is None for e in pmem.energies) and all(r[2] is None for r in pmem.rmsds):
+        print("Warning. Pmem has no valid energies/RMSDs. Fitness is None.")
+        pmem.fitness = None
+        return None
     # make sure energies is not empty
     # rmsds can be empty in the case where there
     # is only one geometry per pmem (sum of empty list
     # is zero)
     valid_energies = [e for e in pmem.energies if e is not None]
     valid_rmsds = [rmsd[2] for rmsd in pmem.rmsds if rmsd[2] is not None]
-    # if all components for the fitness are None, return None
-    if valid_energies == [] and valid_rmsds == []:
-        print("Warning. Pmem has no valid energies/RMSDs. Fitness is None.")
-        pmem.fitness = None
-        return None
+
+    # if any of the energies are None, then penalise the fitness according
+    # to the pmem's worst value (otherwise removing the None can actually
+    # improve the fitness for forcefield results since this essentially
+    # sets the energy to zero - which may be lower than the real energies)
+    try:
+        max_energy = max(valid_energies)
+    except ValueError:
+        # empty sequence
+        max_energy = 100
+    if max_energy > 0:
+        energy_sum = 0
+        for energy in pmem.energies:
+            if energy is not None:
+                energy_sum += energy
+            else:
+                energy_sum += 4 * max_energy
+    else:
+        energy_sum = sum(valid_energies)
+
     if fit_form == 0:
-        fitness = -1 * coef_energy * sum(valid_energies) + coef_rmsd * sum(valid_rmsds)
+        fitness = -1 * coef_energy * energy_sum + coef_rmsd * sum(valid_rmsds)
         pmem.fitness = fitness
         return fitness
     raise InputError("No such fitness formula.")

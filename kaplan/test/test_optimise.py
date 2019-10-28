@@ -10,7 +10,7 @@ from kaplan.tools import amino_acids, TEST_DIR
 from kaplan.energy import obabel_energy, psi4_energy_calc,\
     prep_psi4_geom, run_energy_calc
 from kaplan.optimise import optimise_coords, obabel_geometry_opt,\
-    psi4_geometry_opt
+    psi4_geometry_opt, opt_with_rdkit
 from kaplan.geometry import get_coords
 from kaplan.inputs import Inputs
 
@@ -161,3 +161,21 @@ def test_obabel_geometry_opt():
         print(f"energy diff: {energy_from_func - obminimise_energies[aa]}")
         print()
         assert np.allclose(energy_from_func, obminimise_energies[aa], atol=0.0001)
+
+
+def test_opt_with_rdkit():
+    """Test the opt_with_rdkit function from the optimise module."""
+    inputs = Inputs()
+    inputs.update_inputs({
+        "struct_input": "butane",
+    })
+    # test that doing zero steps of optimisation returns the
+    # same coordinates
+    coords, result = opt_with_rdkit(inputs.obmol, 0)
+    assert np.allclose(coords, inputs.coords)
+    assert result == 1
+
+    # test that optimisation converges for butane and changes coordinates
+    opt_coords, opt_result = opt_with_rdkit(inputs.obmol, 500)
+    assert not np.allclose(inputs.coords, opt_coords)
+    assert opt_result == 0

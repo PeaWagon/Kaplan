@@ -792,6 +792,9 @@ class Inputs(DefaultInputs):
     def get_name(self):
         """Returns a name for easy titles in plots and making a job directory."""
 
+        if self.name is not None:
+            return self.name
+
         # if the struct_input is an integer or float, it should be converted
         # to a string so that string-based methods work without error
         name = str(self.struct_input)

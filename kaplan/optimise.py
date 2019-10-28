@@ -5,24 +5,27 @@ locally using numerical methods. Currently, Openbabel
 is used to apply conjugate gradients to an Openbabel
 molecule object.
 
-In future versions, quantum chemistry methods such
-as self-consistent field can be implemented to optimise
-local coordinates. Possible implementation is available
-here:
-http://www.psicode.org/psi4manual/master/optking.html
+There is also the option to use psi4 to optimise a
+molecule with quantum chemistry methods.
+
+There is a new function that optimises an Openbabel
+molecule with RDKit, which is most likely implementing
+the BFGS algorithm.
 
 """
 
 
+import numpy as np
+import openbabel
 import pybel
 import psi4
 
+from rdkit.Chem import AllChem
+from rdkit import Chem
+
 from psi4.driver import constants
-from openbabel import OBFF_LOGLVL_LOW
 
-from numpy import allclose
-
-from kaplan.inputs import Inputs, hardware_inputs
+from kaplan.inputs import Inputs, hardware_inputs, InputError
 from kaplan.energy import MethodError, BasisSetError,\
     prep_psi4_geom, run_energy_calc
 from kaplan.geometry import get_coords, set_coords
@@ -44,7 +47,7 @@ def optimise_coords(coords, major):
         initial coordinates and final conformer
         geometries). Note that minor geometry
         optimisation is done with Openbabel during
-        psi4 jobs - only the energy is evalutated
+        psi4 jobs - only the energy is evaluated
         using pis4.
 
     Returns
@@ -187,7 +190,7 @@ def obabel_geometry_opt(ff, obmol, tolerance=1e-6, max_steps=2500,
 
     if logging:
         # can also change log level to HIGH for more output
-        ff_instance.SetLogLevel(OBFF_LOGLVL_LOW)
+        ff_instance.SetLogLevel(openbabel.OBFF_LOGLVL_LOW)
         ff_instance.SetLogToStdErr()
 
     result = ff_instance.Setup(obmol)
@@ -204,7 +207,7 @@ def obabel_geometry_opt(ff, obmol, tolerance=1e-6, max_steps=2500,
         for _ in range(1, max_steps + 1, sample_every):
             ff_instance.ConjugateGradients(sample_every)
             energy = ff_instance.Energy(False)
-            if allclose(energy, prev_energy, atol=tolerance, rtol=0):
+            if np.allclose(energy, prev_energy, atol=tolerance, rtol=0):
                 # convergence achieved within max_steps
                 break
             else:
@@ -216,3 +219,66 @@ def obabel_geometry_opt(ff, obmol, tolerance=1e-6, max_steps=2500,
     ff_instance.GetCoordinates(obmol)
     opt_coords = get_coords(obmol)
     return energy, opt_coords
+
+
+def opt_with_rdkit(obmol, max_iters):
+    """Optimise the geometry of an Openbabel molecule object with RDKit.
+
+    Parameters
+    ----------
+    obmol : openbabel.OBMol object instance
+        The molecule to be optimised.
+    max_iters : int
+        How many iterations of the optimisation
+        to carry-out.
+
+    Raises
+    ------
+    InputError:
+        The forcefield could not be setup for the input
+        molecule using RDKit. The opt_result parameter
+        was set to -1.
+
+    Notes
+    -----
+    opt_result should be used to notify the user
+    if the max_iters variable is too low (i.e. rate
+    of convergence is low)
+
+    Returns
+    -------
+    A tuple consisting of:
+    optimised_coords : np.array((num_atoms, 3), float)
+        A numpy array of coordinates representing the
+        optimised molecule.
+    opt_result : int
+        If 0, the optimisation converged. If 1, the
+        optimisation did not converge in the number
+        of steps given.
+
+    """
+    # generate the Openbabel molecule object as an sdf string
+    convert = openbabel.OBConversion()
+    check_format = convert.SetOutFormat("sdf")
+    assert check_format
+    obmol_string = convert.WriteString(obmol)
+
+    # generate an rdkit molecule object using the sdf string
+    rdkit_mol = Chem.MolFromMolBlock(obmol_string, removeHs=False)
+
+    # optimise the rdkit molecule object using the MMFF94 forcefield
+    opt_result = AllChem.MMFFOptimizeMolecule(rdkit_mol, maxIters=max_iters)
+
+    # check that the forcefield setup was successful
+    if opt_result == -1:
+        raise InputError("Could not setup forcefield for molecule with RDKit.")
+
+    # get the coordinates of the optimised rdkit molecule object
+    # and store in a numpy array
+    optimised_coords = np.zeros((rdkit_mol.GetNumAtoms(), 3), float)
+    for i in range(rdkit_mol.GetNumAtoms()):
+        pos = rdkit_mol.GetConformer().GetAtomPosition(i)
+        optimised_coords[i][0] = pos.x
+        optimised_coords[i][1] = pos.y
+        optimised_coords[i][2] = pos.z
+    return optimised_coords, opt_result

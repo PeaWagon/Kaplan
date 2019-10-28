@@ -7,7 +7,6 @@ from vetee.tools import periodic_table
 from kaplan.inputs import Inputs, InputError
 from kaplan.pmem import Pmem
 from kaplan.geometry import create_obmol
-from kaplan.inputs import Inputs
 
 import os
 import csv

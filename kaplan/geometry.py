@@ -611,7 +611,7 @@ def write_coords(coords, atomic_nums, outfile, comments=None):
         for i, atom in enumerate(coords):
             line = [vetee.tools.periodic_table(atomic_nums[i])] + list(atom)
             out_coords.append(line)
-            f.write(f"{line[0]:<3} {line[1]:>20} {line[2]:>20} {line[3]:>20}\n")
+            f.write(f"{line[0]:<3} {line[1]:>20f} {line[2]:>20f} {line[3]:>20f}\n")
 
     return out_coords
 

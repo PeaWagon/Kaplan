@@ -23,7 +23,7 @@ from math import factorial
 import numpy as np
 
 from kaplan.rmsd import calc_rmsd, apply_centroid
-from kaplan.energy import run_energy_calc, MethodError, BasisSetError
+from kaplan.energy import MethodError, BasisSetError
 # values for dihedral angles in radians
 # convert radians to degrees for __str__ method
 from kaplan.geometry import geometry_units,\

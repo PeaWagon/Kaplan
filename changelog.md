@@ -1,4 +1,11 @@
-# New in Version 1.3a.0
+# New in Version 1.3a.1
+
+* remove unnecessary import statements from pmem, extinction, and tools modules.
+* update fitness function for absolute fitness such that invalid geometries are penalised if the energies are positive for that pmem.
+* fix issue with write_coords function where 7e-06 appears instead of 0.000007 in xyz files (thus breaking rmsd package)
+* add function in optimise module to optimise Openbabel molecule object with RDKit (implementation to follow in later version)
+
+## New in Version 1.3a.0
 
 * Default `prog` changed to Openbabel from Psi4
 * added new input option, `stop_at_conv`, which checks the best `pmem` for improvement every `stop_at_conv` mating events
@@ -40,3 +47,8 @@
 * ensure statistical relevance of data in the dihedrals heatmap; as a first start, shift dihedral angles such that the standard deviation in dihedral angle is minimised
 * if there is a new release of Openbabel, re-write optimise function such that the changes to forcefield.cpp are accounted for (i.e. conjugate gradients should converge on its own - no need to calculate the energy delta)
 * bug fixes are expected - a lot of changes were made to the code
+* apply kabsch rotation matrix to final best pmem conformers so that their geometries are aligned with conf0.xyz
+* keep track of whether an attempt has been made to calculate pmem energies/rmsds by initialising these attributes to None instead of empty lists; also don't need to store conformer indices in the RMSD (can make this a property), since pairs are reproducible using all_pairs_gen
+* add the ability to make ramachandran plots to the tools module.
+* counter in inputs to keep track of how many optimisations converged prior to maxsteps versus how many optimisations were run for maxsteps. This tracker would make it more obvious to the user if the calculations needed more time or if maxsteps was sufficient (tracker should be for major and minor).
+* Paul suggested that the np.linspace function be changed to 12, 24, 36 steps such that 2pi/3 and pi/2 are included in the options.
