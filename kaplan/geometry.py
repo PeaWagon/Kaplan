@@ -683,3 +683,40 @@ def get_torsions(obmol):
         value = get_torsion(obmol, torsion)
         torsions.append((torsion[0], torsion[1], torsion[2], torsion[3], value))
     return torsions
+
+
+def filter_duplicate_diheds(dihedrals_list, atomic_nums):
+    """Remove duplicate dihedrals based on b-c rotatable bond.
+
+    Parameters
+    ----------
+    dihedrals_list : list(tuple(int, int, int, int, float))
+        All possible dihedrals for a molecule.
+    atomic_nums : list(int)
+        Atomic numbers in order of index, 0-based.
+        For example: [1,1,6] means 0 H, 1 H, 2 C.
+
+    Returns
+    -------
+    list(tuple(int, int, int, int))
+        Unique dihedrals with priority given to
+        highest atomic number sum.
+
+    """
+    atomic_num_sums = []
+    for i, dihed in enumerate(dihedrals_list):
+        atomic_num_sums.append((sum([atomic_nums[dihed[0]], atomic_nums[dihed[1]],
+                                     atomic_nums[dihed[2]], atomic_nums[dihed[3]]]), i))
+    atomic_num_sums = sorted(atomic_num_sums, reverse=True)
+
+    dihedrals_by_mass = []
+    for i, dihed in enumerate(dihedrals_list):
+        dihedrals_by_mass.append(dihedrals_list[atomic_num_sums[i][1]])
+
+    min_diheds_new = []
+    unique_bc = []
+    for dihed in dihedrals_by_mass:
+        if dihed[1:3] not in unique_bc and dihed[2:0:-1] not in unique_bc:
+            unique_bc.append(dihed[1:3])
+            min_diheds_new.append(dihed[:4])
+    return min_diheds_new
