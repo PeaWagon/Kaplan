@@ -40,11 +40,11 @@ from vetee.tools import periodic_table
 from vetee.job import Job
 
 from kaplan.geometry import update_obmol, create_obmol,\
-    remove_ring_dihed, get_diheds, get_rings,\
+    remove_ring_dihed, get_rings,\
     get_struct_info, get_atomic_nums, create_obmol_from_string,\
-    get_coords, set_coords, construct_internal, write_coords
+    get_coords, set_coords, write_coords,\
+    get_torsions, filter_duplicate_diheds
 
-from saddle.internal import Internal
 
 # these values are used in energy calculations when no
 # options are provided
@@ -96,15 +96,6 @@ class DefaultInputs:
         "min_dihed": True,      # select a minimum number of dihedral angles
         "exclude_from_rmsd": None,  # atomic numbers to exclude from RMSD calculations
                                     # if this value is not None, it should be list(int)
-        "use_gopt": False,          # if True, uses GOpt/saddle to apply dihedral angles
-                                    # and reconfigure the resulting geometry
-                                    # if False, uses Openbabel to reconstruct the
-                                    # geometry
-                                    # GOpt/saddle takes significantly longer to construct
-                                    # the geometry, but may work better for molecules that
-                                    # have constrained components (such as rings), as it is
-                                    # able to simultaneously apply dihedral angles (rather
-                                    # than one at a time, as with Openbabel)
         "stop_at_conv": False,      # stop when the best pmem does not improve after
                                     # a certain number of mating events; False means run for
                                     # num_mevs, otherwise it should be an integer input specifying
@@ -242,7 +233,6 @@ class Inputs(DefaultInputs):
         self.no_ring_dihed = True
         self.min_dihed = True
         self.exclude_from_rmsd = None
-        self.use_gopt = False
         self.stop_at_conv = False
         self.avail_diheds = np.linspace(
             -np.pi, np.pi, num=16, endpoint=False
@@ -323,7 +313,7 @@ class Inputs(DefaultInputs):
         }
         expect_bool = {
             "no_ring_dihed", "normalise", "min_dihed",
-            "use_gopt", "opt_init_geom",
+            "opt_init_geom",
         }
         expect_list = {"exclude_from_rmsd", "cross_points"}
         expect_str = {"name"}
@@ -569,22 +559,17 @@ class Inputs(DefaultInputs):
         write_coords(job.xyz_coords, job.atomic_nums, ofile)
         self.coords = job.xyz_coords
 
-        # now determine minimum dihedrals by atom index
-        print("Selecting dihedral angles.")
-        self.diheds = get_diheds(ofile, self.charge, self.multip, select_min=self.min_dihed)
-
-        # use GOpt to construct geometries from sets of dihedral angles
-        if self.use_gopt:
-            self.extra["internal"] = construct_internal(
-                ofile, self.charge, self.multip, select_min=self.min_dihed
-            )
-
         # if pubchem succeeded in reading smiles /inchi string then
         # the obmol should already have been created
         if self.extra["pubchem_success"]:
             self.obmol = create_obmol(ofile, self.charge, self.multip)
             # set atomic numbers
             self.atomic_nums = get_atomic_nums(self.obmol)
+
+        # now determine minimum dihedrals by atom index
+        print("Selecting dihedral angles.")
+        all_diheds = get_torsions(self.obmol)
+        self.diheds = filter_duplicate_diheds(all_diheds, self.atomic_nums)
 
         # remove ring dihedrals where all four atoms are in a ring
         if self.no_ring_dihed:

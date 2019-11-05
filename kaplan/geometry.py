@@ -9,9 +9,7 @@ and getting and setting of coordinates.
 It also contains a very short list of geometry
 units for easy conversion. This module interfaces
 with Vetee in order to get information from the
-Pubchem database. It also interfaces with GOpt to
-get internal angle information (i.e. minimum
-dihedrals list). It is independent of the
+Pubchem database. It is independent of the
 other Kaplan modules, including inputs.
 
 """
@@ -23,10 +21,6 @@ import numpy as np
 import os
 
 from copy import deepcopy
-
-from saddle.internal import Internal
-from saddle.coordinate_types import DihedralAngle
-from saddle.errors import NotConvergeError
 
 
 # 1 "angstrom" = 1.8897261339213 "atomic unit (length)"
@@ -424,135 +418,6 @@ def remove_ring_dihed(rings, diheds):
     for remove in to_remove:
         diheds.remove(remove)
     return diheds
-
-
-def get_diheds(xyz_file, charge, multip, select_min=True, include_vals=False):
-    """Get minimal dihedrals from file using GOpt.
-
-    Parameters
-    ----------
-    xyz_file : str
-        Full file and path with which to generate GOpt mol.
-        Units for the xyz file are angstroms.
-    charge : int
-        Charge of the molecule.
-    multip : int
-        Multiplicity of the molecule.
-    select_min : bool
-        Defaults to True, which means select
-        a minimum set of dihedral angles (one
-        per rotatable bond). False means select
-        all dihedral angles.
-    include_vals : bool
-        Defaults to False, which means the indicies
-        of atoms involved is returned. If True, the values
-        of the dihedral angles are also returned in the
-        tuple.
-
-    Raises
-    ------
-    AssertionError
-        xyz_file does not exist or is not a file.
-
-    Returns
-    -------
-    If include_vals is False:
-    diheds : list(tuple(int,int,int,int))
-        Tuple containing a tuple of 4 atom indices. The
-        dihedral a-b-c-d as a tuple is (a,b,c,d).
-    If include_vals is True:
-    diheds : list(tuple(int,int,int,int,float))
-        Tuple containing a tuple of 4 atom indices and one
-        dihedral angle size in radians. The
-        dihedral a-b-c-d as a tuple is (a,b,c,d,size).
-
-    """
-    mol = construct_internal(xyz_file, charge, multip, select_min)
-    diheds = []
-    if not include_vals:
-        for intern_coord in mol.ic:
-            if isinstance(intern_coord, DihedralAngle):
-                atoms = intern_coord.atoms
-                # GOpt atoms are np.int64 (not sure openbabel will like that)
-                diheds.append((
-                    int(atoms[0]), int(atoms[1]),
-                    int(atoms[2]), int(atoms[3])
-                ))
-    else:
-        for intern_coord in mol.ic:
-            if isinstance(intern_coord, DihedralAngle):
-                atoms = intern_coord.atoms
-                diheds.append((
-                    int(atoms[0]), int(atoms[1]),
-                    int(atoms[2]), int(atoms[3]),
-                    float(intern_coord.value)
-                ))
-    return diheds
-
-
-def construct_internal(xyz_file, charge, multip, select_min=True):
-    """Construct an Internal object from an xyzfile."""
-    assert os.path.isfile(xyz_file)
-    mol = Internal.from_file(xyz_file, charge, multip)
-    mol.auto_select_ic(minimum=select_min)
-    return mol
-
-
-def get_new_coordinates(iobj, dihedrals, new_values):
-    """Get coordinates from internal object after applying new dihedral angles.
-
-    Parameters
-    ----------
-    iobj : saddle.internal.Internal object
-        An object containing internal coordinate
-        information from the original molecular
-        coordinates.
-    dihedrals : list(tuple(int, int, int, int))
-        A list of size-four tuples, where each
-        tuple is a set of four indicies (representing
-        the connectivity for a dihedral angle).
-    new_values : list(len(dihedrals))
-        A list of floating point values representing
-        the new dihdral values to apply to the
-        original geometry. Each index should
-        correspond to the tuple in the dihdrals
-        list.
-
-    Returns
-    -------
-    new coordinates as np.array((num_atoms, 3), float)
-    or None (if failed to converge)
-
-    """
-    # parameters for optimising the geometry
-    # increase max_iters or change opt_method if geometry
-    # repeatedly fails to converge
-    max_iters = 250
-    opt_method = "BFGS"
-    # make a deepcopy of the saddle object so the original
-    # coordinates don't change
-    mol = deepcopy(iobj)
-    new_ic_values = mol.ic_values
-    for i, ic in enumerate(mol.ic):
-        try:
-            # ic.atoms returns (a,b,c,d) for dihedrals
-            # where a-d are integers
-            atoms = dihedrals.index(ic.atoms)
-        # not a dihedral angle
-        except ValueError:
-            continue
-        # only change it if different
-        value = new_values[atoms]
-        if ic.value != value:
-            new_ic_values[i] = value
-    mol.set_target_ic(new_ic_values)
-    try:
-        mol.optimize_to_target_ic(method=opt_method, max_iter=max_iters)
-    except NotConvergeError as e:
-        print(f"Warning. Saddle did not converge after {max_iters} iterations of {opt_method}.")
-        print(e)
-        return None
-    return mol.coordinates
 
 
 def write_coords(coords, atomic_nums, outfile, comments=None):

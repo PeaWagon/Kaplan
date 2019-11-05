@@ -74,9 +74,6 @@ def run_energy_calc(coords):
         return energy
     elif inputs.prog == "openbabel":
         # check obmol has current geometry
-        # this will be called if use_gopt is True because
-        # openbabel is not being used to calculate the new geometry (instead
-        # that job is for saddle/GOpt)
         if not allclose(coords, get_coords(inputs.obmol)):
             set_coords(inputs.obmol, coords)
         energy = obabel_energy(inputs.method, inputs.obmol)

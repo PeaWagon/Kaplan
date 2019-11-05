@@ -27,7 +27,7 @@ from kaplan.energy import MethodError, BasisSetError
 # values for dihedral angles in radians
 # convert radians to degrees for __str__ method
 from kaplan.geometry import geometry_units,\
-    update_obmol, set_coords, get_new_coordinates
+    update_obmol, set_coords
 from kaplan.inputs import Inputs, InputError
 from kaplan.optimise import optimise_coords
 
@@ -253,12 +253,9 @@ class Pmem:
 
         Notes
         -----
-        There are two ways to get the geometry - using
-        GOpt sets all of the dihedrals at once and tries
-        to find a set of cartesian coordinates that
-        correspond to these new internal coordinates.
+        To get the geometry:
         Openbabel applies a rotation matrix to all atoms
-        on one side of each dihedral. Neither methods work
+        on one side of each dihedral. This method does not work
         for rings, and so constrained molecules are part
         of future work.
 
@@ -283,18 +280,6 @@ class Pmem:
 
         """
         inputs = Inputs()
-
-        # check if geometry optmisation is to be done using openbabel or GOpt
-        if inputs.use_gopt:
-            if "internal" not in inputs.extra:
-                raise InputError(
-                    "internal object required in inputs.extra dictionary."
-                )
-            # if GOpt doesn't converge, new_coords will be None
-            new_coords = get_new_coordinates(
-                inputs.extra["internal"], inputs.diheds, self.dihedrals[conf_index]
-            )
-            return new_coords
 
         if not hasattr(inputs, "obmol") or inputs.obmol is None:
             raise InputError("No input geometry has been set.")

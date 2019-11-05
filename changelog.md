@@ -5,6 +5,7 @@
 * fix issue with write_coords function where 7e-06 appears instead of 0.000007 in xyz files (thus breaking rmsd package)
 * add function in optimise module to optimise Openbabel molecule object with RDKit (implementation to follow in later version)
 * add function to geometry module to produce a set of minimum dihedral angles (one per rotatable bond), using the full set of dihedral angles from the Openbabel molecule object as a starting point
+* remove GOpt dependency
 
 ## New in Version 1.3a.0
 

@@ -22,8 +22,8 @@ from kaplan.geometry import geometry_units,\
     GeometryError, get_struct_info, create_obmol_from_string,\
     create_obmol, update_obmol, get_torsion,\
     get_coords, set_coords, get_rings, get_atomic_nums,\
-    construct_fours, ring_bonds, remove_ring_dihed, get_diheds,\
-    construct_internal, get_new_coordinates, write_coords,\
+    construct_fours, ring_bonds, remove_ring_dihed,\
+    write_coords,\
     get_angles, get_torsions
 from kaplan.inputs import hardware_inputs, InputError,\
     DefaultInputs, Inputs, read_input, get_latest_job
