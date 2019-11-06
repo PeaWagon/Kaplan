@@ -36,14 +36,14 @@ import pickle
 from pybel import forcefields
 
 from vetee.coordinates import CoordinatesError, pubchem_inchi_smiles, read_pubchem
-from vetee.tools import periodic_table
 from vetee.job import Job
 
 from kaplan.geometry import update_obmol, create_obmol,\
     remove_ring_dihed, get_rings,\
     get_struct_info, get_atomic_nums, create_obmol_from_string,\
     get_coords, set_coords, write_coords,\
-    get_torsions, filter_duplicate_diheds
+    get_torsions, filter_duplicate_diheds,\
+    periodic_table
 
 
 # these values are used in energy calculations when no

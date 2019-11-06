@@ -9,10 +9,8 @@ import openbabel
 
 from numpy import allclose
 
-from vetee.tools import periodic_table
-
 from kaplan.inputs import Inputs, hardware_inputs
-from kaplan.geometry import set_coords, get_coords
+from kaplan.geometry import set_coords, get_coords, periodic_table
 
 
 class BasisSetError(Exception):

@@ -9,12 +9,12 @@ from math import pi
 
 from numpy.testing import assert_raises
 from vetee.coordinates import CoordinatesError
-from vetee.tools import periodic_table
 
 from kaplan.geometry import create_obmol, get_rings,\
     update_obmol, remove_ring_dihed, construct_fours,\
     get_struct_info, geometry_units, get_coords,\
-    filter_duplicate_diheds, get_torsions, get_atomic_nums
+    filter_duplicate_diheds, get_torsions, get_atomic_nums,\
+    periodic_table
 from kaplan.inputs import Inputs
 from kaplan.tools import TEST_DIR, amino_acids
 

@@ -474,7 +474,7 @@ def write_coords(coords, atomic_nums, outfile, comments=None):
         f.write(f"{num_atoms}\n")
         f.write(f"{comments}\n")
         for i, atom in enumerate(coords):
-            line = [vetee.tools.periodic_table(atomic_nums[i])] + list(atom)
+            line = [periodic_table(atomic_nums[i])] + list(atom)
             out_coords.append(line)
             f.write(f"{line[0]:<3} {line[1]:>20f} {line[2]:>20f} {line[3]:>20f}\n")
 
@@ -585,3 +585,84 @@ def filter_duplicate_diheds(dihedrals_list, atomic_nums):
             unique_bc.append(dihed[1:3])
             min_diheds_new.append(dihed[:4])
     return min_diheds_new
+
+
+class PTableError(Exception):
+    """Raised when periodic table cannot generate values."""
+
+
+def periodic_table(query):
+    """Convert atomic numbers to element symbols or vice-versa.
+
+    Notes
+    -----
+    Due to a problem with Pubchempy pcp.Compound.elements
+    returns atomic numbers
+
+    Parameters
+    ----------
+    query : list
+        If list(int) - atomic numbers.
+        If list(str) - element symbols.
+    query : int
+        atomic number
+    query : str
+        atomic symbol
+
+    Raises
+    ------
+    IndexError:
+        If given atomic number doesn't exist (needs to
+        be in range of 1-118).
+
+    TypeError:
+        Input list contains more than one type of input.
+        For example, having both str and int in the list.
+
+    ValueError:
+        The input str for one of the atoms does not exist
+        in the periodic table.
+
+    Returns
+    -------
+    A list of element symbols (str) (if query was
+    type list(int)).
+    A list of atomic numbers (int) (if query was
+    type list(str)).
+    An int (if query was str).
+    A str (if query was int).
+
+    """
+    atoms = [
+        "H", "He", "Li", "Be", "B", "C", "N", "O", "F", "Ne",
+        "Na", "Mg", "Al", "Si", "P", "S", "Cl", "Ar",
+        "K", "Ca", "Sc", "Ti", "V", "Cr", "Mn", "Fe",
+        "Co", "Ni", "Cu", "Zn", "Ga", "Ge", "As", "Se", "Br", "Kr",
+        "Rb", "Sr", "Y", "Zr", "Nb", "Mo", "Tc", "Ru", "Rh", "Pd",
+        "Ag", "Cd", "In", "Sn", "Sb", "Te", "I", "Xe",
+        "Cs", "Ba",
+        "La", "Ce", "Pr", "Nd", "Pm", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho", "Er", "Tm", "Yb", "Lu",
+        "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg", "Tl", "Pb", "Bi", "Po", "At", "Rn",
+        "Fr", "Ra",
+        "Ac", "Th", "Pa", "U", "Np", "Pu", "Am", "Cm", "Bk", "Cf", "Es", "Fm", "Md", "No", "Lr",
+        "Rf", "Db", "Sg", "Bh", "Hs", "Mt", "Ds", "Rg", "Cn", "Nh", "Fl", "Mc", "Lv", "Ts", "Og"
+    ]
+
+    try:
+        if isinstance(query, str):
+            return atoms.index(query) + 1
+        elif isinstance(query, int):
+            return atoms[query - 1]
+        return [atoms[i - 1] for i in query]
+    except IndexError:
+        raise PTableError("Atomic numbers should be in the range 1-118.") from None
+    except TypeError:
+        if any([type(a) is not str for a in query]):
+            raise PTableError("The input_list should be all integers or all strings.") from None
+        try:
+            return [atoms.index(i) + 1 for i in query]
+        except ValueError:
+            raise PTableError("One of the input atoms is not in the periodic table.") from None
+    # query is not in list (atoms)
+    except ValueError:
+        raise PTableError(f"No such element in the periodic table: {query}") from None

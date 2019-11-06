@@ -24,7 +24,7 @@ from kaplan.geometry import geometry_units,\
     get_coords, set_coords, get_rings, get_atomic_nums,\
     construct_fours, ring_bonds, remove_ring_dihed,\
     write_coords,\
-    get_angles, get_torsions
+    get_angles, get_torsions, PTableError, periodic_table
 from kaplan.inputs import hardware_inputs, InputError,\
     DefaultInputs, Inputs, read_input, get_latest_job
 from kaplan.mutations import generate_children,\

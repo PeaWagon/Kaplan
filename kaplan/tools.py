@@ -2,11 +2,10 @@
 # includes analysis tools for kaplan data
 
 from vetee.coordinates import read_xyz
-from vetee.tools import periodic_table
 
 from kaplan.inputs import Inputs, InputError
 from kaplan.pmem import Pmem
-from kaplan.geometry import create_obmol
+from kaplan.geometry import create_obmol, periodic_table
 
 import os
 import csv

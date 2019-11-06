@@ -28,11 +28,10 @@ import os
 import pickle
 from time import asctime
 
-from vetee.tools import periodic_table
 from vetee.coordinates import write_xyz
 
 from kaplan.inputs import Inputs, InputError
-from kaplan.geometry import update_obmol, write_coords
+from kaplan.geometry import update_obmol, write_coords, periodic_table
 
 import kaplan.tools as kt
 
