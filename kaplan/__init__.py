@@ -43,3 +43,4 @@ from kaplan.tools import amino_acids, amino_acid_letter_codes,\
     make_heatmap, all_pairs_gen
 from kaplan.tournament import run_tournament, select_pmems, sortby,\
     select_parents, quicksort, partition, swap_ij
+from kaplan.web import REQUESTS, pubchem_request

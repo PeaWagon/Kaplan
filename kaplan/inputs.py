@@ -2,7 +2,7 @@
 class structure.
 
 If the _options dictionary is changed
-(by instatiating another of) Inputs
+(by instantiating another of) Inputs
 or DefaultInputs, the _options is updated
 for all users.
 
@@ -44,6 +44,8 @@ from kaplan.geometry import update_obmol, create_obmol,\
     get_coords, set_coords, write_coords,\
     get_torsions, filter_duplicate_diheds,\
     periodic_table
+
+from kaplan.web import REQUESTS, pubchem_request
 
 
 # these values are used in energy calculations when no
@@ -811,6 +813,28 @@ class Inputs(DefaultInputs):
                 name = "unknown_mol"
 
         return name
+
+    def update_new(self, user_input):
+        """New version of update_inputs using web module.
+
+        Under construction**************
+
+        """
+        # for safety, set the Inputs options
+        # to their defaults every time this is called
+        self._reset_to_defaults()
+
+        # default struct_type is name
+        if "struct_type" not in user_input:
+            user_input["struct_type"] = "name"
+
+        # requests python library is needed to setup a
+        # molecule structure with pubchem
+        if user_input["struct_type"] in ["name", "inchikey", "cid"]:
+            if not REQUESTS:
+                raise InputError("Requests library is required if the struct_type is name.")
+
+        # pubchem_data = pubchem_request()
 
 
 def read_input(job_inputs, new_output_dir=True):
