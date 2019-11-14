@@ -45,7 +45,7 @@ from kaplan.geometry import update_obmol, create_obmol,\
     get_torsions, filter_duplicate_diheds,\
     periodic_table
 
-from kaplan.web import REQUESTS, pubchem_request
+from kaplan.web import pubchem_request
 
 
 # these values are used in energy calculations when no
@@ -69,8 +69,13 @@ class DefaultInputs:
     # programs available in kaplan
     _avail_progs = {"psi4", "openbabel"}
 
-    # available structure inputs for vetee to use to generate coordinates
-    _avail_structs = {"smiles", "com", "xyz", "name", "cid", "inchi", "inchikey"}
+    # available structure inputs to use to generate coordinates
+    # note: some require access to internet/requests library
+    _avail_structs = {
+        "sdf", "com", "xyz",        # file-based
+        "smiles", "inchi",          # identifiers
+        "name", "inchikey", "cid",  # requires pubchem
+    }
 
     # available fitness function formats
     _avail_fit_form = [0]
@@ -79,7 +84,9 @@ class DefaultInputs:
     bad_chars = [" ", "~", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")"]
 
     _options = {
-        "output_dir": "pwd",    # where to store the output
+        "output_dir": None,     # where to store the output
+                                # if None, puts output in pwd
+        "job_num": None,        # job number for output directory
         "name": None,           # used as a title for plots/directory names
                                 # should not include any of the characters in bad_chars
 
@@ -223,7 +230,8 @@ class Inputs(DefaultInputs):
         execution.
 
         """
-        self.output_dir = "pwd"
+        self.output_dir = None
+        self.job_num = None
         self.name = None
         self.prog = "openbabel"
         self.basis = "sto-3g"
@@ -583,36 +591,14 @@ class Inputs(DefaultInputs):
             raise InputError("No dihedral angles could be generated for the input molecule.")
 
     def _set_output_dir(self):
-        """Determine the name of the output directory.
-
-        Parameters
-        ----------
-        structure : str
-            Some identifier for the job. Example
-            a string representing the name of the molecule.
-        loc : str
-            The parent directory to use as output.
-            Defaults to "pwd", which means use the
-            present working directory (current working
-            directory). Another possible option is
-            "home", which puts the output in the
-            home directory (i.e. /user/home), but this
-            option is only available for Linux users.
-            If loc is not home or pwd, then the
-            output will be generated in the given
-            directory.
-
-        Raises
-        ------
-        FileNotFoundError
-            The user gave a location that does not exist.
+        """Determine the path of the output directory.
 
         Notes
         -----
         The output is placed in kaplan_output under a job
         number, formatted as follows:
-        loc/kaplan_output/job_0 # for the first job
-        loc/kaplan_output/job_1 # for the second job
+        ../kaplan_output/job_0 # for the first job
+        ../kaplan_output/job_1 # for the second job
         etc.
 
         Returns
@@ -622,28 +608,36 @@ class Inputs(DefaultInputs):
             be written.
 
         """
-        if self.output_dir == "pwd":
+        if self.output_dir is None or self.output_dir == "":
             self.output_dir = os.path.join(os.getcwd(), "kaplan_output")
-        elif self.output_dir == "home":
-            self.output_dir = os.path.join(os.path.expanduser("~"), "kaplan_output")
-        # don't make more subdirectories
-        elif self.output_dir.endswith("kaplan_output"):
-            self.output_dir = os.path.abspath(self.output_dir)
         else:
-            self.output_dir = os.path.join(os.path.abspath(self.output_dir), "kaplan_output")
+            # get rid of trailing slash
+            if self.output_dir.endswith("/"):
+                self.output_dir = self.output_dir[:-1]
+
+            # don't make more subdirectories
+            if os.path.basename(self.output_dir) == "kaplan_output":
+                self.output_dir = os.path.abspath(self.output_dir)
+            else:
+                self.output_dir = os.path.join(os.path.abspath(self.output_dir), "kaplan_output")
+
+            # make sure directory above kaplan_output exists
+            if not os.path.isdir(os.path.dirname(self.output_dir)):
+                raise InputError(f"No such directory exists: {self.output_dir}")
 
         # make an identifier for the molecule
+        # should not be an issue if name is empty string
         if self.name is None:
             self.name = self.get_name()
-        name = self.name
+        if any(c in self.name for c in self.bad_chars):
+            print(f"Bad characters are: {self.bad_chars}")
+            raise InputError(f"Name contains bad character: {self.name}")
 
         # first check that there is a place to put the
         # output files
         if not os.path.isdir(self.output_dir):
             os.mkdir(self.output_dir)
-            self.output_dir = os.path.join(self.output_dir, f"job_0_{name}")
-            os.mkdir(self.output_dir)
-            return
+
         # iterate over existing jobs to determine
         # dir_num for newest job
         dir_contents = os.scandir(self.output_dir)
@@ -657,12 +651,19 @@ class Inputs(DefaultInputs):
                 except ValueError:
                     pass
         try:
-            new_dir = f"job_{max(dir_nums)+1}_{name}"
+            job_num = max(dir_nums) + 1
         # max() arg is an empty sequence
         except ValueError:
-            new_dir = f"job_0_{name}"
+            job_num = 0
+
+        # zero-padding for job number means that ls will
+        # list the jobs in numerical order (at least up until
+        # 999999 jobs)
+        new_dir = f"job_{job_num:06}_{self.name}"
         self.output_dir = os.path.join(self.output_dir, new_dir)
         os.mkdir(self.output_dir)
+
+        return self.output_dir
 
     def write_inputs(self, fname="inputs.txt", overwrite=False):
         """Write the inputs object contents to a plain text file.
@@ -758,7 +759,7 @@ class Inputs(DefaultInputs):
         # weird output directories are made
         if self.struct_type is None:
             self.struct_type = "name"
-        if self.struct_type not in self._avail_structs:
+        elif self.struct_type not in self._avail_structs:
             raise InputError(f"Invalid structure type: {self.struct_type}")
 
         # generate output directory
@@ -820,19 +821,23 @@ class Inputs(DefaultInputs):
         Under construction**************
 
         """
-        # for safety, set the Inputs options
-        # to their defaults every time this is called
-        self._reset_to_defaults()
-
-        # default struct_type is name
-        if "struct_type" not in user_input:
-            user_input["struct_type"] = "name"
+        # can use openbabel
+        if "struct_type" in ["com", "xyz", "sdf"]:
+            pass
+        elif "struct_type" in ["inchi", "smiles"]:
+            pass
+        # struct type is cid, name, inchikey
+        # need to use pubchem
+        else:
+            pass
 
         # requests python library is needed to setup a
         # molecule structure with pubchem
-        if user_input["struct_type"] in ["name", "inchikey", "cid"]:
-            if not REQUESTS:
-                raise InputError("Requests library is required if the struct_type is name.")
+        # if user_input["struct_type"] in ["name", "inchikey", "cid"]:
+        #    try:
+        #        pubchem_request(self.)
+        #    if not REQUESTS:
+        #        raise InputError("Requests library is required if the struct_type is name.")
 
         # pubchem_data = pubchem_request()
 

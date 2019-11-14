@@ -6,9 +6,8 @@ Small version of PubChemPy.
 
 try:
     import requests
-    REQUESTS = True
 except ImportError:
-    REQUESTS = False
+    pass
 
 
 PUG_REST_ERROR_CODES = {
@@ -39,6 +38,10 @@ SPECIAL_CHARS = {
 }
 
 
+class WebError(Exception):
+    """Exception class for web-related errors."""
+
+
 def pubchem_request(input_value, input_type="name"):
     """Make HTTP request to PubChem database.
 
@@ -60,14 +63,12 @@ def pubchem_request(input_value, input_type="name"):
     assert input_type in valid_input_types
 
     # check internet is working
-    # TODO: perhaps new exception class should be added for
-    # web-related errors
     try:
         requests.get("https://pubchemdocs.ncbi.nlm.nih.gov/")
     except NameError:
-        raise Exception("Requests library is not installed.")
+        raise WebError("Requests library is not installed.")
     except requests.exceptions.ConnectionError:
-        raise Exception("Not connected to the internet.")
+        raise WebError("Not connected to the internet.")
 
     # example URL:
     # https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/vioxx/property/InChI/TXT
