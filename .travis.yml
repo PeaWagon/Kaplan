@@ -18,14 +18,12 @@ install:
   - conda info -a
 
   # Create a conda environment and install dependencies
-  - conda create -n test-kaplan python=$TRAVIS_PYTHON_VERSION numpy matplotlib nose pylint pycodestyle coverage
+  - conda create -n test-kaplan python=$TRAVIS_PYTHON_VERSION numpy matplotlib nose pylint pycodestyle coverage requests
   - source activate test-kaplan
   - conda install -c conda-forge pydocstyle
   - conda install -c psi4 psi4
-  - conda install -c mcs07 pubchempy
   - conda install -c openbabel openbabel
   - pip install rmsd
-  - pip install -i https://pypi.anaconda.org/kumrud/simple vetee
   - pip install -e ./
 
 script:

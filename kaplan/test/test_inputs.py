@@ -15,8 +15,6 @@ import shutil
 
 from copy import deepcopy
 
-import vetee
-
 from numpy.testing import assert_raises
 
 from kaplan.inputs import Inputs, InputError, read_input, get_latest_job
@@ -40,7 +38,6 @@ def test_inputs():
 
 def test_inputs_update_inputs():
     """Test the update_inputs method of the Inputs class."""
-
     out_dir = os.path.join(TEST_DIR, "test_update_inputs")
 
     # remove the test directory if it already exists
@@ -62,6 +59,7 @@ def test_inputs_update_inputs():
         "method": "mp2",
         "output_dir": out_dir,
     }
+
     # should get an error since mp2 is not a forcefield
     # the default is to use openbabel
     with assert_raises(InputError):
@@ -85,20 +83,20 @@ def test_inputs_update_inputs():
     # now try an invalid file name
     test_dict["struct_type"] = "xyz"
     test_dict["struct_input"] = "bloop"
-    with assert_raises(FileNotFoundError):
+    with assert_raises(GeometryError):
         test.update_inputs(test_dict)
     # test with another type of input file
     test_dict["struct_input"] = os.path.join(TEST_DIR, "fopt-cis-1-chloropropene.com")
     # which won't work since the type is xyz and the input is com
-    with assert_raises(vetee.CoordinatesError):
+    with assert_raises(GeometryError):
         test.update_inputs(test_dict)
-    # now it should work
     test_dict["struct_type"] = "com"
-    test.update_inputs(test_dict)
+    with assert_raises(GeometryError):
+        test.update_inputs(test_dict)
 
     # now try cases where incorrect program is given
     test_dict["prog"] = "not-avail"
-    assert_raises(AssertionError, test.update_inputs, test_dict)
+    assert_raises(GeometryError, test.update_inputs, test_dict)
     test_dict["prog"] = "psi4"
 
     # cysteine
@@ -163,6 +161,7 @@ def test_inputs_update_inputs():
     test_dict["num_muts"] = 15
     test.update_inputs(test_dict)
     test_dict["num_muts"] = 16
+    print(test_dict)
     assert_raises(AssertionError, test.update_inputs, test_dict)
     test_dict["num_muts"] = 3
 
@@ -226,7 +225,7 @@ def test_read_input():
     # now generate a new run using the same inputs
     # make one change and start a new job
     inputs_pickle = read_input(
-        os.path.join(out_dir, "kaplan_output/job_0_propane/inputs.pickle"),
+        os.path.join(out_dir, "kaplan_output/job_000000_propane/inputs.pickle"),
         False
     )
     # make trivial change
@@ -234,7 +233,7 @@ def test_read_input():
     run_kaplan(inputs_pickle)
 
     # unpickle the new output dir
-    job1_inputs = os.path.join(out_dir, "kaplan_output/job_1_propane/inputs.pickle")
+    job1_inputs = os.path.join(out_dir, "kaplan_output/job_000001_propane/inputs.pickle")
     assert os.path.isfile(job1_inputs)
     with open(job1_inputs, "rb") as f:
         inputs1 = pickle.load(f)
@@ -255,7 +254,7 @@ def test_read_input():
     # test get_latest_job
     result = get_latest_job(out_dir)
     assert len(result) == 2
-    assert result[0] == os.path.join(out_dir, "kaplan_output/job_1_propane")
+    assert result[0] == os.path.join(out_dir, "kaplan_output/job_000001_propane")
     assert result[1] == 1
 
     # remove the test directory as cleanup

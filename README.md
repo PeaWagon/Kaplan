@@ -3,10 +3,12 @@
 This project implements conformer searching using evolutionary computation.
 
 The main folders in the project are:
+
 * docs (documentation)
 * kaplan (source code)
 
 There is also a test folder within the kaplan directory that contains:
+
 * testfiles
 * jupyter-notebooks
 
@@ -19,13 +21,10 @@ in the list.
 * [python 3.6](https://www.python.org/downloads/)
 * [numpy](https://pypi.org/project/numpy/)
 * [rmsd](https://github.com/charnley/rmsd)
-    * [scipy](https://pypi.org/project/scipy/)
+  * [scipy](https://pypi.org/project/scipy/)
 * [psi4](http://www.psicode.org/)
 * [openbabel](openbabel.org/docs/current/Installation/install.html)
-* vetee
-    * [pubchempy](https://pubchempy.readthedocs.io/en/latest/guide/install.html)
-* GOpt
-    * [importlib_resources](https://importlib-resources.readthedocs.io/en/latest/)
+* [requests](https://3.python-requests.org/)
 
 ## How to install
 
@@ -34,29 +33,21 @@ in the list.
 The recommended installation process involves installing [conda or miniconda](https://conda.io/docs/user-guide/install/download.html#anaconda-or-miniconda).
 
 Generate a new conda environment:  
-`$ conda create -n kenv python=3.6 numpy`
+`$ conda create -n kenv python=3.6 numpy scipy requests`
 
 Turn on the environment:  
-`$ source activate kenv`
+`$ conda activate kenv`
 
 Your prompt should now reflect the environment name:  
 `(kenv) $`
 
 With the environment active, install the dependencies:  
-1. psi4  
+1. psi4
 `(kenv) $ conda install -c psi4 psi4`  
 2. openbabel  
-`(kenv) $ conda install -c openbabel openbabel`  
-3. pubchempy  
-`(kenv) $ conda install -c mcs07 pubchempy`  
-4. rmsd  
-`(kenv) $ pip install rmsd`  
-5. vetee  
-`(kenv) $ pip install -i https://pypi.anaconda.org/kumrud/simple vetee`
-6. GOpt
-This is a private repositoy, and you will need to contact the developer to install it.
-7. importlib_resources
-`(kenv) $ conda install -c conda-forge importlib_resources`
+`(kenv) $ conda install -c openbabel openbabel`
+3. rmsd  
+`(kenv) $ pip install rmsd`
 
 ### Installing Kaplan
 
@@ -75,13 +66,12 @@ To see installed packages:
 `(kenv) $ conda list`  
 
 Turn off the environment:  
-`(kenv) $ source deactivate kenv`  
+`(kenv) $ conda deactivate kenv`  
 `$`
 
 ### Uninstall Kaplan
 
 `(kenv) $ pip uninstall kaplan`
-
 
 ## How to run Kaplan
 
@@ -111,6 +101,3 @@ of this project.
 * Hanane Zlitni
 * Dr. Spencer Smith
 * Dr. Paul Ayers
-
-
-

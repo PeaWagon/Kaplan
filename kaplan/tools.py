@@ -1,11 +1,10 @@
 # general purpose tools or ways to use kaplan
 # includes analysis tools for kaplan data
 
-from vetee.coordinates import read_xyz
-
 from kaplan.inputs import Inputs, InputError
 from kaplan.pmem import Pmem
-from kaplan.geometry import create_obmol, periodic_table
+from kaplan.geometry import create_obmol,\
+    periodic_table, get_coords, get_atomic_nums
 
 import os
 import csv
@@ -244,10 +243,13 @@ def plot_2d(xyzfile=None):
     inputs = Inputs()
     if xyzfile is None:
         xyzfile = os.path.join(inputs.output_dir, "input_coords.xyz")
-    data = read_xyz(xyzfile)
-    xs = [data["_coords"][i][1] for i in range(data["_num_atoms"])]
-    ys = [data["_coords"][i][2] for i in range(data["_num_atoms"])]
-    labels = [f"{i},{data['_coords'][i][0]}" for i in range(data["_num_atoms"])]
+    
+    xyz_mol = create_obmol(xyzfile, "xyz", True)
+    coords = get_coords(xyz_mol)
+    atomic_nums = get_atomic_nums(xyz_mol)
+    xs = [i[0] for i in coords]
+    ys = [i[1] for i in coords]
+    labels = [f"{i},{c}" for i, c in enumerate(inputs.atomic_nums)]
 
     # generate basic scatterplot with atom labels
     _, ax = plt.subplots()
@@ -263,8 +265,7 @@ def plot_2d(xyzfile=None):
         )
 
     # add lines where openbabel has determined there should be bonds
-    obmol = create_obmol(xyzfile, inputs.charge, inputs.multip)
-    bonds = get_bonds_list(obmol)
+    bonds = get_bonds_list(xyz_mol)
     for bond in bonds:
         x_coord = [xs[bond[0]], xs[bond[1]]]
         y_coord = [ys[bond[0]], ys[bond[1]]]
@@ -318,13 +319,14 @@ def plot_3d(xyzfile=None):
         title = f"{inputs.name}, {name}"
         outname = os.path.join(inputs.output_dir, f"{name}.png")
 
-    data = read_xyz(xyzfile)
-    xs = [data["_coords"][i][1] for i in range(data["_num_atoms"])]
-    ys = [data["_coords"][i][2] for i in range(data["_num_atoms"])]
-    zs = [data["_coords"][i][3] for i in range(data["_num_atoms"])]
-    labels = [f"  {data['_coords'][i][0]},{i}" for i in range(data["_num_atoms"])]
-    atomic_nums = [periodic_table(data["_coords"][i][0])
-                   for i in range(data["_num_atoms"])]
+    xyz_mol = create_obmol(xyzfile, "xyz", True)
+    coords = get_coords(xyz_mol)
+    atomic_nums = get_atomic_nums(xyz_mol)
+
+    xs = [i[0] for i in coords]
+    ys = [i[1] for i in coords]
+    zs = [i[2] for i in coords]
+    labels = [f"{i},{c}" for i, c in enumerate(atomic_nums)]
 
     colours = [atom_colours[i] if i in atom_colours
                else atom_colours["other"] for i in atomic_nums]
@@ -354,8 +356,7 @@ def plot_3d(xyzfile=None):
         )
 
     # add lines where openbabel has determined there should be bonds
-    obmol = create_obmol(xyzfile, inputs.charge, inputs.multip)
-    bonds = get_bonds_list(obmol)
+    bonds = get_bonds_list(xyz_mol)
     for bond in bonds:
         ax.plot(
             [xs[bond[0]], xs[bond[1]]],

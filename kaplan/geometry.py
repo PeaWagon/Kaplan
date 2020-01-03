@@ -7,14 +7,11 @@ over rings, collection of angles or torsions,
 and getting and setting of coordinates.
 
 It also contains a very short list of geometry
-units for easy conversion. This module interfaces
-with Vetee in order to get information from the
-Pubchem database. It is independent of the
+units for easy conversion. It is independent of the
 other Kaplan modules, including inputs.
 
 """
 
-import vetee
 import openbabel
 import pybel
 import numpy as np
@@ -51,125 +48,73 @@ class GeometryError(Exception):
     """Raised when geometry problem occurs."""
 
 
-def get_struct_info(struct_input, struct_type="name", prog="psi4"):
-    """Get structure information from an input query using Vetee.
-
-    struct_input : str
-        The value of the input to be parsed. Examples
-        include files (with full path), CID value, and
-        molecule name.
-    struct_type : str
-        One of name, cid, smiles, inchi, inchikey, com,
-        or xyz. Specifies type of input provided. Defaults
-        to name.
-    prog : str
-        Setup structural information according to program.
-
-    Returns
-    -------
-    struct_info : vetee.job.Job object instance
-        Specifies all information needed to write a molecule.
-
-    """
-    AVAIL_STRUCTS = (
-        "xyz", "com", "smiles", "inchi", "inchikey",
-        "name", "cid",
-    )
-    struct_type = struct_type.lower()
-    assert struct_type in AVAIL_STRUCTS
-    if struct_type in ("com", "xyz") and not os.path.isfile(struct_input):
-        raise FileNotFoundError(f"No such input file: {struct_input}")
-    struct_info = vetee.job.Job(struct_type, struct_input, prog)
-    try:
-        # kaplan=True to avoid not-implemented error
-        struct_info.setup(kaplan=True)
-    # Note: JobError raised when unable to set charge and multiplicity
-    except vetee.job.JobError:
-        pass
-    return struct_info
-
-
-def create_obmol_from_string(str_type, value):
-    """Use openbabel to create an OBMol object from a string.
+def create_obmol(obmol_input, input_type, is_file):
+    """Create an Openbabel molecule object.
 
     Parameters
     ----------
-    str_type : str
-        Type of string being passed to the function.
-        Should be one of: "smiles", "inchi".
-    value : str
-        The string with which to generate
-        a molecule.
-
-    Examples
-    --------
-    This function was written so that the user
-    could create structures using SMILES strings
-    that are not in Pubchem. Cyclooctatetraene (COT)
-    was given a 2- charge using this method via
-    the following smiles string:
-        C1=C[CH-]=CC=C[CH-]=C1
+    obmol_input : str
+        Input value - could be a path+filename or
+        a SMILES string, etc.
+    input_type : str
+        Should be one of:
+        com, xyz, inchi, smiles, sdf
+        Or another supported file format.
+    is_file : bool
+        True if obmol_input is a path+filename.
+        False if obmol_input is a string.
 
     Notes
     -----
-    Openbabel cannot construct molecules from
-    InchiKey (example: GSYKYIXVPVFJRF-UHFFFAOYSA-N).
-    Also it will produce garbage results for some
-    inchi strings taken from pubchem (example nonadecane).
+    Openbabel cannot read com file as input unless
+    it is z-matrix format (gzmat is the input_type).
+    If an sdf file contains more than one molecule
+    or geometry, only the first one will be read.
+    Openbabel will not raise an error if the number
+    of atoms does not agree with the number of atoms
+    listed in an xyz file. Instead, it only reads
+    the number of indicated atoms from the input file
+    and the resulting object may have a non-standard
+    total spin multiplicity.
+    This function does not do any sort of geometry
+    optimisation, which is recommended if building
+    from a smiles or inchi string.
 
     Returns
     -------
-    openbabel.OBMol object
+    openbabel.OBMol instance
 
     """
-    if str_type == "smiles":
-        str_type = "smi"
-    try:
-        mol = pybel.readstring(str_type, value)
-    except OSError:
-        raise GeometryError(f"Could not read {str_type} string with Openbabel: {value}") from None
-    except ValueError:
-        raise GeometryError(f"Openbabel does not support the input format: {str_type}") from None
-    mol.make3D()
-    return mol.OBMol
+    assert isinstance(is_file, bool)
+    if is_file and not os.path.isfile(obmol_input):
+        raise GeometryError(f"No such file: {obmol_input}")
 
+    # create a conversion object instance
+    obconvert = openbabel.OBConversion()
+    good_format = obconvert.SetInFormat(input_type)
+    if not good_format:
+        raise GeometryError(f"Unsupported format: {input_type}")
+    obmol = openbabel.OBMol()
+    if is_file:
+        has_mol = obconvert.ReadFile(obmol, obmol_input)
+    else:
+        has_mol = obconvert.ReadString(obmol, obmol_input)
+    if not has_mol:
+        raise GeometryError(
+            f"Unable to read {input_type} {'file' if is_file else 'string'} input: {obmol_input}")
 
-def create_obmol(xyz_file, charge, multip):
-    """Use openbabel to create an OBMol object from xyz file.
+    requires_builder = ["smiles", "inchi", "smi"]
+    if input_type in requires_builder:
+        # builder required for identifier-based input
+        builder = openbabel.OBBuilder()
+        build_success = builder.Build(obmol)
+        # unclear how to raise this error, but the builder
+        # should return 0 if issues are encountered
+        if not build_success:
+            raise GeometryError("Could not construct 3D coordinates.")
+        obmol.AddHydrogens()
 
-    Parameters
-    ----------
-    xyz_file : str
-        Full file and path with which to generate OBMol.
-        Units for the xyz file are angstroms.
-    charge : int
-        The overall charge of the molecule.
-    multip : int
-        The overall multiplicity of the molecule.
-
-    Raises
-    ------
-    AssertionError
-        xyz_file does not exist or is not a file.
-
-    Returns
-    -------
-    obmol : openbabel.OBMol object
-        Containing information from xyz file.
-
-    """
-    assert os.path.isfile(xyz_file)
-    mol = pybel.readfile("xyz", xyz_file).__next__()
-    mol = mol.OBMol
-    if mol.GetTotalCharge() != charge:
-        print(f"Warning: openbabel molecule charge ({mol.GetTotalCharge()})\
-                \ndifferent from input charge ({charge}).")
-        mol.SetTotalCharge(charge)
-    if mol.GetTotalSpinMultiplicity() != multip:
-        print(f"Warning: openbabel molecule multiplicity ({mol.GetTotalSpinMultiplicity()})\
-                \ndifferent from input multiplicity ({multip}).")
-        mol.SetTotalSpinMultiplicity(multip)
-    return mol
+    return obmol
 
 
 def update_obmol(obmol, dihedrals, new_dihed):
@@ -594,11 +539,6 @@ class PTableError(Exception):
 def periodic_table(query):
     """Convert atomic numbers to element symbols or vice-versa.
 
-    Notes
-    -----
-    Due to a problem with Pubchempy pcp.Compound.elements
-    returns atomic numbers
-
     Parameters
     ----------
     query : list
@@ -614,11 +554,9 @@ def periodic_table(query):
     IndexError:
         If given atomic number doesn't exist (needs to
         be in range of 1-118).
-
     TypeError:
         Input list contains more than one type of input.
         For example, having both str and int in the list.
-
     ValueError:
         The input str for one of the atoms does not exist
         in the periodic table.

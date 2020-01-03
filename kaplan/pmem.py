@@ -104,7 +104,7 @@ class Pmem:
                 )
             # TypeError: 'NoneType' object cannot be interpreted as an integer
             except TypeError:
-                raise InputError("Mising required inputs: num_geoms or num_diheds")
+                raise InputError("Missing required inputs: num_geoms or num_diheds")
         else:
             assert dihedrals.shape == (self.num_geoms, self.num_diheds)
             self.dihedrals = dihedrals

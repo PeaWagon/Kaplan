@@ -90,6 +90,13 @@ def pubchem_request(input_value, input_type="name"):
         output_properties = pubchem_post(input_value, input_type, output_properties, domain)
     else:
         output_properties = pubchem_get(input_value, input_type, output_properties, domain)
+    print(output_properties)
+    try:
+        output_properties["Charge"] = int(output_properties["Charge"])
+    # TypeError: int() argument must be a string,
+    # a bytes-like object or a number, not 'NoneType'
+    except TypeError:
+        pass
     return output_properties
 
 
@@ -99,12 +106,13 @@ def pubchem_get(input_value, input_type, output_properties, domain):
         url = f"{domain}/{input_type}/{input_value}/property/{property}/TXT"
         result = requests.get(url)
         if result.status_code == 200:
-            # strip newline character
-            output_properties[property] = result._content.decode()[:-1]
+            content = result._content.decode().split("\n")
+            output_properties[property] = content[0]
 
     cid = requests.get(f"{domain}/{input_type}/{input_value}/cids/TXT")
     if cid.status_code == 200:
-        output_properties["cid"] = cid._content.decode()[:-1]
+        content = cid._content.decode().split("\n")
+        output_properties["cid"] = content[0]
     else:
         output_properties["cid"] = None
 
@@ -134,14 +142,16 @@ def pubchem_post(input_value, input_type, output_properties, domain):
         result = requests.post(url, headers=header, data=data_input)
         if result.status_code == 200:
             # strip newline character
-            output_properties[property] = result._content.decode()[:-1]
+            content = result._content.decode().split("\n")
+            output_properties[property] = content[0]
 
     cid = requests.post(
         f"{domain}/{input_type}/cids/TXT",
         headers=header, data=data_input
     )
     if cid.status_code == 200:
-        output_properties["cid"] = cid._content.decode()[:-1]
+        content = cid._content.decode().split("\n")
+        output_properties["cid"] = content[0]
     else:
         output_properties["cid"] = None
 

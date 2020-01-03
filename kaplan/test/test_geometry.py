@@ -8,37 +8,19 @@ import numpy as np
 from math import pi
 
 from numpy.testing import assert_raises
-from vetee.coordinates import CoordinatesError
 
 from kaplan.geometry import create_obmol, get_rings,\
     update_obmol, remove_ring_dihed, construct_fours,\
-    get_struct_info, geometry_units, get_coords,\
+    geometry_units, get_coords, GeometryError,\
     filter_duplicate_diheds, get_torsions, get_atomic_nums,\
     periodic_table
 from kaplan.inputs import Inputs
 from kaplan.tools import TEST_DIR, amino_acids
 
 
-def test_create_obmol():
-    test1 = os.path.join(TEST_DIR, "2-pentanol.xyz")
-    obmol = create_obmol(test1, 0, 1)
-    atoms = [
-        "O", "C", "C", "C", "C", "C", "H", "H", "H", "H", "H", "H", "H", "H", "H", "H", "H", "H"
-    ]
-    atom_nums = [8, 6, 6, 6, 6, 6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-    for i, atom in enumerate(openbabel.OBMolAtomIter(obmol)):
-        letter_num = atom.GetAtomicNum()
-        assert letter_num == atom_nums[i]
-        letter = periodic_table(letter_num)
-        assert letter == atoms[i]
-        assert atom.x() != 0
-        assert atom.y() != 0
-        assert atom.z() != 0
-
-
 def test_get_rings():
     test1 = os.path.join(TEST_DIR, "caffeine.xyz")
-    obmol = create_obmol(test1, 0, 1)
+    obmol = create_obmol(test1, "xyz", True)
     # to construct the drawing of caffeine:
     # for bond in openbabel.OBMolBondIter(obmol):
     #    print(bond.GetBeginAtom().GetIdx(), bond.GetEndAtom().GetIdx(), bond.GetBondOrder())
@@ -51,7 +33,7 @@ def test_get_rings():
 
 def test_construct_fours():
     test1 = os.path.join(TEST_DIR, "caffeine.xyz")
-    obmol = create_obmol(test1, 0, 1)
+    obmol = create_obmol(test1, "xyz", True)
     rings = get_rings(obmol)
     ring1, ring2 = rings  # pylint: disable=unbalanced-tuple-unpacking
     assert len(construct_fours(ring1)) == 10
@@ -86,7 +68,7 @@ def test_update_obmol():
     # TODO fix this test
     inputs = Inputs()
     test1 = os.path.join(TEST_DIR, "2-pentanol.xyz")
-    obmol = create_obmol(test1, 0, 1)
+    obmol = create_obmol(test1, "xyz", True)
     torsions = get_torsions(obmol)
     atomic_nums = get_atomic_nums(obmol)
     dihedrals = filter_duplicate_diheds(torsions, atomic_nums)
@@ -106,7 +88,7 @@ def test_update_obmol():
         print("\n\n")
 
     test2 = os.path.join(TEST_DIR, "caffeine.xyz")
-    obmol = create_obmol(test2, 0, 1)
+    obmol = create_obmol(test2, "xyz", True)
     torsions = get_torsions(obmol)
     atomic_nums = get_atomic_nums(obmol)
     dihedrals = filter_duplicate_diheds(torsions, atomic_nums)
@@ -146,7 +128,7 @@ def test_update_obmol():
 
     assert inputs.diheds == [(2, 0, 1, 3), (13, 3, 1, 0), (9, 2, 0, 1)]
 
-    new_angle = 0.0
+    # new_angle = 0.0
     torsion_original = inputs.obmol.GetTorsion(3, 1, 2, 4)
     t_orig2 = inputs.obmol.GetTorsion(2, 1, 3, 11)
     t_orig3 = inputs.obmol.GetTorsion(1, 2, 4, 14)
@@ -166,49 +148,9 @@ def test_update_obmol():
 
 def test_atom_indices():
     test1 = os.path.join(TEST_DIR, "caffeine.xyz")
-    obmol = create_obmol(test1, 0, 1)
+    obmol = create_obmol(test1, "xyz", True)
     for atom in openbabel.OBMolAtomIter(obmol):
         print(atom.GetIdx(), atom.GetAtomicNum(), atom.x(), atom.y(), atom.z())
-
-
-def test_get_struct_info():
-    test_names = [
-        "propane",
-        "cysteine",
-        "alanine",
-        "tryptophan",
-        "tyrosine",
-        "glycine",
-        "threonine",
-        "arginine",
-        "proline",
-        "glutamine",
-        "isoleucine",
-        "leucine",
-    ]
-    for test in test_names:
-        result = get_struct_info(test)
-        assert result.value == test
-        assert result.identifier == "name"
-        assert result.charge == 0
-        assert result.multip == 1
-        assert len(result.coords)
-    failures = [
-        100403,
-        "not-a-molecule",
-        "CCCC",
-        "InChI=1S/C8H10N4O2/c1-10-4-9-6-5(10)7(13)12(3)8(14)11(6)2/h4H,1-3H3",  # inchi
-    ]
-    # note inchikey is accepted as a name, so it won't raise an
-    # error (unless inchikey is not in synonyms)
-    for f in failures:
-        assert_raises(CoordinatesError, get_struct_info, f)
-    result = get_struct_info("ammonium")
-    assert result.charge == 1
-    assert len(result.coords) == 5
-    assert result.multip == 1
-    assert result.num_atoms == 5
-    assert result.atomic_nums == [7, 1, 1, 1, 1]
 
 
 def test_get_coords():
@@ -252,3 +194,113 @@ def test_get_coords():
     obmol3 = mol3.OBMol
     glycine_mol_coords = get_coords(obmol3)
     assert np.allclose(glycine_file_coords, glycine_mol_coords)
+
+
+def test_create_obmol():
+    test_values = {
+        "sdf": os.path.join(TEST_DIR, "butanal.sdf"),
+        "xyz": os.path.join(TEST_DIR, "butanal.xyz"),
+        "smiles": os.path.join(TEST_DIR, "butanal.smi"),
+        "inchi": os.path.join(TEST_DIR, "butanal.inchi"),
+    }
+    for key, value in test_values.items():
+        result = create_obmol(value, key, True)
+        with open(value, "r") as f:
+            as_str = f.read()
+            result2 = create_obmol(as_str, key, False)
+        assert result.NumAtoms() == 13
+        assert result.GetTotalCharge() == 0
+        assert result.GetTotalSpinMultiplicity() == 1
+        assert result2.NumAtoms() == 13
+        assert result2.GetTotalCharge() == 0
+        assert result2.GetTotalSpinMultiplicity() == 1
+
+    # test error cases
+    assert_raises(
+        GeometryError,
+        create_obmol,
+        "does_not_exist",
+        "xyz",
+        True
+    )
+    assert_raises(
+        GeometryError,
+        create_obmol,
+        os.path.join(TEST_DIR, "butanal.com"),
+        "com",
+        True
+    )
+    result = create_obmol(
+        os.path.join(TEST_DIR, "incorrect_atom_count.xyz"),
+        "xyz", True
+    )
+    assert result.NumAtoms() == 11
+    assert result.GetTotalCharge() == 0
+    assert result.GetTotalSpinMultiplicity() == 3
+    assert_raises(
+        GeometryError,
+        create_obmol,
+        os.path.join(TEST_DIR, "corrupted_file.xyz"),
+        "xyz",
+        True
+    )
+    assert_raises(
+        GeometryError,
+        create_obmol,
+        "CCAg", "smiles", False
+    )
+    assert_raises(
+        GeometryError,
+        create_obmol,
+        "", "smiles", False
+    )
+    result = create_obmol("CCCCCC=CCC=CCC=CCCCCC(=O)O", "smiles", False)
+    assert result.NumAtoms() == 50
+    assert result.GetTotalCharge() == 0
+    assert result.GetTotalSpinMultiplicity() == 1
+    result = create_obmol(
+        "".join([
+            "InChI=1S/C18H30O2/c1-2-3-4-5-6-7-8-9-10-11-12-13-14-15-16-17-18(19)20/",
+            "h6-7,9-10,12-13H,2-5,8,11,14-17H2,1H3,(H,19,20)"
+        ]),
+        "inchi", False
+    )
+    assert result.NumAtoms() == 50
+    assert result.GetTotalCharge() == 0
+    assert result.GetTotalSpinMultiplicity() == 1
+    assert_raises(
+        GeometryError,
+        create_obmol,
+        "".join([
+            "InChI=1S/C18H30O2/c1-2-3-4-5-6-7-8-9-10-11-12-13-14-15",
+            "-16-17-18(19)20/h6-7,9-10,12-13H,2-5,8,11,14-17H2,1H3,(H,19,20)"
+        ]),
+        "smiles", False
+    )
+    create_obmol(
+        "N12[C@@H]([C@@H](NC([C@@H](c3ccsc3)C(=O)O)=O)C2=O)SC(C)(C)[C@@-]1C(=O)O",
+        "smiles", False
+    )
+    create_obmol(
+        "".join([
+            "InChI=1S/C15H16N2O6S2.2Na/c1-15(2)9(14(22)23)17-11(19)8(12",
+            "(17)25-15)16-10(18)7(13(20)21)6-3-4-24-5-6;;/h3-5,7-9",
+            ",12H,1-2H3,(H,16,18)(H,20,21)(H,22,23);;/q;2*+1/p-2"
+        ]),
+        "inchi", False
+    )
+
+    test1 = os.path.join(TEST_DIR, "2-pentanol.xyz")
+    obmol = create_obmol(test1, "xyz", True)
+    atoms = [
+        "O", "C", "C", "C", "C", "C", "H", "H", "H", "H", "H", "H", "H", "H", "H", "H", "H", "H"
+    ]
+    atom_nums = [8, 6, 6, 6, 6, 6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    for i, atom in enumerate(openbabel.OBMolAtomIter(obmol)):
+        letter_num = atom.GetAtomicNum()
+        assert letter_num == atom_nums[i]
+        letter = periodic_table(letter_num)
+        assert letter == atoms[i]
+        assert atom.x() != 0
+        assert atom.y() != 0
+        assert atom.z() != 0

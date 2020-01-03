@@ -16,17 +16,15 @@ if __name__ == "__main__":
         author_email="garnej2@mcmaster.ca",
         package_dir={"kaplan": "kaplan"},
         # user will need to install these manually since
-        # psi4, vetee, and GOpt are not available on pypi
+        # psi4 is not available on pypi
         # install_requires=[
         #    "numpy",
         #    "scipy",
         #    "openbabel",
         #    "psi4",
-        #    "GOpt",
         #    "rmsd",
-        #    "vetee",
         #    "matplotlib",
-        #    "pubchempy",
+        #    "requests",
         # ],
         python_requires=">=3.7",
         packages=find_packages(),
